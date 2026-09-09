@@ -451,33 +451,63 @@
     const modalClose = document.getElementById('modal-close');
     const googleAction = document.getElementById('google-sso-action');
     const authStatusLog = document.getElementById('auth-status-log');
-    const navAdminLink = document.getElementById('nav-admin-link');
+
+    // Profile modal elements
+    const profileModal = document.getElementById('user-profile-modal');
+    const profileClose = document.getElementById('profile-modal-close');
+    const profileImg = document.getElementById('user-profile-img');
+    const profileFallback = document.getElementById('user-profile-avatar-fallback');
+    const profileName = document.getElementById('user-profile-name');
+    const profileEmail = document.getElementById('user-profile-email');
+    const profileTier = document.getElementById('user-profile-tier');
+    const profileAdminSec = document.getElementById('user-profile-admin-section');
+    const btnSignout = document.getElementById('btn-user-signout');
 
     // Admin Master Stealth Whitelist
     const ADMIN_WHITELIST = ['harshilthakur82@gmail.com', 'harshilthakur82@oksbi', 'harshil1a'];
+    let currentAuthUser = null;
+
+    function renderLoggedInUser(user) {
+      currentAuthUser = user;
+      const email = user.email || '';
+      const meta = user.user_metadata || {};
+      const fullName = meta.full_name || meta.name || email.split('@')[0];
+      const avatarUrl = meta.avatar_url || '';
+      const isMasterAdmin = ADMIN_WHITELIST.some(a => email.toLowerCase().includes(a.toLowerCase())) || email.toLowerCase().includes('harshil');
+
+      // Update Top Nav Button with User Name & Photo
+      if (btnGoogleAuth) {
+        btnGoogleAuth.style.borderColor = '#00ff66';
+        btnGoogleAuth.style.background = 'rgba(0,255,102,0.1)';
+        btnGoogleAuth.innerHTML = `
+          ${avatarUrl ? `<img src="${avatarUrl}" alt="Avatar" style="width:18px;height:18px;border-radius:50%;object-fit:cover;border:1px solid #00ff66;">` : `<span style="font-size:12px;">👤</span>`}
+          <span style="color:#00ff66;font-weight:700;letter-spacing:0.5px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${fullName.toUpperCase()}</span>
+          <span style="width:6px;height:6px;background:#00ff66;border-radius:50%;box-shadow:0 0 6px #00ff66;"></span>
+        `;
+      }
+
+      // Populate User Profile Modal
+      if (profileName) profileName.innerText = fullName.toUpperCase();
+      if (profileEmail) profileEmail.innerText = email;
+      if (avatarUrl && profileImg) {
+        profileImg.src = avatarUrl;
+        profileImg.style.display = 'block';
+        if (profileFallback) profileFallback.style.display = 'none';
+      }
+      if (profileTier) {
+        profileTier.innerText = isMasterAdmin ? 'MASTER OPERATOR // UNLIMITED ACCESS' : 'STANDARD TIER // 5 CLOUD RADAR QUERIES/DAY';
+      }
+      if (profileAdminSec) {
+        profileAdminSec.style.display = isMasterAdmin ? 'block' : 'none';
+      }
+    }
 
     async function checkWebSession() {
       if (!supabaseClient) return;
       try {
         const { data: { session } } = await supabaseClient.auth.getSession();
-        if (session && session.user && session.user.email) {
-          const email = session.user.email.toLowerCase().trim();
-          
-          // 🔒 STEALTH ADMIN AUTORUN:
-          // If master admin logs in, transport silently into private Admin Command Center!
-          const isMasterAdmin = ADMIN_WHITELIST.some(a => email.includes(a.toLowerCase())) || email.includes('harshil');
-          if (isMasterAdmin) {
-            localStorage.setItem('shadow_admin_user', email);
-            window.location.replace('/admin.html');
-            return;
-          }
-
-          // Normal customer: stay on website, display user badge
-          const userPrefix = email.split('@')[0].toUpperCase();
-          if (btnAuthLabel) btnAuthLabel.innerText = `${userPrefix} // NODE`;
-          if (authStatusLog) {
-            authStatusLog.innerHTML = `<span style="color:#00ff66;">ACTIVE USER:</span> ${email}<br><span style="color:#7ca88e;font-size:10px;">TIER: STANDARD // CLOUD RADAR ACTIVE</span>`;
-          }
+        if (session && session.user) {
+          renderLoggedInUser(session.user);
         }
       } catch(e) {
         console.warn('Session check:', e);
@@ -485,23 +515,44 @@
     }
     checkWebSession();
 
-    // Listen to real-time auth changes (when user returns from Google OAuth)
+    // Listen to real-time auth changes
     if (supabaseClient) {
       supabaseClient.auth.onAuthStateChange((event, session) => {
-        if (session && session.user && session.user.email) {
-          const email = session.user.email.toLowerCase().trim();
-          const isMasterAdmin = ADMIN_WHITELIST.some(a => email.includes(a.toLowerCase())) || email.includes('harshil');
-          if (isMasterAdmin) {
-            localStorage.setItem('shadow_admin_user', email);
-            window.location.replace('/admin.html');
-          }
+        if (session && session.user) {
+          renderLoggedInUser(session.user);
+        } else {
+          currentAuthUser = null;
         }
       });
     }
 
-    if (btnGoogleAuth && authModal) {
+    // Toggle Modals
+    if (btnGoogleAuth) {
       btnGoogleAuth.addEventListener('click', () => {
-        authModal.classList.add('open');
+        if (currentAuthUser) {
+          if (profileModal) profileModal.classList.add('open');
+        } else {
+          if (authModal) authModal.classList.add('open');
+        }
+      });
+    }
+
+    if (modalClose && authModal) {
+      modalClose.addEventListener('click', () => { authModal.classList.remove('open'); });
+    }
+
+    if (profileClose && profileModal) {
+      profileClose.addEventListener('click', () => { profileModal.classList.remove('open'); });
+    }
+
+    if (btnSignout) {
+      btnSignout.addEventListener('click', async () => {
+        btnSignout.innerText = 'SIGNING OUT...';
+        if (supabaseClient) {
+          try { await supabaseClient.auth.signOut(); } catch(e) {}
+        }
+        localStorage.removeItem('shadow_admin_user');
+        window.location.reload();
       });
     }
 
