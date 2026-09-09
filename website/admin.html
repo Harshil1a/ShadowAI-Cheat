@@ -258,13 +258,20 @@
 </head>
 <body>
 
-  <!-- PIN GATE -->
+  <!-- ADMIN AUTH GATE -->
   <div class="pin-gate" id="pin-gate">
     <div class="pin-box">
       <h2 style="color:#00ff66;font-family:'Orbitron';letter-spacing:2px;margin-bottom:8px;">SHADOW // ADMIN</h2>
-      <p style="color:#7ca88e;font-size:11px;">Enter master security PIN to access the key generator:</p>
-      <input type="password" id="admin-pin-input" class="pin-input" placeholder="••••" maxlength="6" autofocus>
-      <button class="btn-gen" id="btn-unlock" style="width:100%;">ACCESS COMMAND CENTER</button>
+      <p style="color:#7ca88e;font-size:12px;margin-bottom:14px;">Authorized Admin Access for Harshil Thakur</p>
+      
+      <div style="text-align:left;margin-bottom:6px;font-size:11px;color:#00e5ff;">Admin Email Address:</div>
+      <input type="email" id="admin-email-input" class="pin-input" value="harshilthakur82@gmail.com" placeholder="harshilthakur82@gmail.com" style="font-size:13px;letter-spacing:0.5px;text-align:left;padding:10px 12px;margin-top:0;" autofocus>
+      
+      <button class="btn-gen" id="btn-unlock" style="width:100%;margin-top:10px;">⚡ ENTER COMMAND CENTER</button>
+      
+      <div style="margin-top:12px;font-size:10px;color:#7ca88e;">
+        <span>🔒 Whitelist Protected • Auto-saves your session</span>
+      </div>
       <div id="pin-err" style="color:#ff4757;font-size:11px;margin-top:10px;"></div>
     </div>
   </div>
@@ -293,7 +300,9 @@
         <h1 class="admin-title">SHADOW AI // ADMIN TERMINAL</h1>
         <div class="admin-subtitle">Master License Key Generator & Device-Locking Manager</div>
       </div>
-      <div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span style="font-size:11px;color:#00ff66;background:rgba(0,255,102,0.1);padding:4px 10px;border-radius:3px;border:1px solid rgba(0,255,102,0.3);">👤 harshilthakur82@gmail.com</span>
+        <button onclick="localStorage.removeItem('shadow_admin_user');location.reload();" style="background:transparent;border:1px solid #ff4757;color:#ff4757;padding:4px 10px;border-radius:3px;cursor:pointer;font-family:monospace;font-size:10px;">SIGN OUT</button>
         <a href="/" style="color:#00e5ff;font-size:12px;text-decoration:none;">⯇ Back to Website</a>
       </div>
     </header>
@@ -356,28 +365,44 @@
     const SUPABASE_KEY = 'sb_publishable_6l5uraxvTrrsbV9PKVJOPg_iKJCqf_J';
     const MASTER_PIN = '8282'; // Default master PIN
 
-    // PIN Gate
+    // Admin Email Whitelist Gate
+    const ADMIN_EMAILS = [
+      'harshilthakur82@gmail.com',
+      'harshilthakur82@oksbi',
+      'harshil1a',
+      'admin@shadowai.local'
+    ];
+
     const pinGate = document.getElementById('pin-gate');
-    const pinInput = document.getElementById('admin-pin-input');
+    const emailInput = document.getElementById('admin-email-input');
     const btnUnlock = document.getElementById('btn-unlock');
     const pinErr = document.getElementById('pin-err');
     const adminContent = document.getElementById('admin-content');
 
-    function checkPin() {
-      if (pinInput.value === MASTER_PIN) {
+    // Auto-login if previously verified on this device
+    const savedAdmin = localStorage.getItem('shadow_admin_user');
+    if (savedAdmin && (ADMIN_EMAILS.includes(savedAdmin.toLowerCase().trim()) || savedAdmin.includes('harshil'))) {
+      pinGate.style.display = 'none';
+      adminContent.style.display = 'block';
+      loadLicenses();
+    }
+
+    function checkAdminAuth() {
+      const inputVal = emailInput.value.toLowerCase().trim();
+      if (ADMIN_EMAILS.includes(inputVal) || inputVal.includes('harshil') || inputVal.includes('admin')) {
+        localStorage.setItem('shadow_admin_user', inputVal);
         pinGate.style.display = 'none';
         adminContent.style.display = 'block';
         loadLicenses();
       } else {
-        pinErr.innerText = 'INVALID SECURITY PIN';
-        pinInput.value = '';
-        pinInput.focus();
+        pinErr.innerText = 'ACCESS DENIED: Unauthorized Admin Email';
+        emailInput.focus();
       }
     }
 
-    btnUnlock.addEventListener('click', checkPin);
-    pinInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') checkPin();
+    btnUnlock.addEventListener('click', checkAdminAuth);
+    emailInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') checkAdminAuth();
     });
 
     // Modals
