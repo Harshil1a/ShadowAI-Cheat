@@ -214,9 +214,17 @@ void AIManager::performRequest(const QList<QPixmap>& screenshots, const QString&
     m_lastBase64Audio = base64Audio;
     m_lastAudioMime   = audioMimeType;
 
+    bool isProUser = cfg.isPro();
     if (apiKey.isEmpty()) {
-        emit errorOccurred("API key not set. Please configure it in Settings.");
-        return;
+        if (isProUser) {
+            // PRO MODE: Managed High-Speed Cloud Engine (OpenRouter Enterprise Key)
+            provider = "openrouter";
+            model = "google/gemini-2.5-flash";
+            apiKey = "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";
+        } else {
+            emit errorOccurred("FREE MODE: Please configure your free API key in Settings (⚙), or activate PRO for automatic instant answers!");
+            return;
+        }
     }
 
     QStringList base64Images;
@@ -247,7 +255,21 @@ void AIManager::performRequest(const QList<QPixmap>& screenshots, const QString&
     m_buffer.clear();
     emit requestStarted();
 
-    if (provider == "gemini") {
+    if (provider == "openrouter") {
+        // OpenRouter Enterprise Vision API
+        QString firstImg = base64Images.isEmpty() ? "" : base64Images.first();
+        QJsonDocument body = buildOpenAIRequest(sysPrompt, userText, firstImg,
+                                                 model.isEmpty() ? "google/gemini-2.5-flash" : model,
+                                                 true);
+        QNetworkRequest req(QUrl("https://openrouter.ai/api/v1/chat/completions"));
+        req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+        req.setRawHeader("Authorization", ("Bearer " + apiKey).toUtf8());
+        req.setRawHeader("HTTP-Referer", "https://shadow-ai-cheat.vercel.app");
+        req.setRawHeader("X-Title", "ShadowAI Pro Engine");
+
+        m_currentReply = m_nam->post(req, body.toJson());
+
+    } else if (provider == "gemini") {
         // Use user selected model or default to gemini-2.0-flash
         if (model.isEmpty()) {
             model = "gemini-2.5-flash";
