@@ -215,17 +215,19 @@ void AIManager::performRequest(const QList<QPixmap>& screenshots, const QString&
     m_lastAudioMime   = audioMimeType;
 
     bool isProUser = cfg.isPro();
-    if (isProUser) {
-        // PRO MODE: Managed High-Speed Cloud Engine (Dedicated Pro Master License Key)
-        // Guaranteed zero conflict with any free, expired, or unconfigured BYOK slots
-        provider = "gemini";
-        model = "gemini-2.5-flash";
-        apiKey = "AIzaSyC8aILHZWizqpS4rXc_5s0FGgBbHHr7JcA";
-    } else {
-        if (apiKey.isEmpty()) {
+    if (apiKey.trimmed().isEmpty()) {
+        if (isProUser) {
+            // PRO MODE DEFAULT: Auto-routed to high-speed Pro Master Cloud Engine (Google Gemini 2.5 Flash)
+            // Zero conflict: No key required!
+            provider = "gemini";
+            model = "gemini-2.5-flash";
+            apiKey = "AIzaSyC8aILHZWizqpS4rXc_5s0FGgBbHHr7JcA";
+        } else {
             emit errorOccurred("FREE MODE: Please configure your free API key in Settings (⚙), or activate PRO for automatic instant answers!");
             return;
         }
+    } else {
+        // User entered and saved their own custom key: respect user's custom provider, model, and key
     }
 
     QStringList base64Images;
@@ -702,12 +704,14 @@ void AIManager::transcribeAudio(const QString& filePath, const QList<QPixmap>& s
     QString apiKey = cfg.currentApiKey();
     QString provider = cfg.currentApiProvider();
     
-    if (cfg.isPro()) {
-        provider = "gemini";
-        apiKey = "AIzaSyC8aILHZWizqpS4rXc_5s0FGgBbHHr7JcA";
-    } else if (apiKey.isEmpty()) {
-        emit errorOccurred("API key not set. Please configure it in Settings.");
-        return;
+    if (apiKey.trimmed().isEmpty()) {
+        if (cfg.isPro()) {
+            provider = "gemini";
+            apiKey = "AIzaSyC8aILHZWizqpS4rXc_5s0FGgBbHHr7JcA";
+        } else {
+            emit errorOccurred("API key not set. Please configure it in Settings.");
+            return;
+        }
     }
 
     m_busy = true;
