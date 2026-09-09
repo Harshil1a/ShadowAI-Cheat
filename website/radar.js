@@ -373,7 +373,7 @@
     if (dlMac) {
       dlMac.addEventListener('click', (e) => {
         e.preventDefault();
-        alert("ShadowAI macOS Universal Bundle:\n\nThe macOS .dmg installer will download. You can also build it directly in the cloud via GitHub Actions!");
+        window.location.href = 'downloads/ShadowAI.dmg';
       });
     }
   }
