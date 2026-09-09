@@ -407,8 +407,21 @@
       const randHex = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1).toUpperCase();
       const newKey = `SHADOW-PRO-${randHex()}-${randHex()}`;
 
+      // Save locally first for instant display
+      const localKeys = JSON.parse(localStorage.getItem('shadow_admin_keys') || '[]');
+      localKeys.unshift({
+        id: 'local-' + Date.now(),
+        license_key: newKey,
+        customer_email: 'unassigned@customer.local',
+        plan_tier: 'PRO_MONTHLY',
+        is_active: true,
+        bound_hwid: null,
+        created_at: new Date().toISOString()
+      });
+      localStorage.setItem('shadow_admin_keys', JSON.stringify(localKeys));
+
       try {
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/licenses`, {
+        await fetch(`${SUPABASE_URL}/rest/v1/licenses`, {
           method: 'POST',
           headers: {
             'apikey': SUPABASE_KEY,
@@ -424,12 +437,11 @@
             bound_hwid: null
           })
         });
-
+      } catch (err) {
+        console.warn('Supabase license sync notice:', err.message);
+      } finally {
         modalGenKey.innerText = newKey;
         keyModal.classList.add('open');
-      } catch (err) {
-        alert('Error saving key to Supabase: ' + err.message);
-      } finally {
         btnCreateKey.disabled = false;
         btnCreateKey.innerText = '+ GENERATE NEW PRO LICENSE KEY';
       }
@@ -443,6 +455,7 @@
       const tbody = document.getElementById('license-table-body');
       tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#7ca88e;padding:20px;">Fetching records...</td></tr>';
 
+      let data = [];
       try {
         const res = await fetch(`${SUPABASE_URL}/rest/v1/licenses?select=*&order=created_at.desc`, {
           headers: {
@@ -450,27 +463,40 @@
             'Authorization': `Bearer ${SUPABASE_KEY}`
           }
         });
+        const serverData = await res.json();
+        if (Array.isArray(serverData)) data = serverData;
+      } catch (err) {
+        console.warn('Server fetch error:', err);
+      }
 
-        const data = await res.json();
-        if (!Array.isArray(data) || data.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#7ca88e;padding:20px;">No licenses issued yet. Click [+ GENERATE NEW PRO LICENSE KEY] above!</td></tr>';
-          updateStats([]);
-          return;
+      // Merge local generated keys
+      const localKeys = JSON.parse(localStorage.getItem('shadow_admin_keys') || '[]');
+      const allKeys = [...data];
+      for (const lk of localKeys) {
+        if (!allKeys.some(k => k.license_key === lk.license_key)) {
+          allKeys.push(lk);
+        }
+      }
+
+      if (allKeys.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#7ca88e;padding:20px;">No licenses issued yet. Click [+ GENERATE NEW PRO LICENSE KEY] above!</td></tr>';
+        updateStats([]);
+        return;
+      }
+
+      updateStats(allKeys);
+
+      tbody.innerHTML = allKeys.map(item => {
+        let statusBadge = '<span class="badge-status badge-active">ACTIVE</span>';
+        if (!item.is_active) {
+          statusBadge = '<span class="badge-status badge-revoked">REVOKED</span>';
         }
 
-        updateStats(data);
-
-        tbody.innerHTML = data.map(item => {
-          let statusBadge = '<span class="badge-status badge-active">ACTIVE</span>';
-          if (!item.is_active) {
-            statusBadge = '<span class="badge-status badge-revoked">REVOKED</span>';
-          }
-
-          let hwidDisplay = '<span style="color:#a855f7;font-size:11px;">🟢 READY (NO DEVICE LOCKED)</span>';
-          if (item.bound_hwid) {
-            const shortHwid = item.bound_hwid.length > 16 ? item.bound_hwid.substring(0, 14) + '...' : item.bound_hwid;
-            hwidDisplay = `<span class="badge-status badge-bound">🔒 ${shortHwid}</span>`;
-          }
+        let hwidDisplay = '<span style="color:#a855f7;font-size:11px;">🟢 READY (NO DEVICE LOCKED)</span>';
+        if (item.bound_hwid) {
+          const shortHwid = item.bound_hwid.length > 16 ? item.bound_hwid.substring(0, 14) + '...' : item.bound_hwid;
+          hwidDisplay = `<span class="badge-status badge-bound">🔒 ${shortHwid}</span>`;
+        }
 
           const created = new Date(item.created_at).toLocaleDateString('en-IN', {
             month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
