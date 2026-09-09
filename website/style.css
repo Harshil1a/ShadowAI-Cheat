@@ -1384,3 +1384,30 @@ body {
   padding: 0 10px;
 }
 
+/* Device Lock Notice Banner */
+.device-lock-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(0, 229, 255, 0.08);
+  border: 1px solid rgba(0, 229, 255, 0.4);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin: 12px 0 16px 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: #c9f6ff;
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.15);
+}
+
+.device-lock-notice .lock-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.device-lock-notice strong {
+  color: #00e5ff;
+  letter-spacing: 0.5px;
+}
+
