@@ -519,6 +519,11 @@ void SettingsWindow::loadValues() {
     
     m_apiKeyEdit->blockSignals(true);
     m_apiKeyEdit->setText(m_currentKeys[m_lastSlotIndex]);
+    if (cfg.isPro()) {
+        m_apiKeyEdit->setPlaceholderText("⚡ SHADOW PRO CLOUD ACTIVE (Google Gemini 2.5 Flash Master Engine Provisioned)");
+    } else {
+        m_apiKeyEdit->setPlaceholderText("Paste API key here...");
+    }
     m_apiKeyEdit->blockSignals(false);
 
     m_baseUrlEdit->blockSignals(true);
@@ -702,6 +707,16 @@ void SettingsWindow::onProviderChanged(int index) {
 
 void SettingsWindow::onTestAPI() {
     QString key = m_apiKeyEdit->text().trimmed();
+    QString prov = m_providerCombo->currentData().toString();
+    QString model = m_modelCombo->currentText().trimmed();
+
+    bool isPro = AccountManager::instance().isPro();
+    if (isPro && key.isEmpty()) {
+        key = "AIzaSyC8aILHZWizqpS4rXc_5s0FGgBbHHr7JcA";
+        prov = "gemini";
+        model = "gemini-2.5-flash";
+    }
+
     if (key.isEmpty()) {
         m_testStatus->setText("❌ No API key entered");
         m_testStatus->setStyleSheet("color: #ef4444; font-weight: bold;");
@@ -711,9 +726,6 @@ void SettingsWindow::onTestAPI() {
     m_testStatus->setText("⟳ Testing...");
     m_testStatus->setStyleSheet("color: #78716c;");
     m_testBtn->setEnabled(false);
-
-    QString prov = m_providerCombo->currentData().toString();
-    QString model = m_modelCombo->currentText().trimmed();
 
     auto* nam = new QNetworkAccessManager(this);
     QNetworkRequest req;
@@ -763,11 +775,15 @@ void SettingsWindow::onTestAPI() {
     }
 
     auto* reply = nam->post(req, body);
-    connect(reply, &QNetworkReply::finished, this, [this, reply, nam]() {
+    connect(reply, &QNetworkReply::finished, this, [this, reply, nam, isPro]() {
         m_testBtn->setEnabled(true);
         int code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
         if (code == 200) {
-            m_testStatus->setText("✓ API key works!");
+            if (isPro && m_apiKeyEdit->text().trimmed().isEmpty()) {
+                m_testStatus->setText("✓ Pro License Active (Gemini 2.5 Flash Connected)!");
+            } else {
+                m_testStatus->setText("✓ API key works!");
+            }
             m_testStatus->setStyleSheet("color: #10b981; font-weight: bold;");
         } else {
             QString rawErr = QString::fromUtf8(reply->readAll());
@@ -1128,13 +1144,19 @@ void SettingsWindow::refreshAccountTab() {
 
     bool loggedIn = AccountManager::instance().isLoggedIn();
     bool isPro = AccountManager::instance().isPro();
-    QString email = AccountManager::instance().userEmail();
+    QString rawEmail = AccountManager::instance().userEmail();
+    QString email = QUrl::fromPercentEncoding(rawEmail.toUtf8()).trimmed();
     QString key = AccountManager::instance().licenseKey();
 
+    if (email.contains("operator@gmail.com", Qt::CaseInsensitive) || email.isEmpty()) {
+        loggedIn = false;
+        email = "";
+    }
+
     if (loggedIn) {
-        m_accountStatusLabel->setText(QString("👤 Account: %1\n⚡ Status: %2")
+        m_accountStatusLabel->setText(QString("👤 Google Account: %1\n⚡ Status: %2")
             .arg(email)
-            .arg(isPro ? "SHADOW PRO [UNLIMITED]" : "COMMUNITY FREE TIER"));
+            .arg(isPro ? "SHADOW PRO [UNLIMITED ACCESS]" : "COMMUNITY FREE TIER (BYOK)"));
         m_googleAuthBtn->setText("Sign Out");
     } else {
         m_accountStatusLabel->setText("👤 Account: Guest (Not Signed In)\n⚡ Status: Community Free Tier (BYOK)");
@@ -1148,10 +1170,18 @@ void SettingsWindow::refreshAccountTab() {
     if (m_licenseFeedback) {
         if (isPro) {
             m_licenseFeedback->setStyleSheet("color: #00ff66; font-weight: bold;");
-            m_licenseFeedback->setText("✓ Pro License Active. Unlimited model queries enabled.");
+            m_licenseFeedback->setText("✓ Pro License Active (Linked to Google: " + email + "). Unlimited Vision Engine Active.");
         } else {
             m_licenseFeedback->setStyleSheet("color: #7ca88e;");
             m_licenseFeedback->setText("No Pro key activated. Currently running in Free BYOK mode.");
+        }
+    }
+
+    if (m_apiKeyEdit) {
+        if (isPro) {
+            m_apiKeyEdit->setPlaceholderText("⚡ SHADOW PRO CLOUD ACTIVE (Google Gemini 2.5 Flash Master Engine Provisioned)");
+        } else {
+            m_apiKeyEdit->setPlaceholderText("Paste API key here...");
         }
     }
 }

@@ -19,6 +19,7 @@ public:
     void startGoogleLogin();
     void logout();
     void activateLicenseKey(const QString& key);
+    void syncAccountStatus();
 
 signals:
     void accountStateChanged(bool isLoggedIn, const QString& email, bool isPro);

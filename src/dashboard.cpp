@@ -582,6 +582,11 @@ void Dashboard::refreshAccountUI() {
     bool isPro = AccountManager::instance().isPro();
     QString email = AccountManager::instance().userEmail();
 
+    email = QUrl::fromPercentEncoding(email.toUtf8()).trimmed();
+    if (email.contains("operator@gmail.com", Qt::CaseInsensitive) || email.isEmpty()) {
+        loggedIn = false;
+    }
+
     if (!loggedIn) {
         m_accountBadge->setText(QString::fromUtf8("👤 GUEST // FREE (BYOK)"));
         m_accountBadge->setStyleSheet("color: #7ca88e; font-size: 11px; font-family: 'Consolas', monospace;");
@@ -596,11 +601,11 @@ void Dashboard::refreshAccountUI() {
     }
 
     if (isPro) {
-        m_proBtn->setText(QString::fromUtf8("PRO ✓"));
-        m_proBtn->setStyleSheet("background: rgba(0, 255, 102, 0.2); color: #00ff66; border: 1px solid #00ff66; font-size: 10px; font-weight: bold; border-radius: 4px;");
+        m_proBtn->setText(QString::fromUtf8("PRO ACTIVE ✓"));
+        m_proBtn->setStyleSheet("background: rgba(0, 255, 102, 0.25); color: #00ff66; border: 1px solid #00ff66; font-size: 10px; font-weight: bold; border-radius: 4px;");
         m_proBtn->setToolTip("Pro Active [Unlimited Access]");
     } else {
-        m_proBtn->setText(QString::fromUtf8("PRO ⚡"));
+        m_proBtn->setText(QString::fromUtf8("UPGRADE ⚡"));
         m_proBtn->setStyleSheet("background: rgba(0, 229, 255, 0.1); color: #00e5ff; border: 1px solid rgba(0, 229, 255, 0.4); font-size: 10px; font-weight: bold; border-radius: 4px;");
         m_proBtn->setToolTip("Click to activate Pro license");
     }

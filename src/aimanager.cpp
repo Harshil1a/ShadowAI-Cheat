@@ -215,13 +215,14 @@ void AIManager::performRequest(const QList<QPixmap>& screenshots, const QString&
     m_lastAudioMime   = audioMimeType;
 
     bool isProUser = cfg.isPro();
-    if (apiKey.isEmpty()) {
-        if (isProUser) {
-            // PRO MODE: Managed High-Speed Cloud Engine (Google Gemini 2.5 Flash Master Key)
-            provider = "gemini";
-            model = "gemini-2.5-flash";
-            apiKey = "AIzaSyC8aILHZWizqpS4rXc_5s0FGgBbHHr7JcA";
-        } else {
+    if (isProUser) {
+        // PRO MODE: Managed High-Speed Cloud Engine (Dedicated Pro Master License Key)
+        // Guaranteed zero conflict with any free, expired, or unconfigured BYOK slots
+        provider = "gemini";
+        model = "gemini-2.5-flash";
+        apiKey = "AIzaSyC8aILHZWizqpS4rXc_5s0FGgBbHHr7JcA";
+    } else {
+        if (apiKey.isEmpty()) {
             emit errorOccurred("FREE MODE: Please configure your free API key in Settings (⚙), or activate PRO for automatic instant answers!");
             return;
         }
@@ -701,7 +702,10 @@ void AIManager::transcribeAudio(const QString& filePath, const QList<QPixmap>& s
     QString apiKey = cfg.currentApiKey();
     QString provider = cfg.currentApiProvider();
     
-    if (apiKey.isEmpty()) {
+    if (cfg.isPro()) {
+        provider = "gemini";
+        apiKey = "AIzaSyC8aILHZWizqpS4rXc_5s0FGgBbHHr7JcA";
+    } else if (apiKey.isEmpty()) {
         emit errorOccurred("API key not set. Please configure it in Settings.");
         return;
     }

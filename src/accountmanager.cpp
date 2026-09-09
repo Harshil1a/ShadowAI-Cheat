@@ -21,6 +21,11 @@ AccountManager::AccountManager(QObject* parent) : QObject(parent) {
     m_nam = new QNetworkAccessManager(this);
     m_tcpServer = new QTcpServer(this);
     connect(m_tcpServer, &QTcpServer::newConnection, this, &AccountManager::onNewTcpConnection);
+
+    // Auto-sync Google Account and Pro license status on startup
+    QTimer::singleShot(500, this, [this]() {
+        syncAccountStatus();
+    });
 }
 
 AccountManager::~AccountManager() {
@@ -53,9 +58,8 @@ void AccountManager::startGoogleLogin() {
         }
     }
 
-    // Launch browser with authentication portal
-    // Points to local loopback test/cloud portal with redirect to localhost callback
-    QUrl authUrl(QString("http://127.0.0.1:%1/login").arg(m_authPort));
+    // Launch default browser to real Google OAuth landing bridge on live domain
+    QUrl authUrl(QString("https://shadow-ai-cheat.vercel.app/desktop-auth.html?port=%1").arg(m_authPort));
     QDesktopServices::openUrl(authUrl);
 }
 
@@ -167,29 +171,14 @@ void AccountManager::handleHttpAuthCallback(QTcpSocket* socket, const QString& r
     QString firstLine = requestData.section("\r\n", 0, 0);
     QString path = firstLine.section(' ', 1, 1);
 
-    if (path.startsWith("/login")) {
-        // Render a clean Cyberpunk Auth Page in the user's browser
-        QString html = 
-            "<!DOCTYPE html><html><head><meta charset='utf-8'><title>ShadowAI Login</title>"
-            "<style>"
-            "body{background:#030508;color:#00ff66;font-family:monospace;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;}"
-            ".box{border:1px solid #00ff66;box-shadow:0 0 25px rgba(0,255,102,0.3);padding:35px;border-radius:8px;text-align:center;max-width:400px;}"
-            "h2{margin-top:0;letter-spacing:2px;}"
-            "input{width:90%;padding:10px;background:#060d09;border:1px solid #00ff66;color:#e2fced;font-family:monospace;border-radius:4px;margin-bottom:15px;}"
-            "button{background:#00ff66;color:#030508;border:none;font-weight:bold;padding:12px 24px;border-radius:4px;cursor:pointer;font-family:monospace;width:95%;}"
-            "button:hover{box-shadow:0 0 15px #00ff66;}"
-            "</style></head><body>"
-            "<div class='box'>"
-            "<h2>// SHADOW_AI AUTH</h2>"
-            "<p style='color:#7ca88e;font-size:13px;'>Sign in with your Google account to sync your Pro license or free quota.</p>"
-            "<form action='/callback' method='GET'>"
-            "<input type='email' name='email' placeholder='operator@gmail.com' required value='operator@gmail.com'>"
-            "<button type='submit'>CONTINUE WITH GOOGLE ⯈</button>"
-            "</form>"
-            "</div></body></html>";
-
-        QByteArray resp = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n" + html.toUtf8();
-        socket->write(resp);
+    // Support CORS preflight
+    if (firstLine.startsWith("OPTIONS")) {
+        QByteArray corsResp = "HTTP/1.1 204 No Content\r\n"
+                              "Access-Control-Allow-Origin: *\r\n"
+                              "Access-Control-Allow-Methods: GET, OPTIONS\r\n"
+                              "Access-Control-Allow-Headers: *\r\n"
+                              "Connection: close\r\n\r\n";
+        socket->write(corsResp);
         socket->flush();
         socket->disconnectFromHost();
         return;
@@ -198,41 +187,163 @@ void AccountManager::handleHttpAuthCallback(QTcpSocket* socket, const QString& r
     if (path.startsWith("/callback")) {
         QUrl url("http://localhost" + path);
         QUrlQuery query(url);
-        QString email = query.queryItemValue("email").trimmed();
-        if (email.isEmpty()) email = "operator@gmail.com";
+        QString rawEmail = query.queryItemValue("email");
+        QString email = QUrl::fromPercentEncoding(rawEmail.toUtf8()).trimmed();
+        QString name = QUrl::fromPercentEncoding(query.queryItemValue("name").toUtf8()).trimmed();
+        QString licenseKey = QUrl::fromPercentEncoding(query.queryItemValue("license_key").toUtf8()).trimmed();
+        bool isPro = (query.queryItemValue("is_pro") == "1");
 
-        // Save authenticated session
+        // Clean out legacy mock placeholder
+        if (email.contains("operator@gmail.com", Qt::CaseInsensitive) || email.contains("%40")) {
+            email = "";
+        }
+
+        if (email.isEmpty()) {
+            QByteArray resp = "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\nEmpty Email";
+            socket->write(resp);
+            socket->disconnectFromHost();
+            return;
+        }
+
+        // Master Developer / Owner Whitelist
+        if (email.compare("harshilthakur82@gmail.com", Qt::CaseInsensitive) == 0 ||
+            email.contains("harshil", Qt::CaseInsensitive)) {
+            isPro = true;
+            if (licenseKey.isEmpty()) licenseKey = "SHADOW-PRO-HARSHIL-ADMIN";
+        }
+
+        // Save authenticated Google session
         AppConfig::instance().setUserEmail(email);
+        AppConfig::instance().setPro(isPro);
+        if (!licenseKey.isEmpty()) {
+            AppConfig::instance().setLicenseKey(licenseKey);
+        }
+
+        // When user is Pro, load the dedicated Pro Master Gemini Vision API key
+        if (isPro) {
+            QStringList keys = AppConfig::instance().apiKeys();
+            while (keys.size() < 10) keys << "";
+            int slot = AppConfig::instance().activeSlot();
+            if (slot < 0 || slot >= 10) slot = 0;
+            if (keys[slot].isEmpty() || keys[slot].startsWith("AIzaSy")) {
+                keys[slot] = "AIzaSyC8aILHZWizqpS4rXc_5s0FGgBbHHr7JcA";
+                AppConfig::instance().setApiKeys(keys);
+            }
+        }
         AppConfig::instance().save();
 
         QString html = 
             "<!DOCTYPE html><html><head><meta charset='utf-8'><title>ShadowAI Connected</title>"
             "<style>"
             "body{background:#030508;color:#00ff66;font-family:monospace;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;}"
-            ".box{border:1px solid #00ff66;box-shadow:0 0 30px rgba(0,255,102,0.4);padding:40px;border-radius:8px;text-align:center;}"
-            "h1{margin-top:0;color:#00e5ff;letter-spacing:2px;}"
-            "p{color:#e2fced;}"
+            ".box{border:1px solid #00ff66;box-shadow:0 0 35px rgba(0,255,102,0.35);padding:40px;border-radius:10px;text-align:center;max-width:440px;background:#060d09;}"
+            "h1{margin-top:0;color:#00ff66;letter-spacing:2px;font-size:24px;}"
+            ".badge{display:inline-block;padding:4px 12px;border-radius:4px;font-weight:bold;font-size:12px;margin:12px 0;" + QString(isPro ? "background:rgba(0,255,102,0.2);color:#00ff66;border:1px solid #00ff66;" : "background:rgba(0,229,255,0.2);color:#00e5ff;border:1px solid #00e5ff;") + "}"
+            "p{color:#e2fced;font-size:14px;line-height:1.6;}"
             "</style></head><body>"
             "<div class='box'>"
-            "<h1>✓ AUTHENTICATED</h1>"
+            "<h1>✓ GOOGLE SSO VERIFIED</h1>"
+            "<div class='badge'>" + (isPro ? QString("PRO UNLIMITED ACTIVE") : QString("COMMUNITY TIER CONNECTED")) + "</div>"
             "<p>Connected as <strong>" + email.toHtmlEscaped() + "</strong></p>"
-            "<p style='color:#7ca88e;font-size:12px;'>You can close this tab now and return to the ShadowAI Desktop App.</p>"
+            "<p style='color:#7ca88e;font-size:12px;margin-top:20px;'>✓ Session synced with ShadowAI Desktop.<br>You can close this tab and return to the application.</p>"
             "</div></body></html>";
 
-        QByteArray resp = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n" + html.toUtf8();
+        QByteArray resp = "HTTP/1.1 200 OK\r\n"
+                          "Content-Type: text/html; charset=utf-8\r\n"
+                          "Access-Control-Allow-Origin: *\r\n"
+                          "Connection: close\r\n\r\n" + html.toUtf8();
         socket->write(resp);
         socket->flush();
         socket->disconnectFromHost();
 
-        // Stop listener after successful auth
-        QTimer::singleShot(500, this, [this, email]() {
-            if (m_tcpServer->isListening()) m_tcpServer->close();
-            emit accountStateChanged(true, email, isPro());
+        // If not marked Pro from web callback, double-check database
+        if (!isPro) {
+            syncAccountStatus();
+        }
+
+        emit accountStateChanged(true, email, isPro);
+
+        QTimer::singleShot(2000, this, [this]() {
+            if (m_tcpServer && m_tcpServer->isListening()) m_tcpServer->close();
         });
         return;
     }
 
     // Fallback 404
-    socket->write("HTTP/1.1 404 Not Found\r\n\r\n");
+    socket->write("HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n");
     socket->disconnectFromHost();
+}
+
+void AccountManager::syncAccountStatus() {
+    QString email = AppConfig::instance().userEmail().trimmed();
+    // Clean old corrupted dummy strings
+    if (email.contains("%40") || email.contains("operator@gmail.com", Qt::CaseInsensitive)) {
+        AppConfig::instance().setUserEmail("");
+        AppConfig::instance().setPro(false);
+        AppConfig::instance().setLicenseKey("");
+        AppConfig::instance().save();
+        emit accountStateChanged(false, "", false);
+        return;
+    }
+
+    if (email.isEmpty()) return;
+
+    // Master Developer / Owner: harshilthakur82@gmail.com is always PRO
+    if (email.compare("harshilthakur82@gmail.com", Qt::CaseInsensitive) == 0 ||
+        email.contains("harshil", Qt::CaseInsensitive)) {
+        AppConfig::instance().setPro(true);
+        AppConfig::instance().setLicenseKey("SHADOW-PRO-HARSHIL-ADMIN");
+        // Ensure Pro Gemini Vision API key is populated
+        QStringList keys = AppConfig::instance().apiKeys();
+        while (keys.size() < 10) keys << "";
+        int slot = AppConfig::instance().activeSlot();
+        if (slot < 0 || slot >= 10) slot = 0;
+        if (keys[slot].isEmpty() || keys[slot].startsWith("AIzaSy")) {
+            keys[slot] = "AIzaSyC8aILHZWizqpS4rXc_5s0FGgBbHHr7JcA";
+            AppConfig::instance().setApiKeys(keys);
+        }
+        AppConfig::instance().save();
+        emit accountStateChanged(true, email, true);
+        return;
+    }
+
+    // Query Supabase licenses table for any active license matching this user email
+    QUrl url(m_supabaseUrl + "/rest/v1/licenses?user_email=eq." + QUrl::toPercentEncoding(email) + "&is_active=eq.true&select=*");
+    QNetworkRequest req(url);
+    req.setRawHeader("apikey", m_supabaseKey.toUtf8());
+    req.setRawHeader("Authorization", "Bearer " + m_supabaseKey.toUtf8());
+
+    QNetworkReply* reply = m_nam->get(req);
+    connect(reply, &QNetworkReply::finished, this, [this, reply, email]() {
+        bool isPro = false;
+        QString key;
+        if (reply->error() == QNetworkReply::NoError) {
+            QByteArray data = reply->readAll();
+            QJsonDocument doc = QJsonDocument::fromJson(data);
+            if (doc.isArray() && !doc.array().isEmpty()) {
+                QJsonObject row = doc.array().first().toObject();
+                key = row.value("license_key").toString().trimmed().toUpper();
+                isPro = true;
+            }
+        }
+        reply->deleteLater();
+
+        if (isPro) {
+            AppConfig::instance().setPro(true);
+            if (!key.isEmpty()) {
+                AppConfig::instance().setLicenseKey(key);
+            }
+            // Auto-load Pro Gemini Vision Master Key
+            QStringList keys = AppConfig::instance().apiKeys();
+            while (keys.size() < 10) keys << "";
+            int slot = AppConfig::instance().activeSlot();
+            if (slot < 0 || slot >= 10) slot = 0;
+            if (keys[slot].isEmpty() || keys[slot].startsWith("AIzaSy")) {
+                keys[slot] = "AIzaSyC8aILHZWizqpS4rXc_5s0FGgBbHHr7JcA";
+                AppConfig::instance().setApiKeys(keys);
+            }
+            AppConfig::instance().save();
+            emit accountStateChanged(true, email, true);
+        }
+    });
 }

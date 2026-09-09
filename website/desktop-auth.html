@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShadowAI — Desktop Google Authentication</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Outfit:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg-dark: #030508;
+      --card-bg: rgba(6, 12, 9, 0.95);
+      --accent-green: #00ff66;
+      --accent-cyan: #00e5ff;
+      --text-main: #e2fced;
+      --text-muted: #7ca88e;
+      --border-glow: rgba(0, 255, 102, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg-dark);
+      color: var(--text-main);
+      font-family: 'JetBrains Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow-x: hidden;
+      padding: 20px;
+    }
+    body::before {
+      content: '';
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(0,255,102,0.06) 0%, transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .auth-card {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 460px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-glow);
+      border-radius: 12px;
+      padding: 40px 32px;
+      box-shadow: 0 0 40px rgba(0, 255, 102, 0.12), inset 0 0 20px rgba(0, 255, 102, 0.03);
+      backdrop-filter: blur(12px);
+      text-align: center;
+    }
+    .brand-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0, 255, 102, 0.08);
+      border: 1px solid rgba(0, 255, 102, 0.2);
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 11px;
+      color: var(--accent-green);
+      letter-spacing: 1.5px;
+      margin-bottom: 24px;
+    }
+    .title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+    .google-btn {
+      width: 100%;
+      background: #ffffff;
+      color: #1f1f1f;
+      border: none;
+      border-radius: 8px;
+      padding: 14px 20px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+    }
+    .google-btn:hover {
+      background: #f1f3f4;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255,255,255,0.2);
+    }
+    .google-icon {
+      width: 20px;
+      height: 20px;
+    }
+    .status-box {
+      display: none;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(0, 255, 102, 0.3);
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 20px;
+      text-align: left;
+    }
+    .user-profile-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .avatar-img {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      border: 2px solid var(--accent-green);
+      object-fit: cover;
+    }
+    .user-meta-name {
+      font-weight: 700;
+      font-size: 15px;
+      color: #ffffff;
+    }
+    .user-meta-email {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .tier-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      margin-top: 4px;
+    }
+    .tier-pro {
+      background: rgba(0, 255, 102, 0.15);
+      border: 1px solid var(--accent-green);
+      color: var(--accent-green);
+    }
+    .tier-free {
+      background: rgba(0, 229, 255, 0.15);
+      border: 1px solid var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+    .status-msg {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(0,255,102,0.3);
+      border-top-color: var(--accent-green);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <div class="auth-card">
+    <div class="brand-tag">
+      <span>⚡</span> SHADOW AI CLOUD AUTH
+    </div>
+
+    <h1 class="title">Desktop Sign In</h1>
+    <p class="subtitle">Authenticate with your Google account to sync your Pro license & activate Cloud Vision.</p>
+
+    <!-- Google Sign In Button -->
+    <button id="btn-google-login" class="google-btn">
+      <svg class="google-icon" viewBox="0 0 24 24">
+        <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
+        <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.34 24 12 24z"/>
+        <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.16 0 9.94 0 12s.45 3.84 1.25 5.42l4.03-3.15z"/>
+        <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.93 6.72-4.93z"/>
+      </svg>
+      Sign in with Google
+    </button>
+
+    <!-- Live Status / Connected Card -->
+    <div id="status-box" class="status-box">
+      <div class="user-profile-row">
+        <img id="user-avatar" class="avatar-img" src="" alt="Google Avatar" style="display:none;">
+        <div style="flex:1;">
+          <div id="user-name" class="user-meta-name">Loading User...</div>
+          <div id="user-email" class="user-meta-email">user@gmail.com</div>
+          <div id="user-tier" class="tier-badge tier-pro">PRO ACTIVE</div>
+        </div>
+      </div>
+      <div id="status-msg" class="status-msg">
+        <span class="spinner"></span> Connecting to ShadowAI Desktop...
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://kptqmelofgromeavgmip.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_6l5uraxvTrrsbV9PKVJOPg_iKJCqf_J';
+    const ADMIN_WHITELIST = ['harshilthakur82@gmail.com', 'harshilthakur82@oksbi', 'harshil1a'];
+
+    const params = new URLSearchParams(window.location.search);
+    let port = params.get('port') || sessionStorage.getItem('shadow_desktop_port') || '18234';
+    if (params.get('port')) {
+      sessionStorage.setItem('shadow_desktop_port', port);
+    }
+
+    const supabaseClient = (window.supabase && typeof window.supabase.createClient === 'function')
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+      : null;
+
+    const btnGoogle = document.getElementById('btn-google-login');
+    const statusBox = document.getElementById('status-box');
+    const userAvatar = document.getElementById('user-avatar');
+    const userName = document.getElementById('user-name');
+    const userEmail = document.getElementById('user-email');
+    const userTier = document.getElementById('user-tier');
+    const statusMsg = document.getElementById('status-msg');
+
+    if (btnGoogle && supabaseClient) {
+      btnGoogle.addEventListener('click', async () => {
+        btnGoogle.innerHTML = '<span class="spinner"></span> Redirecting to Google...';
+        btnGoogle.disabled = true;
+        try {
+          await supabaseClient.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+              redirectTo: window.location.origin + window.location.pathname + '?port=' + port
+            }
+          });
+        } catch(err) {
+          alert('Google Sign-In Error: ' + err.message);
+          btnGoogle.disabled = false;
+          btnGoogle.innerText = 'Sign in with Google';
+        }
+      });
+    }
+
+    async function handleAuthenticatedUser(user) {
+      if (!user || !user.email) return;
+
+      btnGoogle.style.display = 'none';
+      statusBox.style.display = 'block';
+
+      const email = user.email.trim();
+      const meta = user.user_metadata || {};
+      const name = meta.full_name || meta.name || email.split('@')[0];
+      const avatar = meta.avatar_url || '';
+
+      userName.innerText = name.toUpperCase();
+      userEmail.innerText = email;
+      if (avatar) {
+        userAvatar.src = avatar;
+        userAvatar.style.display = 'block';
+      }
+
+      // Check Pro status in database
+      const isMasterAdmin = ADMIN_WHITELIST.some(a => email.toLowerCase().includes(a.toLowerCase())) || email.toLowerCase().includes('harshil');
+      let isPro = isMasterAdmin;
+      let licenseKey = isMasterAdmin ? 'SHADOW-PRO-HARSHIL-ADMIN' : '';
+
+      if (!isMasterAdmin) {
+        try {
+          const res = await fetch(`${SUPABASE_URL}/rest/v1/licenses?user_email=eq.${encodeURIComponent(email)}&is_active=eq.true&select=*`, {
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+          });
+          const rows = await res.json();
+          if (Array.isArray(rows) && rows.length > 0) {
+            isPro = true;
+            licenseKey = rows[0].license_key;
+          }
+        } catch(e) {
+          console.warn('License lookup error:', e);
+        }
+      }
+
+      if (isPro) {
+        userTier.className = 'tier-badge tier-pro';
+        userTier.innerText = 'PRO ACTIVE [UNLIMITED]';
+      } else {
+        userTier.className = 'tier-badge tier-free';
+        userTier.innerText = 'COMMUNITY TIER [FREE]';
+      }
+
+      // Relay session to desktop app
+      const callbackUrl = `http://127.0.0.1:${port}/callback?email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&avatar=${encodeURIComponent(avatar)}&is_pro=${isPro ? '1' : '0'}&license_key=${encodeURIComponent(licenseKey)}`;
+
+      statusMsg.innerHTML = '<span class="spinner"></span> Connecting to running ShadowAI Desktop...';
+
+      // Send GET to local desktop server
+      try {
+        await fetch(callbackUrl, { mode: 'no-cors' });
+      } catch(e) {}
+
+      // Also navigate browser to callback or show confirmation
+      setTimeout(() => {
+        window.location.href = callbackUrl;
+      }, 400);
+    }
+
+    async function initSession() {
+      if (!supabaseClient) return;
+      try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session && session.user) {
+          handleAuthenticatedUser(session.user);
+        }
+      } catch(err) {
+        console.warn('Session check failed:', err);
+      }
+    }
+
+    if (supabaseClient) {
+      supabaseClient.auth.onAuthStateChange((event, session) => {
+        if (session && session.user) {
+          handleAuthenticatedUser(session.user);
+        }
+      });
+    }
+
+    initSession();
+  </script>
+</body>
+</html>
