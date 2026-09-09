@@ -1119,3 +1119,187 @@ body {
   padding: 8px;
   border-radius: 4px;
 }
+
+/* ── UPI Checkout Modal ─────────────────────────────────────── */
+.upi-modal-card {
+  max-width: 480px;
+  border: 1px solid var(--accent-green);
+  box-shadow: 0 0 35px rgba(0, 255, 102, 0.25);
+  text-align: center;
+}
+
+.upi-pricing-badge {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(0, 255, 102, 0.08);
+  border: 1px dashed var(--accent-green);
+  border-radius: 4px;
+  padding: 10px 16px;
+  margin-bottom: 14px;
+}
+
+.upi-pricing-badge .plan-tag {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-green);
+  letter-spacing: 1px;
+}
+
+.upi-pricing-badge .price-val {
+  font-size: 18px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.upi-pricing-badge .price-val small {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.upi-desc {
+  font-size: 12px;
+  color: #a0aec0;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.upi-qr-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.qr-glow-frame {
+  position: relative;
+  padding: 10px;
+  background: #030508;
+  border: 2px solid var(--accent-green);
+  border-radius: 8px;
+  box-shadow: 0 0 20px rgba(0, 255, 102, 0.35);
+  display: inline-block;
+}
+
+.upi-qr-img {
+  display: block;
+  width: 200px;
+  height: 200px;
+  border-radius: 4px;
+}
+
+.upi-mobile-tap {
+  margin-bottom: 14px;
+}
+
+.btn-upi-intent {
+  display: block;
+  width: 100%;
+  background: linear-gradient(135deg, #00ff66, #00cc52);
+  color: #030508;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+  padding: 11px 14px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 15px rgba(0, 255, 102, 0.3);
+}
+
+.btn-upi-intent:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 25px rgba(0, 255, 102, 0.6);
+}
+
+.upi-id-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(0, 255, 102, 0.3);
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+
+.upi-id-box .upi-label {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.upi-id-box .upi-address {
+  color: var(--accent-cyan);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.btn-copy-upi {
+  background: rgba(0, 229, 255, 0.15);
+  border: 1px solid var(--accent-cyan);
+  color: var(--accent-cyan);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-copy-upi:hover {
+  background: var(--accent-cyan);
+  color: #030508;
+}
+
+.upi-divider {
+  height: 1px;
+  background: rgba(0, 255, 102, 0.2);
+  margin: 16px 0;
+}
+
+.upi-claim-box {
+  text-align: left;
+}
+
+.upi-claim-box .claim-title {
+  display: block;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.claim-input-group {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.claim-input-group input {
+  flex: 1;
+  background: #050a07;
+  border: 1px solid rgba(0, 255, 102, 0.3);
+  color: #ffffff;
+  padding: 10px 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  border-radius: 4px;
+}
+
+.claim-input-group input:focus {
+  outline: none;
+  border-color: var(--accent-green);
+  box-shadow: 0 0 10px rgba(0, 255, 102, 0.3);
+}
+
+.claim-output {
+  font-size: 11px;
+  color: #a0aec0;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 10px;
+  border-radius: 4px;
+  border-left: 2px solid var(--accent-green);
+  line-height: 1.5;
+}
+

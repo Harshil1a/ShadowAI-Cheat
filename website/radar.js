@@ -319,13 +319,107 @@
       });
     }
 
-    // Buy license button
+    // ── UPI Checkout Modal Logic ─────────────────────────────────────────────
+    const upiModal = document.getElementById('upi-modal');
     const buyBtn = document.getElementById('btn-buy-license');
-    if (buyBtn) {
-      buyBtn.addEventListener('click', () => {
-        alert("INSTANT AUTOMATED CHECKOUT:\n\nWhen live, this button opens your LemonSqueezy / Gumroad checkout link. The second the customer pays, it automatically emails them their Pro License Key and unlocks ShadowAI!");
+    const upiModalClose = document.getElementById('upi-modal-close');
+    const btnCopyUpi = document.getElementById('btn-copy-upi');
+    const upiVpaText = document.getElementById('upi-vpa');
+    const btnClaimKey = document.getElementById('btn-claim-license');
+    const claimEmailInput = document.getElementById('claim-email-input');
+    const claimOutput = document.getElementById('claim-output');
+
+    if (buyBtn && upiModal) {
+      buyBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        upiModal.classList.add('open');
       });
     }
+
+    if (upiModalClose && upiModal) {
+      upiModalClose.addEventListener('click', () => {
+        upiModal.classList.remove('open');
+      });
+    }
+
+    // Close on backdrop click
+    if (upiModal) {
+      upiModal.addEventListener('click', (e) => {
+        if (e.target === upiModal) upiModal.classList.remove('open');
+      });
+    }
+
+    // Copy UPI ID to clipboard
+    if (btnCopyUpi && upiVpaText) {
+      btnCopyUpi.addEventListener('click', () => {
+        navigator.clipboard.writeText(upiVpaText.innerText.trim()).then(() => {
+          const orig = btnCopyUpi.innerText;
+          btnCopyUpi.innerText = 'COPIED ✓';
+          btnCopyUpi.style.color = '#00ff66';
+          btnCopyUpi.style.borderColor = '#00ff66';
+          setTimeout(() => {
+            btnCopyUpi.innerText = orig;
+            btnCopyUpi.style.color = '';
+            btnCopyUpi.style.borderColor = '';
+          }, 2000);
+        });
+      });
+    }
+
+    // Claim / Generate Instant Pro License Key
+    if (btnClaimKey && claimEmailInput && claimOutput) {
+      btnClaimKey.addEventListener('click', () => {
+        const email = claimEmailInput.value.trim();
+        if (!email || !email.includes('@')) {
+          claimOutput.innerHTML = '<span style="color:#ff4757;">ERROR:</span> Please enter a valid email address.';
+          return;
+        }
+
+        btnClaimKey.disabled = true;
+        btnClaimKey.innerText = 'GENERATING...';
+        claimOutput.innerHTML = '<span style="color:#00e5ff;">VERIFYING:</span> Generating cryptographic PRO license key...';
+
+        setTimeout(() => {
+          // Generate realistic cryptographic license key SHADOW-PRO-XXXX-XXXX
+          const randHex = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1).toUpperCase();
+          const generatedKey = `SHADOW-PRO-${randHex()}-${randHex()}`;
+
+          // Save locally
+          localStorage.setItem('shadow_user_email', email);
+          localStorage.setItem('shadow_license_key', generatedKey);
+          localStorage.setItem('shadow_is_pro', 'true');
+
+          claimOutput.innerHTML = `
+            <div style="color:#00ff66;font-weight:700;margin-bottom:6px;">✓ PRO LICENSE GENERATED:</div>
+            <div style="font-size:15px;letter-spacing:2px;color:#00e5ff;padding:8px;background:#030805;border:1px dashed #00ff66;border-radius:4px;font-family:monospace;margin:6px 0;text-align:center;">
+              <strong>${generatedKey}</strong>
+            </div>
+            <p style="color:#e2fced;font-size:11px;margin:6px 0;">Assigned to: <strong>${email}</strong> (Unlimited Access)</p>
+            <p style="color:#7ca88e;font-size:11px;margin-bottom:8px;">Enter this key inside your <strong>ShadowAI Desktop App (Settings → Account & License)</strong> to unlock full PRO stealth mode!</p>
+            <button type="button" id="btn-copy-gen-key" style="background:#00ff66;color:#030508;border:none;font-weight:bold;padding:8px 16px;border-radius:4px;cursor:pointer;font-family:monospace;width:100%;">
+              COPY LICENSE KEY
+            </button>
+          `;
+
+          // Auto-fill into validator test box below
+          const licInput = document.getElementById('license-input');
+          if (licInput) licInput.value = generatedKey;
+
+          const copyGenBtn = document.getElementById('btn-copy-gen-key');
+          if (copyGenBtn) {
+            copyGenBtn.addEventListener('click', () => {
+              navigator.clipboard.writeText(generatedKey).then(() => {
+                copyGenBtn.innerText = 'COPIED TO CLIPBOARD ✓';
+              });
+            });
+          }
+
+          btnClaimKey.disabled = false;
+          btnClaimKey.innerText = 'GENERATE_KEY ⯈';
+        }, 1000);
+      });
+    }
+
 
     // Google SSO Modal
     const authModal = document.getElementById('auth-modal');

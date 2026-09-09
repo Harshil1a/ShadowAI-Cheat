@@ -284,6 +284,58 @@
     </div>
   </footer>
 
+  <!-- UPI PAYMENT & INSTANT LICENSE MODAL -->
+  <div class="modal-backdrop" id="upi-modal">
+    <div class="modal-card upi-modal-card">
+      <div class="modal-header">
+        <span>// ACQUIRE_LICENSE: INSTANT UPI / GPAY / PHONEPE</span>
+        <button class="modal-close" id="upi-modal-close">×</button>
+      </div>
+      <div class="modal-body upi-modal-body">
+        <div class="upi-pricing-badge">
+          <span class="plan-tag">SHADOW CLOUD PRO</span>
+          <span class="price-val">₹99 <small>/ MONTH (OR ONE-TIME)</small></span>
+        </div>
+
+        <p class="upi-desc">Scan the QR code below with any UPI app (<strong>PhonePe, Google Pay, Paytm, BHIM, CRED</strong>) to pay ₹99 directly:</p>
+
+        <!-- Dynamic QR Frame -->
+        <div class="upi-qr-wrapper">
+          <div class="qr-glow-frame">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=upi://pay?pa=harshilthakur82@oksbi%26pn=ShadowAI%20Pro%26am=99%26cu=INR%26tn=ShadowAI%20Pro%20License&color=00ff66&bgcolor=030508" alt="UPI QR Code - Scan to Pay ₹99" class="upi-qr-img">
+          </div>
+        </div>
+
+        <!-- Mobile Direct Tap -->
+        <div class="upi-mobile-tap">
+          <a href="upi://pay?pa=harshilthakur82@oksbi&pn=ShadowAI%20Pro&am=99&cu=INR&tn=ShadowAI%20Pro%20License" class="btn-upi-intent">
+            <span>⚡ TAP TO PAY ON MOBILE (GPAY / PHONEPE / PAYTM)</span>
+          </a>
+        </div>
+
+        <!-- Copy UPI ID -->
+        <div class="upi-id-box">
+          <span class="upi-label">UPI ID:</span>
+          <span class="upi-address" id="upi-vpa">harshilthakur82@oksbi</span>
+          <button class="btn-copy-upi" id="btn-copy-upi" type="button">COPY</button>
+        </div>
+
+        <div class="upi-divider"></div>
+
+        <!-- Instant Key Claiming Form -->
+        <div class="upi-claim-box">
+          <span class="claim-title">// STEP 2: ENTER YOUR EMAIL TO RECEIVE & ACTIVATE KEY</span>
+          <div class="claim-input-group">
+            <input type="email" id="claim-email-input" placeholder="operator@gmail.com" required>
+            <button class="btn-terminal-sm" id="btn-claim-license" type="button">GENERATE_KEY ⯈</button>
+          </div>
+          <div class="claim-output" id="claim-output">Status: Ready. After sending ₹99, enter your email and click GENERATE_KEY.</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
   <!-- AUTH MODAL -->
   <div class="modal-backdrop" id="auth-modal">
     <div class="modal-card">
