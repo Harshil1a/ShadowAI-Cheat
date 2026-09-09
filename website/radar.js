@@ -389,6 +389,25 @@
           localStorage.setItem('shadow_license_key', generatedKey);
           localStorage.setItem('shadow_is_pro', 'true');
 
+          // Sync to Supabase Cloud Database
+          try {
+            fetch(`${SUPABASE_URL}/rest/v1/licenses`, {
+              method: 'POST',
+              headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal'
+              },
+              body: JSON.stringify({
+                license_key: generatedKey,
+                customer_email: email,
+                plan_tier: 'PRO_MONTHLY',
+                is_active: true
+              })
+            }).catch(e => console.warn('Supabase sync notice:', e));
+          } catch (e) {}
+
           claimOutput.innerHTML = `
             <div style="color:#00ff66;font-weight:700;margin-bottom:6px;">✓ PRO LICENSE GENERATED:</div>
             <div style="font-size:15px;letter-spacing:2px;color:#00e5ff;padding:8px;background:#030805;border:1px dashed #00ff66;border-radius:4px;font-family:monospace;margin:6px 0;text-align:center;">
