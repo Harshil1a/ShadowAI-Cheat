@@ -17,8 +17,8 @@ DefaultGroupName={#AppName}
 AllowNoIcons=yes
 OutputDir=dist
 OutputBaseFilename=ShadowAI_Setup
-Compression=lzma2/ultra64
-SolidCompression=yes
+Compression=lzma2/max
+SolidCompression=no
 ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
 ; UI settings
@@ -34,10 +34,8 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Name: "startup"; Description: "Run ShadowAI at Windows Startup"; GroupDescription: "Additional options:"; Flags: unchecked
 
 [Files]
-; Main Executable
-Source: "build\bin\{#AppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-; All DLLs and Plugins (Captured by build.bat's windeployqt)
-Source: "build\bin\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "installer_output\*"
+; All Binaries, DLLs, and Plugins from build\bin (included once, clean extraction)
+Source: "build\bin\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExeName}"
