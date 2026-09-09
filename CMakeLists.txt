@@ -10,6 +10,13 @@ set(CMAKE_AUTOUIC ON)
 # Set the executable name to a custom premium application name
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
+# Workaround for macOS 14+ Xcode SDK removing legacy AGL framework
+if(APPLE)
+    if(NOT TARGET WrapOpenGL::WrapOpenGL)
+        add_library(WrapOpenGL::WrapOpenGL INTERFACE IMPORTED)
+    endif()
+endif()
+
 find_package(Qt6 REQUIRED COMPONENTS
     Core
     Widgets

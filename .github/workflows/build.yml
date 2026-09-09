@@ -17,9 +17,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Qt 6
-        uses: jurplel/install-qt-action@v3
+        uses: jurplel/install-qt-action@v4
         with:
-          version: '6.6.2'
+          version: '6.7.2'
           target: 'desktop'
           arch: 'clang_64'
           modules: 'qtmultimedia'
@@ -28,7 +28,7 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="${{ env.Qt6_DIR }}"
+          cmake .. -DCMAKE_BUILD_TYPE=Release
 
       - name: Build macOS App
         run: |
