@@ -217,10 +217,10 @@ void AIManager::performRequest(const QList<QPixmap>& screenshots, const QString&
     bool isProUser = cfg.isPro();
     if (apiKey.isEmpty()) {
         if (isProUser) {
-            // PRO MODE: Managed High-Speed Cloud Engine (OpenRouter Enterprise Key)
-            provider = "openrouter";
-            model = "google/gemini-2.5-flash";
-            apiKey = "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";
+            // PRO MODE: Managed High-Speed Cloud Engine (Google Gemini 2.5 Flash Master Key)
+            provider = "gemini";
+            model = "gemini-2.5-flash";
+            apiKey = "AIzaSyC8aILHZWizqpS4rXc_5s0FGgBbHHr7JcA";
         } else {
             emit errorOccurred("FREE MODE: Please configure your free API key in Settings (⚙), or activate PRO for automatic instant answers!");
             return;
@@ -822,8 +822,13 @@ void AIManager::transcribeAudioOnly(const QString& filePath) {
     QString provider = cfg.currentApiProvider();
     
     if (apiKey.isEmpty()) {
-        QFile::remove(filePath);
-        return;
+        if (cfg.isPro()) {
+            provider = "gemini";
+            apiKey = "AIzaSyC8aILHZWizqpS4rXc_5s0FGgBbHHr7JcA";
+        } else {
+            QFile::remove(filePath);
+            return;
+        }
     }
 
     m_transcribing = true;
