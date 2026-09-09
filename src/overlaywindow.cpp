@@ -62,6 +62,7 @@ protected:
             QChar qc = m_text[i];
             ushort ch = qc.unicode();
 
+#ifdef Q_OS_WIN
             if (qc == '\n') {
                 // Send simulated Enter Keypress
                 INPUT inputs[2] = {};
@@ -197,6 +198,11 @@ protected:
                 // Wait 15ms for deletion to complete before typing next characters
                 QThread::msleep(15);
             }
+#else
+            // Fallback for non-Windows platforms
+            Q_UNUSED(ch);
+            QThread::msleep(15);
+#endif
 
             // Generate a natural humanized delay within bounds
             int range = qMax(1, m_maxDelay - m_minDelay);
