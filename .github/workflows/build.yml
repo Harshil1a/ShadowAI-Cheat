@@ -1,4 +1,4 @@
-name: Build ShadowAI (Windows & macOS)
+name: Build ShadowAI (macOS DMG)
 
 on:
   push:
@@ -26,8 +26,9 @@ jobs:
 
       - name: Configure CMake (macOS)
         run: |
-          mkdir build && cd build
-          cmake .. -DCMAKE_BUILD_TYPE=Release
+          mkdir -p build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="${{ env.Qt6_DIR }}"
 
       - name: Build macOS App
         run: |
@@ -37,45 +38,13 @@ jobs:
       - name: Package macOS DMG
         run: |
           cd build
-          macdeployqt bin/ShadowAI.app -dmg
-          mkdir -p artifacts
-          cp bin/ShadowAI.dmg artifacts/ || true
+          macdeployqt bin/ShadowAI.app -dmg -always-overwrite || true
+          find . -name "*.dmg"
 
       - name: Upload macOS Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ShadowAI-macOS-DMG
-          path: build/bin/*.dmg
+          path: build/**/*.dmg
+          if-no-files-found: warn
 
-  build-windows:
-    name: Build Windows Release (.exe)
-    runs-on: windows-latest
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Install Qt 6
-        uses: jurplel/install-qt-action@v3
-        with:
-          version: '6.6.2'
-          target: 'desktop'
-          arch: 'win64_mingw'
-          modules: 'qtmultimedia'
-
-      - name: Build Windows Executable
-        run: |
-          mkdir build
-          cd build
-          cmake -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release ..
-          cmake --build . --config Release
-
-      - name: Deploy Dependencies
-        run: |
-          windeployqt build/bin/ShadowAI.exe
-
-      - name: Upload Windows Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ShadowAI-Windows-Release
-          path: build/bin/
