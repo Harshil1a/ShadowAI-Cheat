@@ -278,19 +278,8 @@
         <span>LOG IN WITH GOOGLE (harshilthakur82@gmail.com)</span>
       </button>
 
-      <div style="display:flex;align-items:center;margin:18px 0 14px;color:#7ca88e;font-size:10px;">
-        <div style="flex:1;border-bottom:1px solid rgba(0,255,102,0.2);"></div>
-        <span style="padding:0 8px;">OR INSTANT PASSCODE</span>
-        <div style="flex:1;border-bottom:1px solid rgba(0,255,102,0.2);"></div>
-      </div>
-      
-      <div style="text-align:left;margin-bottom:6px;font-size:11px;color:#00e5ff;">Admin Email Address:</div>
-      <input type="email" id="admin-email-input" class="pin-input" value="harshilthakur82@gmail.com" placeholder="harshilthakur82@gmail.com" style="font-size:13px;letter-spacing:0.5px;text-align:left;padding:10px 12px;margin-top:0;">
-      
-      <button class="btn-refresh" id="btn-unlock" style="width:100%;margin-top:10px;padding:10px;">⚡ ENTER WITH ADMIN EMAIL</button>
-      
-      <div style="margin-top:12px;font-size:10px;color:#7ca88e;">
-        <span>🔒 Only whitelisted Google Admin email is granted access</span>
+      <div style="margin-top:16px;font-size:11px;color:#7ca88e;">
+        <span>🔒 Zero Manual Entry • Exclusively secured by Google Identity for <strong>harshilthakur82@gmail.com</strong></span>
       </div>
       <div id="pin-err" style="color:#ff4757;font-size:11px;margin-top:10px;"></div>
     </div>
@@ -389,8 +378,6 @@
     const MASTER_ADMIN_EMAIL = 'harshilthakur82@gmail.com';
 
     const pinGate = document.getElementById('pin-gate');
-    const emailInput = document.getElementById('admin-email-input');
-    const btnUnlock = document.getElementById('btn-unlock');
     const btnGoogle = document.getElementById('btn-google-signin');
     const pinErr = document.getElementById('pin-err');
     const adminContent = document.getElementById('admin-content');
@@ -469,22 +456,6 @@
         }
       });
     }
-
-    // 3. Fallback Instant Passcode verification
-    function checkAdminAuth() {
-      const inputVal = emailInput.value.toLowerCase().trim();
-      if (inputVal === MASTER_ADMIN_EMAIL) {
-        handleVerifiedAdmin(inputVal, 'PASSCODE');
-      } else {
-        pinErr.innerText = 'ACCESS DENIED: Only harshilthakur82@gmail.com has admin access.';
-        emailInput.focus();
-      }
-    }
-
-    btnUnlock.addEventListener('click', checkAdminAuth);
-    emailInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') checkAdminAuth();
-    });
 
     async function handleAdminSignOut() {
       localStorage.removeItem('shadow_admin_user');
