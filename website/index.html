@@ -322,14 +322,29 @@
 
         <div class="upi-divider"></div>
 
-        <!-- Instant Key Claiming Form -->
+        <!-- Step 2: Instant WhatsApp & UTR Verification -->
         <div class="upi-claim-box">
-          <span class="claim-title">// STEP 2: ENTER YOUR EMAIL TO RECEIVE & ACTIVATE KEY</span>
-          <div class="claim-input-group">
-            <input type="email" id="claim-email-input" placeholder="operator@gmail.com" required>
-            <button class="btn-terminal-sm" id="btn-claim-license" type="button">GENERATE_KEY ⯈</button>
+          <span class="claim-title">// STEP 2: VERIFY PAYMENT & GET PRO KEY INSTANTLY</span>
+
+          <div class="whatsapp-activation-box">
+            <a id="btn-whatsapp-activate" href="https://wa.me/919317526356?text=Hi%20Harshil,%20I%20have%20paid%20%E2%82%B999%20for%20ShadowAI%20Pro!%0A%0AMy%20Google%20Email:%20%0AMy%2012-Digit%20UPI%20UTR:%20" target="_blank" class="btn-whatsapp-pulse">
+              <div class="wa-top">
+                <span class="wa-icon">💬</span>
+                <span>SEND PROOF ON WHATSAPP (+91 9317526356)</span>
+              </div>
+              <span class="wa-badge">⚡ INSTANT ~1 MIN ACTIVATION BY HARSHIL</span>
+            </a>
+            <p class="wa-note">Send payment screenshot or 12-digit UTR on WhatsApp to get your official license key directly from Harshil.</p>
           </div>
-          <div class="claim-output" id="claim-output">Status: Ready. After sending ₹99, enter your email and click GENERATE_KEY.</div>
+
+          <div class="or-separator"><span>OR SUBMIT UTR FOR CLOUD LOG</span></div>
+
+          <div class="claim-input-group">
+            <input type="text" id="claim-utr-input" placeholder="12-Digit UPI UTR / Ref No." maxlength="16">
+            <input type="email" id="claim-email-input" placeholder="your-email@gmail.com" required>
+            <button class="btn-terminal-sm" id="btn-claim-license" type="button">SUBMIT_UTR ⯈</button>
+          </div>
+          <div class="claim-output" id="claim-output">Status: Ready. Click the WhatsApp button above or submit your 12-digit UTR.</div>
         </div>
 
       </div>

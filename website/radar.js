@@ -327,12 +327,26 @@
     const upiVpaText = document.getElementById('upi-vpa');
     const btnClaimKey = document.getElementById('btn-claim-license');
     const claimEmailInput = document.getElementById('claim-email-input');
+    const claimUtrInput = document.getElementById('claim-utr-input');
+    const btnWhatsapp = document.getElementById('btn-whatsapp-activate');
     const claimOutput = document.getElementById('claim-output');
+
+    function updateWhatsAppUrl() {
+      if (!btnWhatsapp) return;
+      const em = claimEmailInput ? claimEmailInput.value.trim() : '';
+      const utr = claimUtrInput ? claimUtrInput.value.trim() : '';
+      const msg = `Hi Harshil, I have paid ₹99 for ShadowAI Pro!%0A%0AMy Google Email: ${encodeURIComponent(em || '[Enter your email]')}%0AMy 12-Digit UPI UTR: ${encodeURIComponent(utr || '[Attaching payment screenshot]')}`;
+      btnWhatsapp.href = `https://wa.me/919317526356?text=${msg}`;
+    }
+
+    if (claimEmailInput) claimEmailInput.addEventListener('input', updateWhatsAppUrl);
+    if (claimUtrInput) claimUtrInput.addEventListener('input', updateWhatsAppUrl);
 
     if (buyBtn && upiModal) {
       buyBtn.addEventListener('click', (e) => {
         e.preventDefault();
         upiModal.classList.add('open');
+        updateWhatsAppUrl();
       });
     }
 
@@ -366,76 +380,62 @@
       });
     }
 
-    // Claim / Generate Instant Pro License Key
+    // Submit UTR and Log for Verification
     if (btnClaimKey && claimEmailInput && claimOutput) {
       btnClaimKey.addEventListener('click', () => {
         const email = claimEmailInput.value.trim();
+        const utr = claimUtrInput ? claimUtrInput.value.trim() : '';
         if (!email || !email.includes('@')) {
-          claimOutput.innerHTML = '<span style="color:#ff4757;">ERROR:</span> Please enter a valid email address.';
+          claimOutput.innerHTML = '<span style="color:#ff4757;">ERROR:</span> Please enter your valid email address.';
+          return;
+        }
+        if (!utr || utr.length < 8) {
+          claimOutput.innerHTML = '<span style="color:#ff4757;">ERROR:</span> Please enter your 12-digit UPI UTR / Ref number from your payment receipt.';
           return;
         }
 
         btnClaimKey.disabled = true;
-        btnClaimKey.innerText = 'GENERATING...';
-        claimOutput.innerHTML = '<span style="color:#00e5ff;">VERIFYING:</span> Generating cryptographic PRO license key...';
+        btnClaimKey.innerText = 'LOGGING...';
+        claimOutput.innerHTML = '<span style="color:#00e5ff;">RECORDING:</span> Registering transaction in cloud verification database...';
+
+        localStorage.setItem('shadow_user_email', email);
+        localStorage.setItem('shadow_user_utr', utr);
+
+        // Sync to Supabase Cloud Database
+        try {
+          fetch(`${SUPABASE_URL}/rest/v1/licenses`, {
+            method: 'POST',
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify({
+              license_key: `PENDING-${utr}`,
+              customer_email: email,
+              plan_tier: 'PRO_MONTHLY',
+              is_active: false
+            })
+          }).catch(e => console.warn('Supabase sync notice:', e));
+        } catch (e) {}
 
         setTimeout(() => {
-          // Generate realistic cryptographic license key SHADOW-PRO-XXXX-XXXX
-          const randHex = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1).toUpperCase();
-          const generatedKey = `SHADOW-PRO-${randHex()}-${randHex()}`;
-
-          // Save locally
-          localStorage.setItem('shadow_user_email', email);
-          localStorage.setItem('shadow_license_key', generatedKey);
-          localStorage.setItem('shadow_is_pro', 'true');
-
-          // Sync to Supabase Cloud Database
-          try {
-            fetch(`${SUPABASE_URL}/rest/v1/licenses`, {
-              method: 'POST',
-              headers: {
-                'apikey': SUPABASE_KEY,
-                'Authorization': `Bearer ${SUPABASE_KEY}`,
-                'Content-Type': 'application/json',
-                'Prefer': 'return=minimal'
-              },
-              body: JSON.stringify({
-                license_key: generatedKey,
-                customer_email: email,
-                plan_tier: 'PRO_MONTHLY',
-                is_active: true
-              })
-            }).catch(e => console.warn('Supabase sync notice:', e));
-          } catch (e) {}
-
+          updateWhatsAppUrl();
           claimOutput.innerHTML = `
-            <div style="color:#00ff66;font-weight:700;margin-bottom:6px;">✓ PRO LICENSE GENERATED:</div>
-            <div style="font-size:15px;letter-spacing:2px;color:#00e5ff;padding:8px;background:#030805;border:1px dashed #00ff66;border-radius:4px;font-family:monospace;margin:6px 0;text-align:center;">
-              <strong>${generatedKey}</strong>
+            <div style="color:#00ff66;font-weight:700;margin-bottom:6px;">✓ PAYMENT SUBMITTED FOR APPROVAL</div>
+            <div style="font-size:13px;letter-spacing:1px;color:#00e5ff;padding:8px;background:#030805;border:1px dashed #00ff66;border-radius:4px;font-family:monospace;margin:6px 0;text-align:center;">
+              UTR: <strong>${utr}</strong>
             </div>
-            <p style="color:#e2fced;font-size:11px;margin:6px 0;">Assigned to: <strong>${email}</strong> (Unlimited Access)</p>
-            <p style="color:#7ca88e;font-size:11px;margin-bottom:8px;">Enter this key inside your <strong>ShadowAI Desktop App (Settings → Account & License)</strong> to unlock full PRO stealth mode!</p>
-            <button type="button" id="btn-copy-gen-key" style="background:#00ff66;color:#030508;border:none;font-weight:bold;padding:8px 16px;border-radius:4px;cursor:pointer;font-family:monospace;width:100%;">
-              COPY LICENSE KEY
-            </button>
+            <p style="color:#e2fced;font-size:11px;margin:6px 0;">Assigned to: <strong>${email}</strong></p>
+            <p style="color:#7ca88e;font-size:11px;margin-bottom:8px;">Now click the green <strong>SEND PROOF ON WHATSAPP</strong> button above to get your key activated by Harshil in ~1 minute!</p>
+            <a href="${btnWhatsapp ? btnWhatsapp.href : 'https://wa.me/919317526356'}" target="_blank" style="display:block;background:#25D366;color:#ffffff;text-align:center;font-weight:bold;padding:9px;border-radius:4px;text-decoration:none;font-family:monospace;">
+              OPEN WHATSAPP NOW 💬
+            </a>
           `;
-
-          // Auto-fill into validator test box below
-          const licInput = document.getElementById('license-input');
-          if (licInput) licInput.value = generatedKey;
-
-          const copyGenBtn = document.getElementById('btn-copy-gen-key');
-          if (copyGenBtn) {
-            copyGenBtn.addEventListener('click', () => {
-              navigator.clipboard.writeText(generatedKey).then(() => {
-                copyGenBtn.innerText = 'COPIED TO CLIPBOARD ✓';
-              });
-            });
-          }
-
           btnClaimKey.disabled = false;
-          btnClaimKey.innerText = 'GENERATE_KEY ⯈';
-        }, 1000);
+          btnClaimKey.innerText = 'SUBMIT_UTR ⯈';
+        }, 800);
       });
     }
 
