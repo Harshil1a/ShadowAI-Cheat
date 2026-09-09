@@ -10,6 +10,7 @@
 #include <QJsonObject>
 #include <QNetworkRequest>
 #include <QNetworkReply>
+#include <QSysInfo>
 
 AccountManager& AccountManager::instance() {
     static AccountManager inst;
@@ -74,36 +75,80 @@ void AccountManager::activateLicenseKey(const QString& rawKey) {
         return;
     }
 
-    // Online check against Supabase database or format validation
-    bool isFormatValid = key.startsWith("SHADOW-PRO") || (key.length() >= 12 && key.contains("-"));
+    // Developer / Master Admin Key Bypass
+    if (key == "SHADOW-PRO-HARSHIL-ADMIN") {
+        AppConfig::instance().setPro(true);
+        AppConfig::instance().setLicenseKey(key);
+        AppConfig::instance().save();
+        emit licenseActivationResult(true, "✓ Master Developer License Activated! Unlimited PRO Active.");
+        emit accountStateChanged(isLoggedIn(), userEmail(), true);
+        return;
+    }
 
-    // Query Supabase REST API
+    // Calculate unique machine hardware ID
+    QByteArray rawHwid = QSysInfo::machineUniqueId();
+    QString hwid = QString::fromUtf8(rawHwid.toHex()).toUpper();
+    if (hwid.isEmpty()) {
+        hwid = QString("%1_%2").arg(QSysInfo::machineHostName(), QSysInfo::currentCpuArchitecture()).toUpper();
+    }
+
+    // Query Supabase for this license key
     QNetworkRequest req(QUrl(m_supabaseUrl + "/rest/v1/licenses?license_key=eq." + key + "&select=*"));
     req.setRawHeader("apikey", m_supabaseKey.toUtf8());
     req.setRawHeader("Authorization", "Bearer " + m_supabaseKey.toUtf8());
 
     QNetworkReply* reply = m_nam->get(req);
-    connect(reply, &QNetworkReply::finished, this, [this, reply, key, isFormatValid]() {
-        bool isValid = isFormatValid;
+    connect(reply, &QNetworkReply::finished, this, [this, reply, key, hwid]() {
+        bool foundInDb = false;
+        bool isActive = false;
+        QString boundHwid;
+
         if (reply->error() == QNetworkReply::NoError) {
             QByteArray resp = reply->readAll();
             QJsonDocument doc = QJsonDocument::fromJson(resp);
             if (doc.isArray() && !doc.array().isEmpty()) {
-                isValid = true;
+                foundInDb = true;
+                QJsonObject row = doc.array().first().toObject();
+                isActive = row.value("is_active").toBool(true);
+                boundHwid = row.value("bound_hwid").toString().trimmed().toUpper();
             }
         }
         reply->deleteLater();
 
-        if (isValid) {
-            AppConfig::instance().setPro(true);
-            AppConfig::instance().setLicenseKey(key);
-            AppConfig::instance().save();
-
-            emit licenseActivationResult(true, "License Key Verified! PRO Mode is now Active.");
-            emit accountStateChanged(isLoggedIn(), userEmail(), true);
-        } else {
-            emit licenseActivationResult(false, "Invalid license key format. Please check your purchase receipt.");
+        if (!foundInDb) {
+            emit licenseActivationResult(false, "❌ Invalid license key. Please check your purchase receipt or upgrade to Pro.");
+            return;
         }
+
+        if (!isActive) {
+            emit licenseActivationResult(false, "❌ This license key has been revoked or expired.");
+            return;
+        }
+
+        // Hardware lock check:
+        if (!boundHwid.isEmpty() && boundHwid != hwid) {
+            emit licenseActivationResult(false, "❌ DEVICE LIMIT REACHED: This license is already locked to another computer. Each license is valid for 1 device only.");
+            return;
+        }
+
+        // If not yet bound to any device, lock it to THIS hardware ID now!
+        if (boundHwid.isEmpty()) {
+            QNetworkRequest patchReq(QUrl(m_supabaseUrl + "/rest/v1/licenses?license_key=eq." + key));
+            patchReq.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+            patchReq.setRawHeader("apikey", m_supabaseKey.toUtf8());
+            patchReq.setRawHeader("Authorization", "Bearer " + m_supabaseKey.toUtf8());
+
+            QJsonObject patchBody;
+            patchBody["bound_hwid"] = hwid;
+            m_nam->sendCustomRequest(patchReq, "PATCH", QJsonDocument(patchBody).toJson());
+        }
+
+        AppConfig::instance().setPro(true);
+        AppConfig::instance().setLicenseKey(key);
+        AppConfig::instance().save();
+
+        emit licenseActivationResult(true, "✓ License Verified & Locked to this device! PRO Mode Active.");
+        emit accountStateChanged(isLoggedIn(), userEmail(), true);
     });
 }
 

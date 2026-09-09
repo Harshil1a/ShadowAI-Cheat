@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SHADOW AI // ADMIN COMMAND CENTER</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      background: #030508;
+      color: #e2fced;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 24px;
+      min-height: 100vh;
+    }
+    .admin-container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(0, 255, 102, 0.3);
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+    }
+    .admin-title {
+      font-family: 'Orbitron', monospace;
+      font-size: 22px;
+      color: #00ff66;
+      letter-spacing: 2px;
+    }
+    .admin-subtitle {
+      font-size: 11px;
+      color: #7ca88e;
+      margin-top: 4px;
+    }
+    .admin-stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: rgba(7, 12, 10, 0.8);
+      border: 1px solid rgba(0, 255, 102, 0.25);
+      border-radius: 6px;
+      padding: 16px;
+      position: relative;
+    }
+    .stat-label {
+      font-size: 10px;
+      color: #7ca88e;
+      letter-spacing: 1px;
+    }
+    .stat-val {
+      font-size: 26px;
+      font-weight: 800;
+      color: #00e5ff;
+      margin-top: 6px;
+      font-family: 'Orbitron', monospace;
+    }
+    .admin-actions {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .btn-gen {
+      background: linear-gradient(135deg, #00ff66 0%, #00b347 100%);
+      color: #030508;
+      border: none;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 13px;
+      padding: 12px 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(0, 255, 102, 0.4);
+      transition: all 0.2s;
+    }
+    .btn-gen:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 30px rgba(0, 255, 102, 0.7);
+    }
+    .btn-refresh {
+      background: rgba(0, 229, 255, 0.1);
+      color: #00e5ff;
+      border: 1px solid #00e5ff;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 12px;
+      padding: 12px 18px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn-refresh:hover {
+      background: #00e5ff;
+      color: #030508;
+    }
+    .admin-card {
+      background: #070c0a;
+      border: 1px solid rgba(0, 255, 102, 0.25);
+      border-radius: 6px;
+      padding: 20px;
+      overflow-x: auto;
+    }
+    .admin-card-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #00ff66;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    th {
+      text-align: left;
+      padding: 10px;
+      color: #7ca88e;
+      border-bottom: 1px solid rgba(0, 255, 102, 0.2);
+      font-weight: 600;
+    }
+    td {
+      padding: 12px 10px;
+      border-bottom: 1px solid rgba(0, 255, 102, 0.1);
+      vertical-align: middle;
+    }
+    tr:hover {
+      background: rgba(0, 255, 102, 0.03);
+    }
+    .badge-status {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .badge-active {
+      background: rgba(0, 255, 102, 0.15);
+      color: #00ff66;
+      border: 1px solid rgba(0, 255, 102, 0.4);
+    }
+    .badge-bound {
+      background: rgba(0, 229, 255, 0.15);
+      color: #00e5ff;
+      border: 1px solid rgba(0, 229, 255, 0.4);
+    }
+    .badge-revoked {
+      background: rgba(255, 71, 87, 0.15);
+      color: #ff4757;
+      border: 1px solid rgba(255, 71, 87, 0.4);
+    }
+    .btn-action-copy {
+      background: rgba(0, 255, 102, 0.1);
+      color: #00ff66;
+      border: 1px solid #00ff66;
+      padding: 4px 8px;
+      font-size: 10px;
+      border-radius: 3px;
+      cursor: pointer;
+      margin-right: 6px;
+    }
+    .btn-action-copy:hover {
+      background: #00ff66;
+      color: #030508;
+    }
+    .btn-action-revoke {
+      background: rgba(255, 71, 87, 0.1);
+      color: #ff4757;
+      border: 1px solid #ff4757;
+      padding: 4px 8px;
+      font-size: 10px;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .btn-action-revoke:hover {
+      background: #ff4757;
+      color: #ffffff;
+    }
+    /* Modal for Key Generation */
+    .pin-gate {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: #030508;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 99999;
+    }
+    .pin-box {
+      background: #070c0a;
+      border: 1px solid #00ff66;
+      box-shadow: 0 0 35px rgba(0, 255, 102, 0.3);
+      padding: 32px;
+      border-radius: 8px;
+      text-align: center;
+      max-width: 380px;
+      width: 90%;
+    }
+    .pin-input {
+      width: 100%;
+      padding: 12px;
+      background: #030508;
+      border: 1px solid #00ff66;
+      color: #00ff66;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 18px;
+      text-align: center;
+      border-radius: 4px;
+      letter-spacing: 4px;
+      margin: 16px 0;
+    }
+    .key-modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(5px);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+    }
+    .key-modal.open {
+      display: flex;
+    }
+    .key-modal-content {
+      background: #070c0a;
+      border: 1px solid #00ff66;
+      box-shadow: 0 0 40px rgba(0, 255, 102, 0.4);
+      padding: 28px;
+      border-radius: 8px;
+      max-width: 480px;
+      width: 90%;
+      text-align: center;
+    }
+    .gen-key-display {
+      font-size: 18px;
+      color: #00ff66;
+      background: #030508;
+      border: 1px dashed #00ff66;
+      padding: 14px;
+      border-radius: 6px;
+      margin: 16px 0;
+      letter-spacing: 2px;
+      font-weight: 800;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PIN GATE -->
+  <div class="pin-gate" id="pin-gate">
+    <div class="pin-box">
+      <h2 style="color:#00ff66;font-family:'Orbitron';letter-spacing:2px;margin-bottom:8px;">SHADOW // ADMIN</h2>
+      <p style="color:#7ca88e;font-size:11px;">Enter master security PIN to access the key generator:</p>
+      <input type="password" id="admin-pin-input" class="pin-input" placeholder="••••" maxlength="6" autofocus>
+      <button class="btn-gen" id="btn-unlock" style="width:100%;">ACCESS COMMAND CENTER</button>
+      <div id="pin-err" style="color:#ff4757;font-size:11px;margin-top:10px;"></div>
+    </div>
+  </div>
+
+  <!-- KEY GENERATED MODAL -->
+  <div class="key-modal" id="key-modal">
+    <div class="key-modal-content">
+      <h3 style="color:#00ff66;font-family:'Orbitron';letter-spacing:1px;margin-bottom:4px;">PRO LICENSE CREATED</h3>
+      <p style="color:#7ca88e;font-size:11px;">This key is ready to send to your paying customer on WhatsApp:</p>
+      
+      <div class="gen-key-display" id="modal-gen-key">SHADOW-PRO-XXXX-XXXX</div>
+      
+      <p style="color:#e2fced;font-size:11px;margin-bottom:16px;">Locked to <strong>1 Device</strong> on first activation.</p>
+      
+      <div style="display:flex;gap:10px;">
+        <button class="btn-gen" id="btn-modal-copy" style="flex:1;">COPY KEY TO CLIPBOARD 📋</button>
+        <button class="btn-refresh" id="btn-modal-close">DONE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN ADMIN DASHBOARD -->
+  <div class="admin-container" id="admin-content" style="display:none;">
+    <header class="admin-header">
+      <div>
+        <h1 class="admin-title">SHADOW AI // ADMIN TERMINAL</h1>
+        <div class="admin-subtitle">Master License Key Generator & Device-Locking Manager</div>
+      </div>
+      <div>
+        <a href="/" style="color:#00e5ff;font-size:12px;text-decoration:none;">⯇ Back to Website</a>
+      </div>
+    </header>
+
+    <!-- STATS -->
+    <div class="admin-stat-grid">
+      <div class="stat-card">
+        <div class="stat-label">TOTAL LICENSES ISSUED</div>
+        <div class="stat-val" id="stat-total">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">ACTIVE / LOCKED DEVICES</div>
+        <div class="stat-val" id="stat-bound" style="color:#00ff66;">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">UNUSED / READY TO SELL</div>
+        <div class="stat-val" id="stat-unused" style="color:#a855f7;">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">TOTAL REVENUE (EST.)</div>
+        <div class="stat-val" id="stat-rev" style="color:#00e5ff;">₹0</div>
+      </div>
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="admin-actions">
+      <button class="btn-gen" id="btn-create-key">+ GENERATE NEW PRO LICENSE KEY</button>
+      <button class="btn-refresh" id="btn-refresh-table">↻ REFRESH LICENSES</button>
+    </div>
+
+    <!-- TABLE -->
+    <div class="admin-card">
+      <div class="admin-card-title">
+        <span>ISSUED LICENSES & HARDWARE LOCKS</span>
+        <span id="load-status" style="font-size:11px;color:#7ca88e;">Live Supabase Sync</span>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>LICENSE KEY</th>
+            <th>STATUS</th>
+            <th>BOUND HARDWARE ID</th>
+            <th>CUSTOMER EMAIL</th>
+            <th>CREATED</th>
+            <th>ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody id="license-table-body">
+          <tr>
+            <td colspan="6" style="text-align:center;color:#7ca88e;padding:20px;">Loading licenses from database...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://kptqmelofgromeavgmip.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_6l5uraxvTrrsbV9PKVJOPg_iKJCqf_J';
+    const MASTER_PIN = '8282'; // Default master PIN
+
+    // PIN Gate
+    const pinGate = document.getElementById('pin-gate');
+    const pinInput = document.getElementById('admin-pin-input');
+    const btnUnlock = document.getElementById('btn-unlock');
+    const pinErr = document.getElementById('pin-err');
+    const adminContent = document.getElementById('admin-content');
+
+    function checkPin() {
+      if (pinInput.value === MASTER_PIN) {
+        pinGate.style.display = 'none';
+        adminContent.style.display = 'block';
+        loadLicenses();
+      } else {
+        pinErr.innerText = 'INVALID SECURITY PIN';
+        pinInput.value = '';
+        pinInput.focus();
+      }
+    }
+
+    btnUnlock.addEventListener('click', checkPin);
+    pinInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') checkPin();
+    });
+
+    // Modals
+    const keyModal = document.getElementById('key-modal');
+    const modalGenKey = document.getElementById('modal-gen-key');
+    const btnModalCopy = document.getElementById('btn-modal-copy');
+    const btnModalClose = document.getElementById('btn-modal-close');
+
+    btnModalClose.addEventListener('click', () => {
+      keyModal.classList.remove('open');
+      loadLicenses();
+    });
+
+    btnModalCopy.addEventListener('click', () => {
+      navigator.clipboard.writeText(modalGenKey.innerText.trim()).then(() => {
+        btnModalCopy.innerText = 'COPIED TO CLIPBOARD ✓';
+        setTimeout(() => { btnModalCopy.innerText = 'COPY KEY TO CLIPBOARD 📋'; }, 2000);
+      });
+    });
+
+    // Generate Key Logic
+    const btnCreateKey = document.getElementById('btn-create-key');
+    btnCreateKey.addEventListener('click', async () => {
+      btnCreateKey.disabled = true;
+      btnCreateKey.innerText = 'GENERATING...';
+
+      const randHex = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1).toUpperCase();
+      const newKey = `SHADOW-PRO-${randHex()}-${randHex()}`;
+
+      try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/licenses`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({
+            license_key: newKey,
+            customer_email: 'unassigned@customer.local',
+            plan_tier: 'PRO_MONTHLY',
+            is_active: true,
+            bound_hwid: null
+          })
+        });
+
+        modalGenKey.innerText = newKey;
+        keyModal.classList.add('open');
+      } catch (err) {
+        alert('Error saving key to Supabase: ' + err.message);
+      } finally {
+        btnCreateKey.disabled = false;
+        btnCreateKey.innerText = '+ GENERATE NEW PRO LICENSE KEY';
+      }
+    });
+
+    // Load & Render Table
+    const btnRefresh = document.getElementById('btn-refresh-table');
+    btnRefresh.addEventListener('click', loadLicenses);
+
+    async function loadLicenses() {
+      const tbody = document.getElementById('license-table-body');
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#7ca88e;padding:20px;">Fetching records...</td></tr>';
+
+      try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/licenses?select=*&order=created_at.desc`, {
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`
+          }
+        });
+
+        const data = await res.json();
+        if (!Array.isArray(data) || data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#7ca88e;padding:20px;">No licenses issued yet. Click [+ GENERATE NEW PRO LICENSE KEY] above!</td></tr>';
+          updateStats([]);
+          return;
+        }
+
+        updateStats(data);
+
+        tbody.innerHTML = data.map(item => {
+          let statusBadge = '<span class="badge-status badge-active">ACTIVE</span>';
+          if (!item.is_active) {
+            statusBadge = '<span class="badge-status badge-revoked">REVOKED</span>';
+          }
+
+          let hwidDisplay = '<span style="color:#a855f7;font-size:11px;">🟢 READY (NO DEVICE LOCKED)</span>';
+          if (item.bound_hwid) {
+            const shortHwid = item.bound_hwid.length > 16 ? item.bound_hwid.substring(0, 14) + '...' : item.bound_hwid;
+            hwidDisplay = `<span class="badge-status badge-bound">🔒 ${shortHwid}</span>`;
+          }
+
+          const created = new Date(item.created_at).toLocaleDateString('en-IN', {
+            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+          });
+
+          return `
+            <tr>
+              <td><strong style="color:#00ff66;letter-spacing:1px;">${item.license_key}</strong></td>
+              <td>${statusBadge}</td>
+              <td>${hwidDisplay}</td>
+              <td style="color:#7ca88e;">${item.customer_email || 'unassigned'}</td>
+              <td style="color:#7ca88e;font-size:11px;">${created}</td>
+              <td>
+                <button class="btn-action-copy" onclick="copyText('${item.license_key}', this)">COPY</button>
+                ${item.is_active 
+                  ? `<button class="btn-action-revoke" onclick="toggleRevoke('${item.id}', false)">REVOKE</button>`
+                  : `<button class="btn-action-copy" onclick="toggleRevoke('${item.id}', true)">RESTORE</button>`
+                }
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ff4757;padding:20px;">Error loading data: ${err.message}</td></tr>`;
+      }
+    }
+
+    function updateStats(data) {
+      document.getElementById('stat-total').innerText = data.length;
+      const boundCount = data.filter(d => d.bound_hwid && d.is_active).length;
+      const unusedCount = data.filter(d => !d.bound_hwid && d.is_active).length;
+      document.getElementById('stat-bound').innerText = boundCount;
+      document.getElementById('stat-unused').innerText = unusedCount;
+      document.getElementById('stat-rev').innerText = `₹${data.length * 99}`;
+    }
+
+    window.copyText = function(text, btn) {
+      navigator.clipboard.writeText(text).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'COPIED!';
+        setTimeout(() => { btn.innerText = orig; }, 1500);
+      });
+    };
+
+    window.toggleRevoke = async function(id, activate) {
+      if (!confirm(`Are you sure you want to ${activate ? 'RESTORE' : 'REVOKE / KILL'} this license key?`)) return;
+      try {
+        await fetch(`${SUPABASE_URL}/rest/v1/licenses?id=eq.${id}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ is_active: activate })
+        });
+        loadLicenses();
+      } catch (e) {
+        alert('Action failed: ' + e.message);
+      }
+    };
+  </script>
+</body>
+</html>
