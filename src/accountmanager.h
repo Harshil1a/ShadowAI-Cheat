@@ -36,5 +36,8 @@ private:
     QNetworkAccessManager* m_nam = nullptr;
     quint16 m_authPort = 18234;
 
+    QString m_supabaseUrl = "https://kptqmelofgromeavgmip.supabase.co";
+    QString m_supabaseKey = "sb_publishable_6l5uraxvTrrsbV9PKVJOPg_iKJCqf_J";
+
     void handleHttpAuthCallback(QTcpSocket* socket, const QString& requestData);
 };

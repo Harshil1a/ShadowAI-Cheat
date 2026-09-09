@@ -5,6 +5,11 @@
 #include <QDesktopServices>
 #include <QDebug>
 #include <QTimer>
+#include <QJsonDocument>
+#include <QJsonArray>
+#include <QJsonObject>
+#include <QNetworkRequest>
+#include <QNetworkReply>
 
 AccountManager& AccountManager::instance() {
     static AccountManager inst;
@@ -69,20 +74,37 @@ void AccountManager::activateLicenseKey(const QString& rawKey) {
         return;
     }
 
-    // Validation: Checks format or Pro prefix
-    // Accepts formats like: SHADOW-PRO-XXXX-XXXX or valid 12+ char serial keys
-    bool isValid = key.startsWith("SHADOW-PRO") || (key.length() >= 12 && key.contains("-"));
+    // Online check against Supabase database or format validation
+    bool isFormatValid = key.startsWith("SHADOW-PRO") || (key.length() >= 12 && key.contains("-"));
 
-    if (isValid) {
-        AppConfig::instance().setPro(true);
-        AppConfig::instance().setLicenseKey(key);
-        AppConfig::instance().save();
+    // Query Supabase REST API
+    QNetworkRequest req(QUrl(m_supabaseUrl + "/rest/v1/licenses?license_key=eq." + key + "&select=*"));
+    req.setRawHeader("apikey", m_supabaseKey.toUtf8());
+    req.setRawHeader("Authorization", "Bearer " + m_supabaseKey.toUtf8());
 
-        emit licenseActivationResult(true, "License Key Verified! PRO Mode is now Active.");
-        emit accountStateChanged(isLoggedIn(), userEmail(), true);
-    } else {
-        emit licenseActivationResult(false, "Invalid license key format. Please check your purchase receipt.");
-    }
+    QNetworkReply* reply = m_nam->get(req);
+    connect(reply, &QNetworkReply::finished, this, [this, reply, key, isFormatValid]() {
+        bool isValid = isFormatValid;
+        if (reply->error() == QNetworkReply::NoError) {
+            QByteArray resp = reply->readAll();
+            QJsonDocument doc = QJsonDocument::fromJson(resp);
+            if (doc.isArray() && !doc.array().isEmpty()) {
+                isValid = true;
+            }
+        }
+        reply->deleteLater();
+
+        if (isValid) {
+            AppConfig::instance().setPro(true);
+            AppConfig::instance().setLicenseKey(key);
+            AppConfig::instance().save();
+
+            emit licenseActivationResult(true, "License Key Verified! PRO Mode is now Active.");
+            emit accountStateChanged(isLoggedIn(), userEmail(), true);
+        } else {
+            emit licenseActivationResult(false, "Invalid license key format. Please check your purchase receipt.");
+        }
+    });
 }
 
 void AccountManager::onNewTcpConnection() {

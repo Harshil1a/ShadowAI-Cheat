@@ -5,6 +5,10 @@
 (function () {
   'use strict';
 
+  // ── Supabase Cloud Database Configuration ──────────────────────────────────
+  const SUPABASE_URL = 'https://kptqmelofgromeavgmip.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_6l5uraxvTrrsbV9PKVJOPg_iKJCqf_J';
+
   // ── Global Tech Hubs ────────────────────────────────────────────────────────
   const GLOBAL_HUBS = [
     { name: 'SILICON_VALLEY', coords: [-122.4194, 37.7749], ping: '16ms' },
