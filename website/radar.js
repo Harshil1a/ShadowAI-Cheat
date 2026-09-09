@@ -500,6 +500,9 @@
       if (profileAdminSec) {
         profileAdminSec.style.display = isMasterAdmin ? 'block' : 'none';
       }
+      if (isMasterAdmin) {
+        localStorage.setItem('shadow_admin_user', 'harshilthakur82@gmail.com');
+      }
     }
 
     async function checkWebSession() {

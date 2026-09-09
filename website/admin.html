@@ -379,13 +379,8 @@
     const SUPABASE_KEY = 'sb_publishable_6l5uraxvTrrsbV9PKVJOPg_iKJCqf_J';
     const MASTER_PIN = '8282'; // Default master PIN
 
-    // Authorized Admin Whitelist
-    const ADMIN_EMAILS = [
-      'harshilthakur82@gmail.com',
-      'harshilthakur82@oksbi',
-      'harshil1a',
-      'admin@shadowai.local'
-    ];
+    // STRICT SOLE ADMIN: Only this single Google ID has admin authorization
+    const MASTER_ADMIN_EMAIL = 'harshilthakur82@gmail.com';
 
     const pinGate = document.getElementById('pin-gate');
     const emailInput = document.getElementById('admin-email-input');
@@ -401,16 +396,22 @@
       : null;
 
     function handleVerifiedAdmin(email, provider = 'LOCAL') {
-      localStorage.setItem('shadow_admin_user', email);
-      pinGate.style.display = 'none';
-      adminContent.style.display = 'block';
+      localStorage.setItem('shadow_admin_user', MASTER_ADMIN_EMAIL);
+      if (pinGate) pinGate.style.display = 'none';
+      if (adminContent) adminContent.style.display = 'block';
       if (adminBadgeEmail) {
-        adminBadgeEmail.innerHTML = `👤 ${email} <span style="font-size:9px;color:${provider === 'GOOGLE' ? '#00ff66' : '#00e5ff'};background:rgba(0,0,0,0.4);padding:2px 6px;border-radius:2px;margin-left:4px;">${provider === 'GOOGLE' ? '✓ GOOGLE SECURED' : 'WHITELISTED'}</span>`;
+        adminBadgeEmail.innerHTML = `👤 ${MASTER_ADMIN_EMAIL} <span style="font-size:9px;color:${provider === 'GOOGLE' ? '#00ff66' : '#00e5ff'};background:rgba(0,0,0,0.4);padding:2px 6px;border-radius:2px;margin-left:4px;">${provider === 'GOOGLE' ? '✓ GOOGLE SECURED' : 'WHITELISTED'}</span>`;
       }
       loadLicenses();
     }
 
-    // 1. Check if user already logged in with Google via Supabase OAuth
+    // 0. INSTANT ZERO-DELAY SYNC CHECK: If already logged in as Harshil, open terminal immediately
+    const savedAdmin = localStorage.getItem('shadow_admin_user');
+    if (savedAdmin && savedAdmin.toLowerCase().trim() === MASTER_ADMIN_EMAIL) {
+      handleVerifiedAdmin(MASTER_ADMIN_EMAIL, 'SESSION');
+    }
+
+    // 1. Google OAuth Session Verification: STRICT SINGLE USER CHECK
     async function checkGoogleSession() {
       if (!supabaseClient) return;
 
@@ -418,24 +419,24 @@
         const { data: { session }, error } = await supabaseClient.auth.getSession();
         if (session && session.user && session.user.email) {
           const uEmail = session.user.email.toLowerCase().trim();
-          const isAllowed = ADMIN_EMAILS.some(a => uEmail.includes(a.toLowerCase())) || uEmail.includes('harshil');
-          if (isAllowed) {
-            handleVerifiedAdmin(session.user.email, 'GOOGLE');
+          if (uEmail === MASTER_ADMIN_EMAIL) {
+            handleVerifiedAdmin(MASTER_ADMIN_EMAIL, 'GOOGLE');
             return;
           } else {
-            pinErr.innerHTML = `⛔ <strong>ACCESS DENIED:</strong> Google Account <code>${session.user.email}</code> is not authorized.<br><span style="font-size:10px;color:#7ca88e;">Ejecting session in 3s...</span>`;
-            setTimeout(() => { window.location.replace('/'); }, 3000);
+            // STRICT SHUTDOWN: Any other Google account is instantly blocked and ejected!
+            if (pinGate) pinGate.style.display = 'flex';
+            if (adminContent) adminContent.style.display = 'none';
+            pinErr.innerHTML = `⛔ <strong>ACCESS DENIED:</strong> Google Account <code>${session.user.email}</code> is NOT an admin.<br><span style="font-size:10px;color:#ff4757;">Only harshilthakur82@gmail.com is authorized. Ejecting...</span>`;
+            setTimeout(async () => {
+              try { await supabaseClient.auth.signOut(); } catch(e) {}
+              localStorage.removeItem('shadow_admin_user');
+              window.location.replace('/');
+            }, 2000);
             return;
           }
         }
       } catch (err) {
         console.warn('Supabase session check error:', err);
-      }
-
-      // Check local cached admin session
-      const savedAdmin = localStorage.getItem('shadow_admin_user');
-      if (savedAdmin && (ADMIN_EMAILS.includes(savedAdmin.toLowerCase().trim()) || savedAdmin.includes('harshil'))) {
-        handleVerifiedAdmin(savedAdmin, 'CACHED');
       }
     }
 
@@ -466,10 +467,10 @@
     // 3. Fallback Instant Passcode verification
     function checkAdminAuth() {
       const inputVal = emailInput.value.toLowerCase().trim();
-      if (ADMIN_EMAILS.includes(inputVal) || inputVal.includes('harshil') || inputVal.includes('admin')) {
+      if (inputVal === MASTER_ADMIN_EMAIL) {
         handleVerifiedAdmin(inputVal, 'PASSCODE');
       } else {
-        pinErr.innerText = 'ACCESS DENIED: Unauthorized Admin Email Address';
+        pinErr.innerText = 'ACCESS DENIED: Only harshilthakur82@gmail.com has admin access.';
         emailInput.focus();
       }
     }
@@ -562,9 +563,10 @@
       const tbody = document.getElementById('license-table-body');
       tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#7ca88e;padding:20px;">Fetching records...</td></tr>';
 
-      let data = [];
       try {
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/licenses?select=*&order=created_at.desc`, {
+        let data = [];
+        try {
+          const res = await fetch(`${SUPABASE_URL}/rest/v1/licenses?select=*&order=created_at.desc`, {
           headers: {
             'apikey': SUPABASE_KEY,
             'Authorization': `Bearer ${SUPABASE_KEY}`
