@@ -440,12 +440,35 @@
     }
 
 
-    // Google SSO Modal
+    // Google SSO via Supabase Client
+    const supabaseClient = (window.supabase && typeof window.supabase.createClient === 'function')
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+      : null;
+
     const authModal = document.getElementById('auth-modal');
     const btnGoogleAuth = document.getElementById('btn-google-auth');
+    const btnAuthLabel = document.getElementById('btn-auth-label');
     const modalClose = document.getElementById('modal-close');
     const googleAction = document.getElementById('google-sso-action');
     const authStatusLog = document.getElementById('auth-status-log');
+    const navAdminLink = document.getElementById('nav-admin-link');
+
+    async function checkWebSession() {
+      if (!supabaseClient) return;
+      try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session && session.user && session.user.email) {
+          const email = session.user.email;
+          if (btnAuthLabel) btnAuthLabel.innerText = email.split('@')[0].toUpperCase();
+          if (navAdminLink && (email.includes('harshil') || email === 'harshilthakur82@gmail.com')) {
+            navAdminLink.style.display = 'inline-flex';
+          }
+        }
+      } catch(e) {
+        console.warn('Session check:', e);
+      }
+    }
+    checkWebSession();
 
     if (btnGoogleAuth && authModal) {
       btnGoogleAuth.addEventListener('click', () => {
@@ -459,16 +482,21 @@
       });
     }
 
-    if (googleAction && authStatusLog) {
-      googleAction.addEventListener('click', () => {
-        authStatusLog.innerHTML = '<span style="color:#00e5ff;">REDIRECTING:</span> Opening Google OAuth authentication portal...';
-        setTimeout(() => {
-          authStatusLog.innerHTML = '<span style="color:#00ff66;">AUTHENTICATED:</span> Logged in as <strong>operator@gmail.com</strong> [Session Synced]';
-          setTimeout(() => {
-            authModal.classList.remove('open');
-            if (btnGoogleAuth) btnGoogleAuth.innerHTML = '<span>USER: OPERATOR</span>';
-          }, 1200);
-        }, 1200);
+    if (googleAction) {
+      googleAction.addEventListener('click', async () => {
+        if (authStatusLog) authStatusLog.innerHTML = '<span style="color:#00e5ff;">REDIRECTING:</span> Connecting to Google Secure OAuth...';
+        if (supabaseClient) {
+          try {
+            await supabaseClient.auth.signInWithOAuth({
+              provider: 'google',
+              options: {
+                redirectTo: window.location.origin
+              }
+            });
+          } catch(err) {
+            if (authStatusLog) authStatusLog.innerHTML = '<span style="color:#ff4757;">ERROR:</span> ' + err.message;
+          }
+        }
       });
     }
 
