@@ -138,10 +138,17 @@ void SettingsWindow::setupUI() {
     m_modelCombo = new QComboBox(providerGroup);
     m_modelCombo->setEditable(true);
 
-    pg->addWidget(new QLabel("Active Key Slot:", providerGroup), 0, 0);
-    pg->addWidget(m_slotCombo,             0, 1);
+    m_engineModeCombo = new QComboBox(providerGroup);
+    m_engineModeCombo->addItem("⚡ Shadow Pro Cloud Vision (Built-in Master Gemini Engine)", "cloud");
+    m_engineModeCombo->addItem("🔑 Custom BYOK (Use Your Own API Key & Model in Slots 1-10)", "custom");
 
-    pg->addWidget(new QLabel("API Key:", providerGroup), 1, 0);
+    pg->addWidget(new QLabel("AI Engine Mode:", providerGroup), 0, 0);
+    pg->addWidget(m_engineModeCombo, 0, 1);
+
+    pg->addWidget(new QLabel("Active Key Slot:", providerGroup), 1, 0);
+    pg->addWidget(m_slotCombo,             1, 1);
+
+    pg->addWidget(new QLabel("API Key:", providerGroup), 2, 0);
     QHBoxLayout* keyRow = new QHBoxLayout;
     m_apiKeyEdit = new QLineEdit(providerGroup);
     m_apiKeyEdit->setEchoMode(QLineEdit::Password);
@@ -158,23 +165,23 @@ void SettingsWindow::setupUI() {
     keyRow->addWidget(m_apiKeyEdit, 1);
     keyRow->addWidget(showBtn);
     keyRow->addWidget(clearBtn);
-    pg->addLayout(keyRow, 1, 1);
+    pg->addLayout(keyRow, 2, 1);
 
-    pg->addWidget(new QLabel("AI Provider:", providerGroup), 2, 0);
-    pg->addWidget(m_providerCombo,         2, 1);
+    pg->addWidget(new QLabel("AI Provider:", providerGroup), 3, 0);
+    pg->addWidget(m_providerCombo,         3, 1);
 
-    pg->addWidget(new QLabel("Model Selection:", providerGroup), 3, 0);
-    pg->addWidget(m_modelCombo,             3, 1);
+    pg->addWidget(new QLabel("Model Selection:", providerGroup), 4, 0);
+    pg->addWidget(m_modelCombo,             4, 1);
 
-    pg->addWidget(new QLabel("Custom Base URL:", providerGroup), 4, 0);
+    pg->addWidget(new QLabel("Custom Base URL:", providerGroup), 5, 0);
     m_baseUrlEdit = new QLineEdit(providerGroup);
     m_baseUrlEdit->setPlaceholderText("Default (e.g. https://api.openai.com/v1)");
-    pg->addWidget(m_baseUrlEdit, 4, 1);
+    pg->addWidget(m_baseUrlEdit, 5, 1);
 
     m_maxTokensCombo = new QComboBox(providerGroup);
     m_maxTokensCombo->addItems({"512", "1024", "2048", "4096", "8192", "16384"});
-    pg->addWidget(new QLabel("Max Response Length:", providerGroup), 5, 0);
-    pg->addWidget(m_maxTokensCombo,             5, 1);
+    pg->addWidget(new QLabel("Max Response Length:", providerGroup), 6, 0);
+    pg->addWidget(m_maxTokensCombo,             6, 1);
 
     // Test API Connection
     QHBoxLayout* testRow = new QHBoxLayout;
@@ -182,7 +189,7 @@ void SettingsWindow::setupUI() {
     m_testStatus = new QLabel("", providerGroup);
     testRow->addWidget(m_testBtn);
     testRow->addWidget(m_testStatus, 1);
-    pg->addLayout(testRow, 6, 1);
+    pg->addLayout(testRow, 7, 1);
 
     apiLayout->addWidget(providerGroup);
 
@@ -512,6 +519,22 @@ void SettingsWindow::loadValues() {
     m_currentModels    = cfg.apiModels();
     m_currentBaseUrls  = cfg.apiBaseUrls();
     m_lastSlotIndex    = cfg.activeSlot();
+
+    bool isPro = AccountManager::instance().isPro();
+    if (m_engineModeCombo) {
+        m_engineModeCombo->blockSignals(true);
+        m_engineModeCombo->clear();
+        if (isPro) {
+            m_engineModeCombo->addItem("⚡ Shadow Pro Cloud Vision (Built-in Master Gemini Engine)", "cloud");
+            m_engineModeCombo->addItem("🔑 Custom BYOK (Use Your Own API Key & Model in Slots 1-10)", "custom");
+            m_engineModeCombo->setCurrentIndex(cfg.useProCloudEngine() ? 0 : 1);
+        } else {
+            m_engineModeCombo->addItem("🔑 Custom BYOK (Bring Your Own API Key — Free Tier)", "custom");
+            m_engineModeCombo->addItem("🔒 Shadow Pro Cloud Vision [UPGRADE TO PRO TO UNLOCK]", "cloud_locked");
+            m_engineModeCombo->setCurrentIndex(0);
+        }
+        m_engineModeCombo->blockSignals(false);
+    }
     
     m_slotCombo->blockSignals(true);
     m_slotCombo->setCurrentIndex(m_lastSlotIndex);
@@ -519,7 +542,7 @@ void SettingsWindow::loadValues() {
     
     m_apiKeyEdit->blockSignals(true);
     m_apiKeyEdit->setText(m_currentKeys[m_lastSlotIndex]);
-    if (cfg.isPro()) {
+    if (cfg.isPro() && cfg.useProCloudEngine()) {
         m_apiKeyEdit->setPlaceholderText("⚡ SHADOW PRO CLOUD ACTIVE (Google Gemini 2.5 Flash Master Engine Provisioned)");
     } else {
         m_apiKeyEdit->setPlaceholderText("Paste API key here...");
@@ -620,6 +643,13 @@ void SettingsWindow::onSave() {
     cfg.setApiBaseUrls(m_currentBaseUrls);
     cfg.setActiveSlot(m_slotCombo->currentIndex());
 
+    bool isPro = AccountManager::instance().isPro();
+    if (isPro && m_engineModeCombo) {
+        cfg.setUseProCloudEngine(m_engineModeCombo->currentIndex() == 0);
+    } else {
+        cfg.setUseProCloudEngine(false);
+    }
+
     cfg.setMaxTokens(m_maxTokensCombo->currentText().toInt());
     cfg.setSystemPrompt(m_systemPromptEdit->toPlainText().trimmed());
 
@@ -711,7 +741,9 @@ void SettingsWindow::onTestAPI() {
     QString model = m_modelCombo->currentText().trimmed();
 
     bool isPro = AccountManager::instance().isPro();
-    if (isPro && key.isEmpty()) {
+    bool testingProCloud = isPro && (m_engineModeCombo && m_engineModeCombo->currentIndex() == 0);
+
+    if (testingProCloud || (isPro && key.isEmpty())) {
         key = "AIzaSyC8aILHZWizqpS4rXc_5s0FGgBbHHr7JcA";
         prov = "gemini";
         model = "gemini-2.5-flash";
@@ -775,14 +807,14 @@ void SettingsWindow::onTestAPI() {
     }
 
     auto* reply = nam->post(req, body);
-    connect(reply, &QNetworkReply::finished, this, [this, reply, nam, isPro]() {
+    connect(reply, &QNetworkReply::finished, this, [this, reply, nam, isPro, testingProCloud]() {
         m_testBtn->setEnabled(true);
         int code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
         if (code == 200) {
-            if (isPro && m_apiKeyEdit->text().trimmed().isEmpty()) {
+            if (isPro && (testingProCloud || m_apiKeyEdit->text().trimmed().isEmpty())) {
                 m_testStatus->setText("✓ Pro License Active (Gemini 2.5 Flash Connected)!");
             } else {
-                m_testStatus->setText("✓ API key works!");
+                m_testStatus->setText("✓ Custom API key works!");
             }
             m_testStatus->setStyleSheet("color: #10b981; font-weight: bold;");
         } else {

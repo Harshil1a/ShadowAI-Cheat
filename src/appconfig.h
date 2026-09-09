@@ -125,6 +125,9 @@ public:
     QString licenseKey() const;
     void setLicenseKey(const QString& key);
 
+    bool useProCloudEngine() const;
+    void setUseProCloudEngine(bool enable);
+
     void save();
     void load();
 
@@ -133,6 +136,7 @@ private:
     QSettings m_settings;
 
     bool        m_isPro = false;
+    bool        m_useProCloudEngine = true;
     QString     m_userEmail;
     QString     m_licenseKey;
 

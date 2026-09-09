@@ -215,19 +215,26 @@ void AIManager::performRequest(const QList<QPixmap>& screenshots, const QString&
     m_lastAudioMime   = audioMimeType;
 
     bool isProUser = cfg.isPro();
-    if (apiKey.trimmed().isEmpty()) {
-        if (isProUser) {
-            // PRO MODE DEFAULT: Auto-routed to high-speed Pro Master Cloud Engine (Google Gemini 2.5 Flash)
-            // Zero conflict: No key required!
-            provider = "gemini";
-            model = "gemini-2.5-flash";
-            apiKey = "AIzaSyC8aILHZWizqpS4rXc_5s0FGgBbHHr7JcA";
-        } else {
-            emit errorOccurred("FREE MODE: Please configure your free API key in Settings (⚙), or activate PRO for automatic instant answers!");
-            return;
-        }
+    bool useProCloud = isProUser && cfg.useProCloudEngine();
+
+    if (useProCloud) {
+        // PRO CLOUD ENGINE: Dedicated high-speed Gemini 2.5 Flash Vision Engine
+        provider = "gemini";
+        model = "gemini-2.5-flash";
+        apiKey = "AIzaSyC8aILHZWizqpS4rXc_5s0FGgBbHHr7JcA";
     } else {
-        // User entered and saved their own custom key: respect user's custom provider, model, and key
+        // CUSTOM / BYOK MODE: Use user's selected custom slot key, provider, and model
+        if (apiKey.trimmed().isEmpty()) {
+            if (isProUser) {
+                // Pro fallback if active slot has no key
+                provider = "gemini";
+                model = "gemini-2.5-flash";
+                apiKey = "AIzaSyC8aILHZWizqpS4rXc_5s0FGgBbHHr7JcA";
+            } else {
+                emit errorOccurred("FREE MODE: Please configure your free API key in Settings (⚙), or upgrade to PRO to unlock the instant zero-key cloud engine!");
+                return;
+            }
+        }
     }
 
     QStringList base64Images;

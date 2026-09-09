@@ -55,6 +55,7 @@ protected:
     void showEvent(QShowEvent* event) override;
 
     // API settings
+    QComboBox*  m_engineModeCombo = nullptr;
     QComboBox*  m_slotCombo;
     QLineEdit*  m_apiKeyEdit;
     QLineEdit*  m_baseUrlEdit;

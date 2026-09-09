@@ -78,12 +78,14 @@ void AppConfig::load() {
     m_overlayHeight  = m_settings.value("ui/height", 680).toInt();
 
     m_isPro          = m_settings.value("account/isPro", false).toBool();
+    m_useProCloudEngine = m_settings.value("api/useProCloudEngine", true).toBool();
     m_userEmail      = m_settings.value("account/email", "").toString();
     m_licenseKey     = m_settings.value("account/licenseKey", "").toString();
 }
 
 void AppConfig::save() {
     m_settings.setValue("account/isPro",      m_isPro);
+    m_settings.setValue("api/useProCloudEngine", m_useProCloudEngine);
     m_settings.setValue("account/email",      m_userEmail);
     m_settings.setValue("account/licenseKey", m_licenseKey);
 
@@ -222,4 +224,8 @@ void AppConfig::setUserEmail(const QString& email) { m_userEmail = email; }
 
 QString AppConfig::licenseKey() const { return m_licenseKey; }
 void AppConfig::setLicenseKey(const QString& key) { m_licenseKey = key; }
+
+bool AppConfig::useProCloudEngine() const { return m_useProCloudEngine; }
+void AppConfig::setUseProCloudEngine(bool enable) { m_useProCloudEngine = enable; }
+
 
