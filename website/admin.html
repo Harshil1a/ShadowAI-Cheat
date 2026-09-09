@@ -423,7 +423,8 @@
             handleVerifiedAdmin(session.user.email, 'GOOGLE');
             return;
           } else {
-            pinErr.innerHTML = `⛔ <strong>ACCESS DENIED:</strong> Google Account <code>${session.user.email}</code> is not authorized as an administrator.<br><a href="#" onclick="handleAdminSignOut()" style="color:#00e5ff;text-decoration:underline;">Switch Account</a>`;
+            pinErr.innerHTML = `⛔ <strong>ACCESS DENIED:</strong> Google Account <code>${session.user.email}</code> is not authorized.<br><span style="font-size:10px;color:#7ca88e;">Ejecting session in 3s...</span>`;
+            setTimeout(() => { window.location.replace('/'); }, 3000);
             return;
           }
         }

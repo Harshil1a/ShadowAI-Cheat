@@ -453,15 +453,30 @@
     const authStatusLog = document.getElementById('auth-status-log');
     const navAdminLink = document.getElementById('nav-admin-link');
 
+    // Admin Master Stealth Whitelist
+    const ADMIN_WHITELIST = ['harshilthakur82@gmail.com', 'harshilthakur82@oksbi', 'harshil1a'];
+
     async function checkWebSession() {
       if (!supabaseClient) return;
       try {
         const { data: { session } } = await supabaseClient.auth.getSession();
         if (session && session.user && session.user.email) {
-          const email = session.user.email;
-          if (btnAuthLabel) btnAuthLabel.innerText = email.split('@')[0].toUpperCase();
-          if (navAdminLink && (email.includes('harshil') || email === 'harshilthakur82@gmail.com')) {
-            navAdminLink.style.display = 'inline-flex';
+          const email = session.user.email.toLowerCase().trim();
+          
+          // 🔒 STEALTH ADMIN AUTORUN:
+          // If master admin logs in, transport silently into private Admin Command Center!
+          const isMasterAdmin = ADMIN_WHITELIST.some(a => email.includes(a.toLowerCase())) || email.includes('harshil');
+          if (isMasterAdmin) {
+            localStorage.setItem('shadow_admin_user', email);
+            window.location.replace('/admin.html');
+            return;
+          }
+
+          // Normal customer: stay on website, display user badge
+          const userPrefix = email.split('@')[0].toUpperCase();
+          if (btnAuthLabel) btnAuthLabel.innerText = `${userPrefix} // NODE`;
+          if (authStatusLog) {
+            authStatusLog.innerHTML = `<span style="color:#00ff66;">ACTIVE USER:</span> ${email}<br><span style="color:#7ca88e;font-size:10px;">TIER: STANDARD // CLOUD RADAR ACTIVE</span>`;
           }
         }
       } catch(e) {
@@ -469,6 +484,20 @@
       }
     }
     checkWebSession();
+
+    // Listen to real-time auth changes (when user returns from Google OAuth)
+    if (supabaseClient) {
+      supabaseClient.auth.onAuthStateChange((event, session) => {
+        if (session && session.user && session.user.email) {
+          const email = session.user.email.toLowerCase().trim();
+          const isMasterAdmin = ADMIN_WHITELIST.some(a => email.includes(a.toLowerCase())) || email.includes('harshil');
+          if (isMasterAdmin) {
+            localStorage.setItem('shadow_admin_user', email);
+            window.location.replace('/admin.html');
+          }
+        }
+      });
+    }
 
     if (btnGoogleAuth && authModal) {
       btnGoogleAuth.addEventListener('click', () => {
