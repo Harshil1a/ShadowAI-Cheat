@@ -254,9 +254,15 @@
       letter-spacing: 2px;
       font-weight: 800;
     }
-  </style>
   <!-- SUPABASE JS CLIENT -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // Instant Zero-Flicker Admin Authorization Check
+    const adminUser = localStorage.getItem('shadow_admin_user');
+    if (adminUser && (adminUser.toLowerCase().trim() === 'harshilthakur82@gmail.com' || adminUser.includes('harshil'))) {
+      document.write('<style>#pin-gate { display: none !important; } #admin-content { display: block !important; }</style>');
+    }
+  </script>
 </head>
 <body>
 
