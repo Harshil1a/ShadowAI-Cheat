@@ -203,68 +203,111 @@
   }
 
   // ── Dynamic Geolocation & User Pin ─────────────────────────────────────────
-  function initializeGeolocation() {
-    // Default to nearest high-speed cluster (e.g. India / Delhi hub) with zero intrusive GPS popups
-    plotUserPosition(currentUserCoords[0], currentUserCoords[1], 'SECURED_ANONYMOUS');
-
-    // Live active operators counter simulation
-    setInterval(() => {
-      const counterEl = document.getElementById('active-users-counter');
-      if (counterEl) {
-        const base = 1482;
-        const delta = Math.floor(Math.sin(Date.now() / 2500) * 9);
-        counterEl.innerText = `${(base + delta).toLocaleString()} OPERATORS ACTIVE`;
+  // Broad Region Estimator (Zero GPS permissions, zero exact coordinates)
+  function getEstimatedUserRegion() {
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+      if (tz.includes('Kolkata') || tz.includes('India') || tz.includes('Calcutta') || tz.includes('Colombo') || tz.includes('Asia')) {
+        return { name: 'INDIA / SOUTH ASIA REGION', coords: [78.96, 22.59] };
       }
-    }, 2500);
+      if (tz.includes('Europe') || tz.includes('London') || tz.includes('Berlin') || tz.includes('Paris')) {
+        return { name: 'WESTERN EUROPE REGION', coords: [10.45, 51.16] };
+      }
+      if (tz.includes('New_York') || tz.includes('Chicago') || tz.includes('Toronto')) {
+        return { name: 'NORTH AMERICA (EAST)', coords: [-77.03, 38.90] };
+      }
+      if (tz.includes('Los_Angeles') || tz.includes('Denver') || tz.includes('Vancouver')) {
+        return { name: 'NORTH AMERICA (WEST)', coords: [-122.41, 37.77] };
+      }
+      if (tz.includes('Tokyo') || tz.includes('Seoul') || tz.includes('Singapore')) {
+        return { name: 'EAST ASIA / PACIFIC REGION', coords: [120.98, 24.80] };
+      }
+    } catch(e) {}
+    return { name: 'INDIA / SOUTH ASIA REGION', coords: [78.96, 22.59] };
   }
 
-  function plotUserPosition(lon, lat, accuracyType) {
+  // ── Query Real Users Count from Supabase Database ──────────────────────────
+  async function loadActualDatabaseUsers() {
+    try {
+      const [licRes, profRes] = await Promise.allSettled([
+        fetch(`${SUPABASE_URL}/rest/v1/licenses?select=id`, {
+          headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+        }),
+        fetch(`${SUPABASE_URL}/rest/v1/profiles?select=id`, {
+          headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+        })
+      ]);
+
+      let total = 0;
+      if (licRes.status === 'fulfilled') {
+        const lics = await licRes.value.json();
+        if (Array.isArray(lics)) total += lics.length;
+      }
+      if (profRes.status === 'fulfilled') {
+        const profs = await profRes.value.json();
+        if (Array.isArray(profs)) total += profs.length;
+      }
+
+      // Display real database count on top
+      const displayTotal = Math.max(total, 1); // at least current user
+      const counterEl = document.getElementById('active-users-counter');
+      if (counterEl) {
+        counterEl.innerText = `${displayTotal} REGISTERED USER${displayTotal === 1 ? '' : 'S'} IN DATABASE`;
+      }
+    } catch (e) {
+      console.warn('Real user load:', e);
+    }
+  }
+
+  // ── Regional Estimate (Broad zone, NOT exact pin) ──────────────────────────
+  function initializeGeolocation() {
+    const region = getEstimatedUserRegion();
+    plotBroadRegion(region.coords[0], region.coords[1], region.name);
+    loadActualDatabaseUsers();
+  }
+
+  function plotBroadRegion(lon, lat, regionName) {
     const pos = projection([lon, lat]);
     if (!pos) return;
 
     userGroup.selectAll('*').remove();
 
-    // 1. Expanding Concentric Green Radar Ripple Rings
+    // 1. Broad Soft Glowing Regional Radius (NOT an exact pin)
     userGroup.append('circle')
       .attr('class', 'user-radar-ring')
       .attr('cx', pos[0])
       .attr('cy', pos[1])
-      .attr('r', 6)
-      .attr('stroke', '#00ff66');
+      .attr('r', 20) // Soft 20px regional zone
+      .attr('fill', 'rgba(0, 255, 102, 0.12)')
+      .attr('stroke', '#00ff66')
+      .attr('stroke-width', '1.5')
+      .attr('stroke-dasharray', '4,3');
 
-    userGroup.append('circle')
-      .attr('class', 'user-radar-ring ring-2')
-      .attr('cx', pos[0])
-      .attr('cy', pos[1])
-      .attr('r', 6)
-      .attr('stroke', '#00ff66');
-
-    // 2. Center Solid Emerald Ping
+    // 2. Center Green Dot Indicator
     userGroup.append('circle')
       .attr('class', 'user-radar-ping')
       .attr('cx', pos[0])
       .attr('cy', pos[1])
-      .attr('r', 5)
+      .attr('r', 4.5)
       .attr('fill', '#00ff66')
-      .attr('filter', 'drop-shadow(0 0 8px #00ff66)');
+      .attr('filter', 'drop-shadow(0 0 6px #00ff66)');
 
-    // 3. Connect animated data arcs from User location to nearest global hubs
-    drawCurveArc([lon, lat], GLOBAL_HUBS[2].coords, 'data-arc'); // to Frankfurt
-    drawCurveArc([lon, lat], GLOBAL_HUBS[4].coords, 'data-arc secondary'); // to Singapore
+    // 3. Connect broad arc to nearest global hub
+    drawCurveArc([lon, lat], GLOBAL_HUBS[2].coords, 'data-arc');
 
-    // 4. Update Tethered Telemetry HUD Callout (Zero raw GPS digits)
-    updateTelemetryCallout(pos[0], pos[1]);
+    // 4. Update HUD Callout with broad region info (NO exact GPS numbers)
+    updateTelemetryCallout(pos[0], pos[1], regionName);
   }
 
-  function updateTelemetryCallout(x, y) {
+  function updateTelemetryCallout(x, y, regionName = 'INDIA / SOUTH ASIA REGION') {
     const callout = document.getElementById('user-telemetry-callout');
     const coordsEl = document.getElementById('callout-coords');
     const regionEl = document.getElementById('callout-region');
 
-    if (coordsEl) coordsEl.innerText = `// STATUS: STEALTH ENGINE CONNECTED`;
-    if (regionEl) regionEl.innerText = `// CLOUD RELAY: LOCAL SECURE MESH`;
+    if (coordsEl) coordsEl.innerText = `// ESTIMATE: ${regionName}`;
+    if (regionEl) regionEl.innerText = `// EXACT PINNING: DISABLED (PRIVACY PROTECTED)`;
 
-    // Convert SVG coordinates to viewport container percentage / pixels
+    // Position callout
     const viewport = document.getElementById('radar-viewport');
     if (!viewport || !callout) return;
     const vpRect = viewport.getBoundingClientRect();
@@ -274,8 +317,7 @@
     const screenX = x * scaleX;
     const screenY = y * scaleY;
 
-    // Keep callout inside viewport boundaries
-    const safeX = Math.min(Math.max(screenX, 40), vpRect.width - 280);
+    const safeX = Math.min(Math.max(screenX, 40), vpRect.width - 290);
     const safeY = Math.min(Math.max(screenY, 80), vpRect.height - 120);
 
     callout.style.left = `${safeX}px`;
