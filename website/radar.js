@@ -69,12 +69,14 @@
           .attr('d', pathGenerator);
 
         renderHubsAndArcs();
+        renderActiveUserClusters();
         initializeGeolocation();
       })
       .catch(err => {
         console.warn('[RADAR] CDN fetch failed, rendering fallback vector grid:', err);
         renderFallbackLand();
         renderHubsAndArcs();
+        renderActiveUserClusters();
         initializeGeolocation();
       });
   }
@@ -156,26 +158,64 @@
       .attr('d', pathData);
   }
 
+  // Live Active User Clusters around the globe (Glowing Green Dots)
+  const ACTIVE_USER_CLUSTERS = [
+    { name: 'DELHI_OPERATORS', coords: [77.2090, 28.6139], count: 342 },
+    { name: 'MUMBAI_OPERATORS', coords: [72.8777, 19.0760], count: 218 },
+    { name: 'BANGALORE_OPERATORS', coords: [77.5946, 12.9716], count: 189 },
+    { name: 'HYDERABAD_OPERATORS', coords: [78.4867, 17.3850], count: 114 },
+    { name: 'NEW_YORK_OPERATORS', coords: [-74.0060, 40.7128], count: 176 },
+    { name: 'SF_BAY_OPERATORS', coords: [-122.0842, 37.4220], count: 204 },
+    { name: 'LONDON_OPERATORS', coords: [-0.1276, 51.5074], count: 145 },
+    { name: 'BERLIN_OPERATORS', coords: [13.4050, 52.5200], count: 98 },
+    { name: 'SINGAPORE_OPERATORS', coords: [103.8198, 1.3521], count: 165 },
+    { name: 'TOKYO_OPERATORS', coords: [139.6917, 35.6895], count: 138 },
+    { name: 'SYDNEY_OPERATORS', coords: [151.2093, -33.8688], count: 87 }
+  ];
+
+  // Render Green Active User Dots on the Map
+  function renderActiveUserClusters() {
+    ACTIVE_USER_CLUSTERS.forEach(cluster => {
+      const pos = projection(cluster.coords);
+      if (!pos) return;
+
+      // Outer gentle pulse
+      hubsGroup.append('circle')
+        .attr('class', 'user-cluster-pulse')
+        .attr('cx', pos[0])
+        .attr('cy', pos[1])
+        .attr('r', 5)
+        .attr('fill', 'none')
+        .attr('stroke', '#00ff66')
+        .attr('stroke-width', '1')
+        .attr('opacity', '0.5');
+
+      // Inner glowing green dot
+      hubsGroup.append('circle')
+        .attr('cx', pos[0])
+        .attr('cy', pos[1])
+        .attr('r', 3)
+        .attr('fill', '#00ff66')
+        .attr('filter', 'drop-shadow(0 0 4px #00ff66)')
+        .append('title')
+        .text(`${cluster.name}: ${cluster.count} Active Users`);
+    });
+  }
+
   // ── Dynamic Geolocation & User Pin ─────────────────────────────────────────
   function initializeGeolocation() {
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        position => {
-          const lat = position.coords.latitude;
-          const lon = position.coords.longitude;
-          currentUserCoords = [lon, lat];
-          plotUserPosition(lon, lat, 'GPS_ACCURATE');
-        },
-        error => {
-          console.warn('[RADAR] Geolocation access denied or timed out:', error.message);
-          // Fallback to IP or Delhi/London default
-          plotUserPosition(currentUserCoords[0], currentUserCoords[1], 'ESTIMATED_RELAY');
-        },
-        { timeout: 8000, enableHighAccuracy: true }
-      );
-    } else {
-      plotUserPosition(currentUserCoords[0], currentUserCoords[1], 'DEFAULT_NODE');
-    }
+    // Default to nearest high-speed cluster (e.g. India / Delhi hub) with zero intrusive GPS popups
+    plotUserPosition(currentUserCoords[0], currentUserCoords[1], 'SECURED_ANONYMOUS');
+
+    // Live active operators counter simulation
+    setInterval(() => {
+      const counterEl = document.getElementById('active-users-counter');
+      if (counterEl) {
+        const base = 1482;
+        const delta = Math.floor(Math.sin(Date.now() / 2500) * 9);
+        counterEl.innerText = `${(base + delta).toLocaleString()} OPERATORS ACTIVE`;
+      }
+    }, 2500);
   }
 
   function plotUserPosition(lon, lat, accuracyType) {
@@ -184,56 +224,49 @@
 
     userGroup.selectAll('*').remove();
 
-    // 1. Expanding Concentric Radar Ripple Rings (@keyframes userPing)
+    // 1. Expanding Concentric Green Radar Ripple Rings
     userGroup.append('circle')
       .attr('class', 'user-radar-ring')
       .attr('cx', pos[0])
       .attr('cy', pos[1])
-      .attr('r', 6);
+      .attr('r', 6)
+      .attr('stroke', '#00ff66');
 
     userGroup.append('circle')
       .attr('class', 'user-radar-ring ring-2')
       .attr('cx', pos[0])
       .attr('cy', pos[1])
-      .attr('r', 6);
+      .attr('r', 6)
+      .attr('stroke', '#00ff66');
 
-    userGroup.append('circle')
-      .attr('class', 'user-radar-ring ring-3')
-      .attr('cx', pos[0])
-      .attr('cy', pos[1])
-      .attr('r', 6);
-
-    // 2. Center Solid Cyan Ping
+    // 2. Center Solid Emerald Ping
     userGroup.append('circle')
       .attr('class', 'user-radar-ping')
       .attr('cx', pos[0])
       .attr('cy', pos[1])
-      .attr('r', 4.5);
+      .attr('r', 5)
+      .attr('fill', '#00ff66')
+      .attr('filter', 'drop-shadow(0 0 8px #00ff66)');
 
     // 3. Connect animated data arcs from User location to nearest global hubs
     drawCurveArc([lon, lat], GLOBAL_HUBS[2].coords, 'data-arc'); // to Frankfurt
     drawCurveArc([lon, lat], GLOBAL_HUBS[4].coords, 'data-arc secondary'); // to Singapore
 
-    // 4. Update Tethered Telemetry HUD Callout
-    updateTelemetryCallout(pos[0], pos[1], lon, lat, accuracyType);
+    // 4. Update Tethered Telemetry HUD Callout (Zero raw GPS digits)
+    updateTelemetryCallout(pos[0], pos[1]);
   }
 
-  function updateTelemetryCallout(x, y, lon, lat, accuracy) {
+  function updateTelemetryCallout(x, y) {
     const callout = document.getElementById('user-telemetry-callout');
     const coordsEl = document.getElementById('callout-coords');
     const regionEl = document.getElementById('callout-region');
-    const bottomCoords = document.getElementById('bottom-coords');
 
-    const latDir = lat >= 0 ? 'N' : 'S';
-    const lonDir = lon >= 0 ? 'E' : 'W';
-    const formatted = `${Math.abs(lat).toFixed(4)}° ${latDir}, ${Math.abs(lon).toFixed(4)}° ${lonDir}`;
-
-    coordsEl.innerText = `// COORD: ${formatted}`;
-    regionEl.innerText = `// ACCURACY: [${accuracy}] // LATENCY: 18ms`;
-    if (bottomCoords) bottomCoords.innerText = formatted;
+    if (coordsEl) coordsEl.innerText = `// STATUS: STEALTH ENGINE CONNECTED`;
+    if (regionEl) regionEl.innerText = `// CLOUD RELAY: LOCAL SECURE MESH`;
 
     // Convert SVG coordinates to viewport container percentage / pixels
     const viewport = document.getElementById('radar-viewport');
+    if (!viewport || !callout) return;
     const vpRect = viewport.getBoundingClientRect();
     const scaleX = vpRect.width / width;
     const scaleY = vpRect.height / height;
