@@ -1032,11 +1032,14 @@ body {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(2, 4, 3, 0.85);
-  backdrop-filter: blur(8px);
+  background: rgba(2, 4, 3, 0.88);
+  backdrop-filter: blur(10px);
   z-index: 10000;
   align-items: center;
   justify-content: center;
+  overflow-y: auto;
+  padding: 24px 12px;
+  box-sizing: border-box;
 }
 
 .modal-backdrop.open {
@@ -1047,10 +1050,14 @@ body {
   background: #070e0a;
   border: 1px solid var(--accent-green);
   box-shadow: 0 0 35px rgba(0, 255, 102, 0.3);
-  border-radius: 8px;
-  width: 90%;
-  max-width: 440px;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
+  margin: auto;
 }
 
 .modal-header {
@@ -1063,6 +1070,7 @@ body {
   font-size: 12px;
   color: var(--accent-green);
   font-weight: 700;
+  flex-shrink: 0;
 }
 
 .modal-close {
@@ -1079,7 +1087,11 @@ body {
 }
 
 .modal-body {
-  padding: 24px;
+  padding: 18px 22px;
+  overflow-y: auto;
+  max-height: calc(92vh - 55px);
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-green) #070e0a;
 }
 
 .modal-body p {
@@ -1182,8 +1194,8 @@ body {
 
 .upi-qr-img {
   display: block;
-  width: 200px;
-  height: 200px;
+  width: 165px;
+  height: 165px;
   border-radius: 4px;
 }
 
@@ -1272,16 +1284,18 @@ body {
 
 .claim-input-group {
   display: flex;
+  flex-direction: column;
   gap: 8px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .claim-input-group input {
-  flex: 1;
+  width: 100%;
+  box-sizing: border-box;
   background: #050a07;
   border: 1px solid rgba(0, 255, 102, 0.3);
   color: #ffffff;
-  padding: 10px 12px;
+  padding: 10px 14px;
   font-family: 'JetBrains Mono', monospace;
   font-size: 13px;
   border-radius: 4px;
@@ -1291,6 +1305,13 @@ body {
   outline: none;
   border-color: var(--accent-green);
   box-shadow: 0 0 10px rgba(0, 255, 102, 0.3);
+}
+
+.claim-input-group .btn-terminal-sm {
+  width: 100%;
+  padding: 12px;
+  font-size: 12px;
+  letter-spacing: 1px;
 }
 
 .claim-output {
