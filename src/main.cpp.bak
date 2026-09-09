@@ -1,0 +1,204 @@
+#include <QApplication>
+#include <QSystemTrayIcon>
+#include <QMessageBox>
+#include <QDebug>
+#include <QDir>
+#include <QStandardPaths>
+
+#ifdef Q_OS_WIN
+#include <windows.h>
+#endif
+
+#include "overlaywindow.h"
+#include "settingswindow.h"
+#include "hotkeymanager.h"
+#include "screencapture.h"
+#include "aimanager.h"
+#include "trayicon.h"
+#include "appconfig.h"
+#include "dashboard.h"
+#include "mainwindow.h"
+#include "vm/vmconsole.h"
+#include "vm/vmmanager.h"
+
+
+int main(int argc, char* argv[]) {
+    // ── Process disguise ──────────────────────────────────────────────────────
+    // The executable should be named AudioService.exe (set via CMake)
+    // This makes it appear as "AudioService.exe" in Task Manager
+
+#ifdef Q_OS_WIN
+    // Single-instance lock — if already running, silently exit
+    HANDLE hMutex = CreateMutexA(NULL, TRUE, "RuntimeBroker_SingleInstance_Lock");
+    if (GetLastError() == ERROR_ALREADY_EXISTS) {
+        if (hMutex) CloseHandle(hMutex);
+        return 0; // Already running, do nothing
+    }
+
+    // Set console title to something innocuous
+    SetConsoleTitleA("Runtime Broker");
+
+    // Disable the DPI scaling dialog
+    SetProcessDPIAware();
+#endif
+
+    // ── Qt Application ────────────────────────────────────────────────────────
+    QApplication app(argc, argv);
+    app.setApplicationName("RuntimeBroker");
+    app.setOrganizationName("Microsoft");       // appears in registry under Microsoft
+    app.setApplicationDisplayName("Runtime Broker");
+    app.setQuitOnLastWindowClosed(false);        // keep running when overlay closes
+
+    // ── Check system tray ─────────────────────────────────────────────────────
+    if (!QSystemTrayIcon::isSystemTrayAvailable()) {
+        QMessageBox::critical(nullptr, "System Broker",
+            "System components not available on this system.");
+        return 1;
+    }
+
+    // ── Initialize core components ────────────────────────────────────────────
+    AppConfig::instance().load();
+
+    auto* aiManager    = new AIManager(&app);
+    auto* screenCap    = new ScreenCapture(&app);
+    auto* hotkeyMgr    = new HotkeyManager(&app);
+    auto* overlay      = new OverlayWindow();
+    auto* tray         = new TrayIcon(&app);
+    auto* mainWindow   = new MainWindow();
+    auto* dashboard    = mainWindow->findChild<Dashboard*>();
+
+    overlay->setAIManager(aiManager);
+    overlay->setScreenCapture(screenCap);
+
+    // ── Connect hotkeys to overlay ────────────────────────────────────────────
+    QObject::connect(hotkeyMgr, &HotkeyManager::toggleOverlay, overlay, [overlay, dashboard]() {
+        overlay->toggleVisibility();
+        dashboard->updateStatus(true, overlay->isVisible());
+    });
+
+    QObject::connect(hotkeyMgr, &HotkeyManager::takeScreenshot,
+                     overlay,   &OverlayWindow::doScreenshot);
+
+    QObject::connect(hotkeyMgr, &HotkeyManager::getAnswer,
+                     overlay,   &OverlayWindow::doGetAnswer);
+
+    QObject::connect(hotkeyMgr, &HotkeyManager::scrollUp,
+                     overlay,   &OverlayWindow::scrollContentUp);
+
+    QObject::connect(hotkeyMgr, &HotkeyManager::scrollDown,
+                     overlay,   &OverlayWindow::scrollContentDown);
+
+    QObject::connect(hotkeyMgr, &HotkeyManager::cycleTransparency,
+                     overlay,   &OverlayWindow::cycleTransparency);
+
+    QObject::connect(hotkeyMgr, &HotkeyManager::clearAnswer,
+                     overlay,   &OverlayWindow::clearAll);
+
+    QObject::connect(hotkeyMgr, &HotkeyManager::moveLeft,
+                     overlay,   &OverlayWindow::moveLeft);
+
+    QObject::connect(hotkeyMgr, &HotkeyManager::moveRight,
+                     overlay,   &OverlayWindow::moveRight);
+
+    QObject::connect(hotkeyMgr, &HotkeyManager::moveUp,
+                     overlay,   &OverlayWindow::moveUp);
+
+    QObject::connect(hotkeyMgr, &HotkeyManager::moveDown,
+                     overlay,   &OverlayWindow::moveDown);
+
+    QObject::connect(hotkeyMgr, &HotkeyManager::voiceRecordDown,
+                     overlay,   &OverlayWindow::toggleVoiceRecord);
+
+    QObject::connect(hotkeyMgr, &HotkeyManager::voiceRecordUp,
+                     overlay,   &OverlayWindow::stopVoiceRecordOnRelease);
+
+    QObject::connect(hotkeyMgr, &HotkeyManager::toggleBadges,
+                     overlay,   &OverlayWindow::toggleBadgesVisibility);
+
+    QObject::connect(hotkeyMgr, &HotkeyManager::copyScreenshot,
+                     overlay,   &OverlayWindow::copyScreenshotToClipboard);
+
+    QObject::connect(hotkeyMgr, &HotkeyManager::ghostWriter,
+                     overlay,   &OverlayWindow::doGhostWriter);
+
+    // ── Connect tray ──────────────────────────────────────────────────────────
+    QObject::connect(tray, &TrayIcon::toggleOverlay, overlay, [overlay, dashboard]() {
+        overlay->toggleVisibility();
+        dashboard->updateStatus(true, overlay->isVisible());
+    });
+
+    QObject::connect(tray, &TrayIcon::showDashboard, mainWindow, &MainWindow::show);
+
+    QObject::connect(tray, &TrayIcon::openSettings, mainWindow, [mainWindow, dashboard]() {
+        mainWindow->show();
+        mainWindow->raise();
+        mainWindow->activateWindow();
+        dashboard->openSettingsPage();
+    });
+
+    QObject::connect(dashboard->settingsWidget(), &SettingsWindow::settingsSaved, hotkeyMgr, [hotkeyMgr, aiManager, overlay]() {
+        // Re-register hotkeys with new keys
+        hotkeyMgr->reregisterAll();
+        // Reload API keys
+        aiManager->loadKeys();
+        // Refresh overlay size/settings
+        overlay->refreshSettings();
+    });
+
+    QObject::connect(tray, &TrayIcon::quit, &app, [overlay, hotkeyMgr, mainWindow]() {
+        AppConfig::instance().setOverlayPos(overlay->x(), overlay->y());
+        AppConfig::instance().save();
+        hotkeyMgr->unregisterAll();
+        mainWindow->hide();
+        overlay->stopAll();
+        VMManager::instance().stopVM();
+        qApp->quit();
+    });
+
+    // ── Dashboard connections ────────────────────────────────────────────────
+    // Unified state management for Start/Stop Assistant
+    QObject::connect(dashboard, &Dashboard::toggleOverlay, overlay, [overlay, hotkeyMgr, dashboard]() {
+        if (dashboard->isOverlayRunning()) {
+            // Stop Assistant completely (hide and unregister hotkeys)
+            overlay->hide();
+            hotkeyMgr->unregisterAll();
+            dashboard->updateStatus(false, false);
+        } else {
+            // Start Assistant (show overlay and register hotkeys)
+            overlay->toggleVisibility(); // show overlay
+            hotkeyMgr->registerAll();
+            dashboard->updateStatus(true, overlay->isVisible());
+        }
+    });
+
+    QObject::connect(dashboard, &Dashboard::openSettings, tray, [&]() {
+        emit tray->openSettings();
+    });
+
+    QObject::connect(dashboard, &Dashboard::quitApp, tray, &TrayIcon::quit);
+
+    QObject::connect(dashboard, &Dashboard::hideOverlay, overlay, &OverlayWindow::hide);
+
+
+
+
+    // ── Set process priority to mimic system idle behavior ────────────────────
+#ifdef Q_OS_WIN
+    SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
+#endif
+
+    // Initialize Dashboard to Stopped state on startup
+    dashboard->updateStatus(false);
+
+    // ── Show Tray (Dashboard stays hidden until tray icon is clicked) ────────
+    // Dashboard starts hidden to keep app in Background processes only
+    tray->show();
+
+    // Show a brief startup notification
+    // (won't draw attention - just a tray bubble)
+    // tray notification omitted for stealth
+
+    // Debug output removed for stealth
+
+    return app.exec();
+}

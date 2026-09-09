@@ -1,0 +1,259 @@
+#include "mainwindow.h"
+#include "dashboard.h"
+#include "vm/vmwidget.h"
+#include <QPainter>
+#include <QPainterPath>
+#include <QGraphicsDropShadowEffect>
+#include <QTimer>
+#include <QApplication>
+
+#ifdef Q_OS_WIN
+#include <windows.h>
+#endif
+
+MainWindow::MainWindow(QWidget* parent) : QWidget(parent) {
+    setWindowTitle("System Broker - Runtime Broker");
+    setFixedSize(540, 520);
+    setWindowFlags(Qt::Window | Qt::Tool | Qt::FramelessWindowHint);
+    setAttribute(Qt::WA_ShowWithoutActivating, true);
+
+    setupUI();
+    applyStyle();
+
+    // Default to AI Assistant tab
+    switchTab(0);
+}
+
+MainWindow::~MainWindow() {}
+
+void MainWindow::setupUI() {
+    QVBoxLayout* rootLayout = new QVBoxLayout(this);
+    rootLayout->setContentsMargins(0, 0, 0, 0);
+    rootLayout->setSpacing(0);
+
+    // ── CUSTOM TAB NAVIGATION & TITLE BAR ──────────────────────────────────────
+    QWidget* titleBar = new QWidget(this);
+    titleBar->setObjectName("customTitleBar");
+    titleBar->setFixedHeight(44);
+    
+    QHBoxLayout* tbLayout = new QHBoxLayout(titleBar);
+    tbLayout->setContentsMargins(14, 0, 8, 0);
+    tbLayout->setSpacing(10);
+
+    QLabel* tbIcon = new QLabel(QString::fromUtf8("❖"), titleBar);
+    tbIcon->setObjectName("tbIcon");
+    tbLayout->addWidget(tbIcon);
+
+    // AI Assistant tab button
+    m_tabAiBtn = new QPushButton("AI ASSISTANT", titleBar);
+    m_tabAiBtn->setObjectName("tabBtn");
+    m_tabAiBtn->setCheckable(true);
+    m_tabAiBtn->setCursor(Qt::PointingHandCursor);
+    tbLayout->addWidget(m_tabAiBtn);
+
+    // VM Mode tab button
+    m_tabVmBtn = new QPushButton("VM MODE", titleBar);
+    m_tabVmBtn->setObjectName("tabBtn");
+    m_tabVmBtn->setCheckable(true);
+    m_tabVmBtn->setCursor(Qt::PointingHandCursor);
+    tbLayout->addWidget(m_tabVmBtn);
+
+    tbLayout->addStretch();
+
+    // — button: hide window, keep app running in tray
+    m_hideBtn = new QPushButton("—", titleBar);
+    m_hideBtn->setObjectName("tbHideBtn");
+    m_hideBtn->setFixedSize(28, 22);
+    m_hideBtn->setCursor(Qt::PointingHandCursor);
+    tbLayout->addWidget(m_hideBtn);
+
+    // × button: quit app completely
+    m_closeBtn = new QPushButton("×", titleBar);
+    m_closeBtn->setObjectName("tbCloseBtn");
+    m_closeBtn->setFixedSize(28, 22);
+    m_closeBtn->setCursor(Qt::PointingHandCursor);
+    tbLayout->addWidget(m_closeBtn);
+
+    rootLayout->addWidget(titleBar);
+
+    // ── STACKED CONTENT ────────────────────────────────────────────────────────
+    m_stackedWidget = new QStackedWidget(this);
+    rootLayout->addWidget(m_stackedWidget, 1);
+
+    // Tab 1: Dashboard
+    m_dashboard = new Dashboard(this);
+    // Remove individual frameless decoration and margins from child dashboard
+    m_dashboard->setWindowFlags(Qt::Widget);
+    m_dashboard->setContentsMargins(0, 0, 0, 0);
+    // Remove custom title bar of child dashboard to avoid double title bar
+    QWidget* childTitleBar = m_dashboard->findChild<QWidget*>("customTitleBar");
+    if (childTitleBar) {
+        childTitleBar->hide();
+    }
+    m_stackedWidget->addWidget(m_dashboard);
+
+    // Tab 2: VM Mode Widget
+    m_vmWidget = new VMModeWidget(this);
+    m_stackedWidget->addWidget(m_vmWidget);
+
+    // ── CONNECTIONS ────────────────────────────────────────────────────────────
+    connect(m_tabAiBtn, &QPushButton::clicked, this, [this]() { switchTab(0); });
+    connect(m_tabVmBtn, &QPushButton::clicked, this, [this]() { switchTab(1); });
+
+    connect(m_hideBtn, &QPushButton::clicked, this, [this]() {
+        emit m_dashboard->hideOverlay();
+        hide();
+    });
+
+    connect(m_closeBtn, &QPushButton::clicked, this, [this]() {
+        emit m_dashboard->quitApp();
+    });
+
+    // Forward dashboard signals to mainwindow
+    connect(m_dashboard, &Dashboard::quitApp, this, [this]() {
+        emit m_dashboard->quitApp(); // already hooked up to tray
+    });
+}
+
+void MainWindow::switchTab(int index) {
+    m_stackedWidget->setCurrentIndex(index);
+    
+    m_tabAiBtn->setChecked(index == 0);
+    m_tabVmBtn->setChecked(index == 1);
+
+    if (index == 0) {
+        // AI Assistant mode: fixed small size
+        setMinimumSize(540, 520);
+        setMaximumSize(540, 520);
+        resize(540, 520);
+    } else {
+        // VM Mode: resizable, large default size
+        setMinimumSize(960, 680);
+        setMaximumSize(16777215, 16777215); // Unlimited
+        resize(1200, 800);
+
+        // Center on screen when changing to larger VM size
+        auto screens = QApplication::screens();
+        if (!screens.isEmpty()) {
+            QRect screenGeom = screens[0]->geometry();
+            int cx = screenGeom.x() + (screenGeom.width() - width()) / 2;
+            int cy = screenGeom.y() + (screenGeom.height() - height()) / 2;
+            move(cx, cy);
+        }
+    }
+}
+
+void MainWindow::paintEvent(QPaintEvent*) {
+    QPainter p(this);
+    p.setRenderHint(QPainter::Antialiasing);
+
+    int w = width();
+    int h = height();
+
+    // Outer background
+    QLinearGradient outerBg(0, 0, 0, h);
+    outerBg.setColorAt(0.0, QColor(4, 8, 18));
+    outerBg.setColorAt(0.5, QColor(6, 12, 26));
+    outerBg.setColorAt(1.0, QColor(3, 6, 14));
+    p.fillRect(rect(), outerBg);
+}
+
+void MainWindow::mousePressEvent(QMouseEvent* event) {
+    // Only allow dragging from the titlebar or empty space (not inside widgets)
+    if (event->button() == Qt::LeftButton && event->position().y() < 44) {
+        m_dragging = true;
+        m_dragOffset = event->globalPosition().toPoint() - frameGeometry().topLeft();
+    }
+    QWidget::mousePressEvent(event);
+}
+
+void MainWindow::mouseMoveEvent(QMouseEvent* event) {
+    if (m_dragging && (event->buttons() & Qt::LeftButton)) {
+        move(event->globalPosition().toPoint() - m_dragOffset);
+    }
+    QWidget::mouseMoveEvent(event);
+}
+
+void MainWindow::mouseReleaseEvent(QMouseEvent* event) {
+    m_dragging = false;
+    QWidget::mouseReleaseEvent(event);
+}
+
+void MainWindow::showEvent(QShowEvent* event) {
+    QWidget::showEvent(event);
+#ifdef Q_OS_WIN
+    HWND hwnd = (HWND)winId();
+    LONG_PTR exStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
+    exStyle |= WS_EX_TOOLWINDOW;
+    exStyle &= ~WS_EX_APPWINDOW;
+    SetWindowLongPtr(hwnd, GWL_EXSTYLE, exStyle);
+#endif
+}
+
+void MainWindow::applyStyle() {
+    setStyleSheet(R"(
+        MainWindow {
+            background: transparent;
+        }
+
+        /* ═══ Custom Title Bar ═══ */
+        QWidget#customTitleBar {
+            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 rgba(10, 20, 38, 0.95), stop:1 rgba(6, 12, 24, 0.98));
+            border-bottom: 1px solid rgba(0, 229, 255, 0.18);
+        }
+        QLabel#tbIcon {
+            color: #00e5ff;
+            font-size: 16px;
+            font-weight: bold;
+            background: transparent;
+            margin-right: 6px;
+        }
+        QPushButton#tabBtn {
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: #8b9bb4;
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 8px 16px;
+            letter-spacing: 1.5px;
+        }
+        QPushButton#tabBtn:hover {
+            color: #ffffff;
+            background: rgba(0, 229, 255, 0.05);
+        }
+        QPushButton#tabBtn:checked {
+            color: #00e5ff;
+            border-bottom: 2px solid #00e5ff;
+            background: rgba(0, 229, 255, 0.08);
+        }
+        QPushButton#tbHideBtn {
+            background: transparent;
+            border: 1px solid rgba(0,229,255,0.15);
+            border-radius: 3px;
+            color: #8b9bb4;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        QPushButton#tbHideBtn:hover {
+            background: rgba(0,229,255,0.12);
+            border: 1px solid rgba(0,229,255,0.4);
+            color: #00e5ff;
+        }
+        QPushButton#tbCloseBtn {
+            background: transparent;
+            border: 1px solid rgba(255,80,80,0.15);
+            border-radius: 3px;
+            color: #ff6b6b;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        QPushButton#tbCloseBtn:hover {
+            background: rgba(255,60,60,0.18);
+            border: 1px solid rgba(255,80,80,0.5);
+            color: #ff3333;
+        }
+    )");
+}

@@ -1,0 +1,30 @@
+# Build directories
+build/
+build-*/
+bin/
+dist/
+node_modules/
+
+# IDE files
+.vscode/
+.qtcreator/
+*.autosave
+*.user
+*.user.*
+*.suo
+*.userosv
+
+# Compiled binaries
+*.exe
+*.dll
+*.o
+*.obj
+*.a
+*.dylib
+*.dmg
+*.app
+
+# Logs & temp
+*.log
+startup.log
+scratch/

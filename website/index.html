@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SHADOW AI // Invisible Tactical AI Assistant & Global Radar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://unpkg.com/topojson-client@3"></script>
+</head>
+<body class="crt-enabled">
+  <div class="crt-overlay"></div>
+  <div class="tactical-grid-bg"></div>
+
+  <!-- TOP HUD STATUS BAR -->
+  <header class="hud-top-bar">
+    <div class="brand-cluster">
+      <div class="status-blip active"></div>
+      <span class="brand-glitch" data-text="SHADOW_AI">SHADOW_AI</span>
+      <span class="hud-badge">// v2.4.0-STEALTH</span>
+    </div>
+    
+    <div class="hud-telemetry-cluster">
+      <span class="telemetry-item"><span class="dim">SESSION:</span> <span class="accent-green">ENCRYPTED</span></span>
+      <span class="telemetry-item"><span class="dim">PING:</span> <span id="hud-live-ping" class="accent-cyan">18ms</span></span>
+      <span class="telemetry-item"><span class="dim">NODES:</span> <span class="accent-green">8,421 ONLINE</span></span>
+      <span class="telemetry-item"><span class="dim">DEFENSE:</span> <span class="accent-magenta">BYPASS_ACTIVE</span></span>
+    </div>
+
+    <div class="nav-actions">
+      <a href="#radar-section" class="nav-link">// RADAR_HUD</a>
+      <a href="#downloads" class="nav-link">// DOWNLOADS</a>
+      <a href="#access-plans" class="nav-link">// ACCESS_KEYS</a>
+      <button class="btn-terminal-sm" id="btn-google-auth">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/></svg>
+        <span>AUTH_NODE</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="main-container">
+
+    <!-- HERO SECTION -->
+    <section class="hero-section">
+      <div class="hero-tag">// UNDETECTABLE DESKTOP ASSISTANT</div>
+      <h1 class="hero-title">
+        INVISIBLE SCREEN AI.<br>
+        <span class="gradient-text">GLOBAL TACTICAL RECON.</span>
+      </h1>
+      <p class="hero-desc">
+        A zero-footprint HUD overlay built for Windows and macOS. Analyzes code, solves problems, and extracts live screen intelligence without ever appearing in screen recordings, Discord streams, or Zoom conferences.
+      </p>
+
+      <div class="hero-cta-row">
+        <a href="#downloads" class="btn-cta-primary">
+          <span class="btn-icon">⚡</span>
+          <span>GET SHADOW_AI // FREE DOWNLOAD</span>
+        </a>
+        <a href="#radar-section" class="btn-cta-secondary">
+          <span>INITIALIZE GEO_RADAR ⯈</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- CYBERPUNK GEO-LOCATION RADAR SECTION -->
+    <section id="radar-section" class="radar-wrapper-section">
+      <div class="terminal-panel">
+        
+        <!-- TERMINAL HEADER -->
+        <div class="terminal-header">
+          <div class="header-left">
+            <div class="term-lights">
+              <span class="dot red"></span>
+              <span class="dot yellow"></span>
+              <span class="dot green"></span>
+            </div>
+            <span class="terminal-title">// SYSTEM HUD: GEO-VECTOR TRACKER [ACTIVE SESSION] // PROTOCOL: ENCRYPTED</span>
+          </div>
+          <div class="header-right">
+            <span class="freq-tag" id="radar-freq">FREQ: 142.85 MHz</span>
+            <button class="btn-hud-locate" id="btn-recenter" title="Locate User Node">
+              <span class="radar-scan-icon">⌖</span> ACQUIRE_GPS
+            </button>
+          </div>
+        </div>
+
+        <!-- RADAR VIEWPORT CONTAINER -->
+        <div class="radar-viewport" id="radar-viewport">
+          
+          <!-- Tactical Grid overlay inside map -->
+          <div class="map-grid-overlay"></div>
+          
+          <!-- Radar Sweep Beam (Rotating Scanner) -->
+          <div class="radar-sweep-beam"></div>
+
+          <!-- SVG D3 Map Canvas -->
+          <svg id="world-map-svg" viewBox="0 0 960 480" preserveAspectRatio="xMidYMid meet"></svg>
+
+          <!-- Floating Tethered Telemetry HUD Callout (Dynamic Coordinates) -->
+          <div class="hud-telemetry-callout" id="user-telemetry-callout">
+            <div class="tether-anchor"></div>
+            <div class="callout-box">
+              <div class="callout-header">
+                <span class="blip-cyan"></span>
+                <strong>[TARGET_LOCKED]: USER_NODE</strong>
+              </div>
+              <div class="callout-row" id="callout-coords">// COORD: ACQUIRING...</div>
+              <div class="callout-row" id="callout-ping">// PING: 21ms | STATUS: CONNECTED</div>
+              <div class="callout-row callout-region" id="callout-region">// REGION: DETECTING...</div>
+              <div class="callout-footer">ENCRYPTION: AES-256-GCM // STEALTH: 100%</div>
+            </div>
+          </div>
+
+          <!-- Radar Bottom Telemetry Bar -->
+          <div class="radar-bottom-bar">
+            <div class="radar-stat">
+              <span class="lbl">LAT / LON:</span>
+              <span class="val" id="bottom-coords">00.0000° N, 00.0000° E</span>
+            </div>
+            <div class="radar-stat">
+              <span class="lbl">GLOBAL HUBS:</span>
+              <span class="val accent-green">7 ONLINE</span>
+            </div>
+            <div class="radar-stat">
+              <span class="lbl">ACTIVE RELAYS:</span>
+              <span class="val accent-cyan">FRANKFURT, TOKYO, SINGAPORE, SILICON VALLEY</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- DOWNLOADS SECTION -->
+    <section id="downloads" class="downloads-section">
+      <div class="section-tag">// CLIENT DISTRIBUTION DEPLOYMENT</div>
+      <h2 class="section-title">DOWNLOAD SHADOW_AI</h2>
+      <p class="section-subtitle">Compiled natively with Qt 6 C++ for near-zero latency, minimal RAM footprint (<40MB), and absolute system stealth.</p>
+
+      <div class="download-cards-grid">
+        <!-- Windows Card -->
+        <div class="download-card">
+          <div class="card-os-badge win">WINDOWS 10 / 11 (x64)</div>
+          <div class="card-icon">🪟</div>
+          <h3>ShadowAI for Windows</h3>
+          <p class="card-meta">Version 2.4.0 • Standalone Installer / Portable • SHA-256 Verified</p>
+          <ul class="feature-bullets">
+            <li>✓ DXGI / DWM Hardware Stealth Capture</li>
+            <li>✓ Global Stealth Hotkeys (Ctrl+Alt+A, S, H)</li>
+            <li>✓ Auto Process Disguise (Runtime Broker)</li>
+            <li>✓ Zero Screen-Share Footprint</li>
+          </ul>
+          <a href="#" class="btn-download primary" id="btn-dl-windows">
+            <span>DOWNLOAD .EXE (64-BIT)</span>
+            <span class="arrow">↓</span>
+          </a>
+          <span class="sub-download-note">Clean build • Portable or Installer ready</span>
+        </div>
+
+        <!-- macOS Card -->
+        <div class="download-card">
+          <div class="card-os-badge mac">macOS (APPLE SILICON & INTEL)</div>
+          <div class="card-icon">🍏</div>
+          <h3>ShadowAI for macOS</h3>
+          <p class="card-meta">Version 2.4.0 • Universal .dmg Bundle • macOS 12+ (Monterey, Ventura, Sonoma)</p>
+          <ul class="feature-bullets">
+            <li>✓ Native ScreenCaptureKit Metal Engine</li>
+            <li>✓ Invisible Floating Window Level</li>
+            <li>✓ Global CGEventTap Shortcut Listener</li>
+            <li>✓ M1 / M2 / M3 Apple Silicon Native</li>
+          </ul>
+          <a href="#" class="btn-download secondary" id="btn-dl-mac">
+            <span>DOWNLOAD .DMG (UNIVERSAL)</span>
+            <span class="arrow">↓</span>
+          </a>
+          <span class="sub-download-note">Drag & Drop to /Applications</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- DUAL PRICING / ACCESS MATRIX SECTION (OPTION A & B) -->
+    <section id="access-plans" class="pricing-section">
+      <div class="section-tag">// ACCESS PROTOCOL ARCHITECTURE</div>
+      <h2 class="section-title">CHOOSE YOUR DEPLOYMENT MODE</h2>
+      <p class="section-subtitle">Whether you want $0 cost using your own free keys, or instant automated Cloud Pro access with zero configuration—ShadowAI supports both.</p>
+
+      <div class="pricing-grid">
+        
+        <!-- OPTION A: BYOK FREE TIER -->
+        <div class="pricing-card free-tier">
+          <div class="plan-header">
+            <span class="plan-type">OPTION A // ZERO COST</span>
+            <h3 class="plan-title">COMMUNITY HACKER</h3>
+            <div class="plan-price">$0 <span>/ FOREVER</span></div>
+            <p class="plan-desc">Bring Your Own Key (BYOK). Connect your own free Google Gemini, Groq, or OpenAI API key. $0 cost to anyone, full sovereignty.</p>
+          </div>
+
+          <div class="plan-divider"></div>
+
+          <ul class="plan-features">
+            <li><span class="check">✓</span> <strong>100% Free Forever</strong> — Zero subscription</li>
+            <li><span class="check">✓</span> <strong>Google Gemini 1.5 Flash</strong> (1,500 free queries/day)</li>
+            <li><span class="check">✓</span> <strong>Groq Llama 3.3 70B & DeepSeek</strong> (Ultra-fast)</li>
+            <li><span class="check">✓</span> 10 Independent Switchable Key Slots in Settings</li>
+            <li><span class="check">✓</span> Full Screenshot Vision & GhostWriter Engine</li>
+            <li><span class="check">✓</span> 100% Local Storage of your Keys (Encrypted)</li>
+          </ul>
+
+          <div class="plan-action">
+            <a href="#downloads" class="btn-plan free">
+              <span>GET CLIENT & USE FREE KEY</span>
+            </a>
+            <span class="helper-text">Works out of the box with any Gmail account</span>
+          </div>
+        </div>
+
+        <!-- OPTION B: SHADOW CLOUD PRO -->
+        <div class="pricing-card pro-tier featured">
+          <div class="popular-badge">INSTANT AUTOMATED ACCESS</div>
+          <div class="plan-header">
+            <span class="plan-type">OPTION B // READY TO GO</span>
+            <h3 class="plan-title">SHADOW CLOUD PRO</h3>
+            <div class="plan-price">$5 <span>/ MONTH OR LIFETIME</span></div>
+            <p class="plan-desc">No API keys required. Instant automated checkout unlocks full high-speed AI cloud access in 3 seconds flat.</p>
+          </div>
+
+          <div class="plan-divider"></div>
+
+          <ul class="plan-features">
+            <li><span class="check">✓</span> <strong>No Setup Required</strong> — Download & It Works</li>
+            <li><span class="check">✓</span> <strong>Automated Instant License Key</strong> via Email</li>
+            <li><span class="check">✓</span> <strong>Google One-Click Sign-In</strong> Synchronization</li>
+            <li><span class="check">✓</span> Unlimited High-Speed Vision & Coding Responses</li>
+            <li><span class="check">✓</span> Claude 3.5 Sonnet & GPT-4o Multi-Modal Nodes</li>
+            <li><span class="check">✓</span> Priority Latency & Global CDN Routing</li>
+          </ul>
+
+          <div class="plan-action">
+            <button class="btn-plan pro" id="btn-buy-license">
+              <span>⚡ UPGRADE TO PRO // INSTANT KEY</span>
+            </button>
+            <span class="helper-text">Instant delivery • PayPal, Cards, Apple/Google Pay</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- IN-BROWSER INSTANT LICENSE ACTIVATION TESTER -->
+      <div class="license-tester-box">
+        <div class="tester-header">
+          <span class="terminal-prompt">&gt;</span>
+          <strong>AUTOMATED LICENSE ACTIVATION VERIFIER</strong>
+          <span class="badge-live">LIVE_CHECKER</span>
+        </div>
+        <div class="tester-body">
+          <div class="input-group">
+            <input type="text" id="license-input" placeholder="ENTER LICENSE KEY (e.g. SHADOW-PRO-89F2-K91A)" value="SHADOW-PRO-DEMO-2026">
+            <button class="btn-terminal-sm" id="btn-test-license">VALIDATE_KEY</button>
+          </div>
+          <div class="tester-result" id="tester-result">
+            <span class="status-indicator">READY:</span> Enter a license key or click "VALIDATE_KEY" to simulate instant cloud verification.
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="hud-footer">
+    <div class="footer-left">
+      <span>SHADOW_AI TERMINAL // ALL RIGHTS RESERVED 2026</span>
+      <span class="dot-sep">•</span>
+      <span>STATUS: OPERATIONAL</span>
+      <span class="dot-sep">•</span>
+      <span>ZERO LOGS POLICY</span>
+    </div>
+    <div class="footer-right">
+      <span class="protocol-tag">AES-256-GCM // PROTOCOL-7</span>
+    </div>
+  </footer>
+
+  <!-- AUTH MODAL -->
+  <div class="modal-backdrop" id="auth-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span>// AUTHENTICATION_NODE: GOOGLE_SSO</span>
+        <button class="modal-close" id="modal-close">×</button>
+      </div>
+      <div class="modal-body">
+        <p>Sign in with your Google account to sync your Pro subscription or access your free cloud query allowance.</p>
+        <button class="btn-google-sign-in" id="google-sso-action">
+          <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/></svg>
+          <span>Continue with Google</span>
+        </button>
+        <div class="auth-status-log" id="auth-status-log">Status: Awaiting credential trigger...</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="radar.js"></script>
+</body>
+</html>

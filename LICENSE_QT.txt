@@ -1,0 +1,12 @@
+ShadowAI - Third-Party Notices & Licenses
+============================================
+
+This software uses the Qt GUI Toolkit under the GNU Lesser General Public License (LGPL) version 3.
+
+The Qt GUI Toolkit is copyright (C) The Qt Company Ltd. and other contributors.
+Qt is available under the GNU LGPLv3: https://www.gnu.org/licenses/lgpl-3.0.html
+
+In compliance with the LGPLv3:
+- Qt libraries are dynamically linked as shared libraries (.dll on Windows, .dylib/.framework on macOS).
+- Users are free to replace these dynamic Qt libraries with compatible versions.
+- All non-Qt source code, proprietary algorithms, and AI overlay architecture remain proprietary to ShadowAI.
