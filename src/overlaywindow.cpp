@@ -375,27 +375,25 @@ void OverlayWindow::setupUI() {
     m_divider->setFrameShape(QFrame::HLine);
     m_divider->setObjectName("divider");
 
-    // ── ANSWER DISPLAY ───────────────────────────────────────────────────
+    // ── ANSWER DISPLAY & ALL KEYS HUD STACK ───────────────────────────────
+    m_contentStack = new QStackedWidget;
+    m_contentStack->setObjectName("contentStack");
+
     m_answerDisplay = new QTextBrowser;
     m_answerDisplay->setObjectName("answerDisplay");
     m_answerDisplay->setOpenExternalLinks(false);
     m_answerDisplay->setReadOnly(true);
     m_answerDisplay->installEventFilter(this);
-    m_answerDisplay->setPlaceholderText(
-        "AI answer will appear here...\n\n"
-        "Shortcuts:\n"
-        "  Shift+Alt+S  →  Screenshot\n"
-        "  Shift+Alt+A  →  Get Answer\n"
-        "  Shift+Alt+V  →  Auto-type\n"
-        "  Shift+Alt+R  →  System Rec\n"
-        "  Shift+Alt+H  →  Show/Hide\n"
-        "  Shift+Alt+B  →  Toggle Help & Screenshot\n"
-        "  Shift+Alt+C  →  Copy Screenshot\n"
-        "  Shift+Alt+T  →  Transparency\n"
-        "  Shift+Alt+I/K →  Scroll Up/Down\n"
-        "  Shift+Alt+Z  →  Clear\n"
-        "  Shift+Alt+Arrows →  Move Overlay"
-    );
+
+    m_allKeysHUD = new QWidget;
+    m_allKeysHUD->setObjectName("allKeysHUD");
+    m_allKeysLayout = new QVBoxLayout(m_allKeysHUD);
+    m_allKeysLayout->setContentsMargins(6, 6, 6, 6);
+    m_allKeysLayout->setSpacing(4);
+
+    m_contentStack->addWidget(m_answerDisplay); // Index 0
+    m_contentStack->addWidget(m_allKeysHUD);     // Index 1
+    m_contentStack->setCurrentIndex(0);
 
     // ── HOTKEY CONTROLS ──────────────────────────────────────────────────
     m_controlsPanel = new QWidget;
@@ -459,7 +457,7 @@ void OverlayWindow::setupUI() {
     hgLayout->addWidget(group2);
 
     // Label that remains visible when badges are hidden
-    m_bottomHintLabel = new QLabel("[Shift+Alt+B] Show Shortcuts Help");
+    m_bottomHintLabel = new QLabel("[Shift+Alt+B] All Keys Directory");
     m_bottomHintLabel->setObjectName("bottomHintLabel");
     m_bottomHintLabel->setAlignment(Qt::AlignCenter);
     m_bottomHintLabel->setVisible(false); // Hidden by default
@@ -472,7 +470,7 @@ void OverlayWindow::setupUI() {
     mainLayout->addWidget(topBar);
     mainLayout->addWidget(m_screenshotFrame);
     mainLayout->addWidget(m_divider);
-    mainLayout->addWidget(m_answerDisplay, 1);
+    mainLayout->addWidget(m_contentStack, 1);
     mainLayout->addWidget(m_controlsPanel);
 }
 
@@ -617,6 +615,88 @@ void OverlayWindow::applyGlassStyle() {
             font-family: "Segoe UI", sans-serif;
             font-size: 9px;
             font-weight: 600;
+        }
+
+        /* ═══ ALL KEYS DIRECTORY HUD ═══ */
+        QWidget#allKeysHUD {
+            background: rgba(14, 14, 20, 220);
+            border: 1px solid rgba(0, 229, 255, 0.25);
+            border-radius: 8px;
+        }
+
+        QLabel#hudHeader {
+            color: #00e5ff;
+            font-family: "Segoe UI", -apple-system, sans-serif;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            padding: 2px 0;
+            background: transparent;
+        }
+
+        QScrollArea#hudScrollArea {
+            background: transparent;
+            border: none;
+        }
+
+        .hudCategoryCard {
+            background: rgba(18, 22, 32, 200);
+            border: 1px solid rgba(0, 229, 255, 0.18);
+            border-radius: 6px;
+        }
+
+        .hudCategoryTitle {
+            color: #00e5ff;
+            font-family: "Segoe UI", sans-serif;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            margin-bottom: 2px;
+        }
+
+        .hudBadge {
+            background: rgba(0, 229, 255, 0.14);
+            color: #ffffff;
+            border: 1px solid rgba(0, 229, 255, 0.40);
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-family: "Consolas", monospace;
+            font-size: 9px;
+            font-weight: bold;
+        }
+
+        .hudBadgeDanger {
+            background: rgba(255, 60, 60, 0.22);
+            color: #ff6b6b;
+            border: 1px solid #ff4444;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-family: "Consolas", monospace;
+            font-size: 9px;
+            font-weight: bold;
+        }
+
+        .hudAction {
+            color: #d0e4f5;
+            font-family: "Segoe UI", sans-serif;
+            font-size: 10px;
+            font-weight: 500;
+        }
+
+        .hudActionDanger {
+            color: #ff8b8b;
+            font-family: "Segoe UI", sans-serif;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        QLabel#hudFooter {
+            color: #00e5ff;
+            font-family: "Consolas", monospace;
+            font-size: 10px;
+            font-weight: bold;
+            padding: 2px 0;
+            background: transparent;
         }
 
         /* ═══ BOTTOM HELP HINT ═══ */
@@ -796,6 +876,9 @@ void OverlayWindow::doGetAnswer() {
         return;
     }
     showStatusMessage(QString("Sending %1 images to AI...").arg(m_screenshots.size()));
+    if (m_contentStack) {
+        m_contentStack->setCurrentIndex(0);
+    }
     m_answerDisplay->clear();
     m_ai->askWithImages(m_screenshots);
 }
@@ -826,6 +909,9 @@ void OverlayWindow::cycleTransparency() {
 void OverlayWindow::clearAll() {
     if (m_ghostWriterWorker) {
         m_ghostWriterWorker->requestStop();
+    }
+    if (m_contentStack) {
+        m_contentStack->setCurrentIndex(0);
     }
     m_answerDisplay->clear();
     m_screenshots.clear();
@@ -871,6 +957,112 @@ static QString vkToKeyName(int vk) {
         case 0x28: return "Down";
         default:   return QString("0x%1").arg(vk, 2, 16, QChar('0')).toUpper();
     }
+}
+
+void OverlayWindow::buildAllKeysHUD() {
+    if (!m_allKeysHUD || !m_allKeysLayout) return;
+
+    // Clear previous items in m_allKeysLayout
+    QLayoutItem* item;
+    while ((item = m_allKeysLayout->takeAt(0)) != nullptr) {
+        if (item->widget()) item->widget()->deleteLater();
+        delete item;
+    }
+
+    auto& cfg = AppConfig::instance();
+
+    QLabel* header = new QLabel(QString::fromUtf8("◈ SHADOW_AI // SHORTCUTS DIRECTORY"));
+    header->setObjectName("hudHeader");
+    header->setAlignment(Qt::AlignCenter);
+    m_allKeysLayout->addWidget(header);
+
+    QScrollArea* sa = new QScrollArea;
+    sa->setWidgetResizable(true);
+    sa->setFrameShape(QFrame::NoFrame);
+    sa->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    sa->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    sa->setObjectName("hudScrollArea");
+
+    QWidget* scrollContent = new QWidget;
+    QVBoxLayout* scLayout = new QVBoxLayout(scrollContent);
+    scLayout->setContentsMargins(4, 2, 4, 2);
+    scLayout->setSpacing(6);
+
+    auto makeCategoryCard = [](const QString& title, const QList<QPair<QString, QString>>& items, bool isEmergency = false) -> QWidget* {
+        QFrame* card = new QFrame;
+        card->setProperty("class", "hudCategoryCard");
+        QVBoxLayout* cl = new QVBoxLayout(card);
+        cl->setContentsMargins(8, 6, 8, 6);
+        cl->setSpacing(4);
+
+        QLabel* tLbl = new QLabel(title);
+        tLbl->setProperty("class", "hudCategoryTitle");
+        if (isEmergency) {
+            tLbl->setStyleSheet("color: #ff6b6b; font-weight: bold; font-family: 'Segoe UI', sans-serif; font-size: 10px;");
+        }
+        cl->addWidget(tLbl);
+
+        for (const auto& pair : items) {
+            QWidget* row = new QWidget;
+            QHBoxLayout* rl = new QHBoxLayout(row);
+            rl->setContentsMargins(0, 1, 0, 1);
+            rl->setSpacing(8);
+
+            QLabel* kBadge = new QLabel(pair.first);
+            kBadge->setProperty("class", isEmergency ? "hudBadgeDanger" : "hudBadge");
+            kBadge->setAlignment(Qt::AlignCenter);
+            kBadge->setMinimumWidth(125);
+
+            QLabel* aLbl = new QLabel(pair.second);
+            aLbl->setProperty("class", isEmergency ? "hudActionDanger" : "hudAction");
+
+            rl->addWidget(kBadge);
+            rl->addWidget(aLbl, 1);
+            cl->addWidget(row);
+        }
+        return card;
+    };
+
+    // 1. AI & Capture
+    QList<QPair<QString, QString>> aiItems = {
+        {"Shift+Alt+" + vkToKeyName(cfg.hotkeyScreenshot()), "Capture Screen Selection"},
+        {"Shift+Alt+" + vkToKeyName(cfg.hotkeyGetAnswer()), "Instant AI Solution (Snap & Solve)"},
+        {"Shift+Alt+" + vkToKeyName(cfg.hotkeyVoice()), "Microphone Voice Query"},
+        {"Shift+Alt+" + vkToKeyName(cfg.hotkeyGhostWriter()), "Auto-Type Ghost Writer"},
+        {"Shift+Alt+" + vkToKeyName(cfg.hotkeyCopyScreenshot()), "Copy Last Screen Snapshot"}
+    };
+    scLayout->addWidget(makeCategoryCard("📸 AI & CAPTURE CONTROLS", aiItems));
+
+    // 2. View & Stealth
+    QList<QPair<QString, QString>> viewItems = {
+        {"Shift+Alt+" + vkToKeyName(cfg.hotkeyToggle()), "Show / Hide Overlay Window"},
+        {"Shift+Alt+" + vkToKeyName(cfg.hotkeyTransparency()), "Cycle Transparency (9 Presets)"},
+        {"Shift+Alt+" + vkToKeyName(cfg.hotkeyClear()), "Clear AI Output & Chat History"},
+        {"Shift+Alt+" + vkToKeyName(cfg.hotkeyToggleBadges()), "Toggle All Keys Directory HUD"}
+    };
+    scLayout->addWidget(makeCategoryCard("🪟 OVERLAY & STEALTH CONTROLS", viewItems));
+
+    // 3. Navigation & Movement
+    QList<QPair<QString, QString>> navItems = {
+        {"Shift+Alt+" + vkToKeyName(cfg.hotkeyMoveLeft()) + "/" + vkToKeyName(cfg.hotkeyMoveRight()), "Nudge Window Left / Right"},
+        {"Shift+Alt+" + vkToKeyName(cfg.hotkeyMoveUp()) + "/" + vkToKeyName(cfg.hotkeyMoveDown()), "Nudge Window Up / Down"},
+        {"Shift+Alt+" + vkToKeyName(cfg.hotkeyScrollUp()) + "/" + vkToKeyName(cfg.hotkeyScrollDown()), "Scroll Answer Output Up / Down"}
+    };
+    scLayout->addWidget(makeCategoryCard("🧭 NAVIGATION & MOVEMENT", navItems));
+
+    // 4. Emergency
+    QList<QPair<QString, QString>> emergItems = {
+        {"Ctrl+Shift+" + vkToKeyName(cfg.hotkeyPanic()), "Panic Kill (Terminates Process & Clears Clipboard)"}
+    };
+    scLayout->addWidget(makeCategoryCard("🚨 EMERGENCY CONTROLS", emergItems, true));
+
+    sa->setWidget(scrollContent);
+    m_allKeysLayout->addWidget(sa, 1);
+
+    QLabel* footer = new QLabel(QString("[Shift+Alt+%1] Press hotkey again to close directory").arg(vkToKeyName(cfg.hotkeyToggleBadges())));
+    footer->setObjectName("hudFooter");
+    footer->setAlignment(Qt::AlignCenter);
+    m_allKeysLayout->addWidget(footer);
 }
 
 void OverlayWindow::refreshKeyBadges() {
@@ -920,7 +1112,7 @@ void OverlayWindow::refreshKeyBadges() {
 
     m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyToggle()), "Show/Hide"));
     m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyTransparency()), "Transparency"));
-    m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyToggleBadges()), "Toggle Help"));
+    m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyToggleBadges()), "All Keys ☰"));
     m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyCopyScreenshot()), "Copy Shot"));
     m_keysLayout1->addWidget(makeKey("Shift+Alt+Arrows", "Move Overlay"));
 
@@ -932,7 +1124,36 @@ void OverlayWindow::refreshKeyBadges() {
     m_keysLayout2->addWidget(makeKey("Ctrl+Shift+" + vkToKeyName(cfg.hotkeyPanic()), "Panic Kill", true));
 
     if (m_bottomHintLabel) {
-        m_bottomHintLabel->setText(QString("[Shift+Alt+%1] Show Shortcuts Help").arg(vkToKeyName(cfg.hotkeyToggleBadges())));
+        m_bottomHintLabel->setText(QString("[Shift+Alt+%1] All Keys Directory").arg(vkToKeyName(cfg.hotkeyToggleBadges())));
+    }
+
+    // Dynamically rebuild the All Keys HUD to reflect updated keys
+    buildAllKeysHUD();
+
+    // Dynamically update placeholder text in answer display
+    if (m_answerDisplay) {
+        m_answerDisplay->setPlaceholderText(
+            QString("AI answer will appear here...\n\n"
+                    "Active Shortcuts:\n"
+                    "  Shift+Alt+%1  →  Screenshot\n"
+                    "  Shift+Alt+%2  →  Get Answer (Snap & Solve)\n"
+                    "  Shift+Alt+%3  →  Show / Hide Overlay\n"
+                    "  Shift+Alt+%4  →  All Keys Directory HUD\n"
+                    "  Shift+Alt+%5  →  Auto-type (Ghost Writer)\n"
+                    "  Shift+Alt+%6  →  Voice Recording\n"
+                    "  Shift+Alt+%7  →  Cycle Transparency\n"
+                    "  Shift+Alt+%8  →  Clear Output\n"
+                    "  Ctrl+Shift+%9 →  Emergency Panic Kill")
+                .arg(vkToKeyName(cfg.hotkeyScreenshot()))
+                .arg(vkToKeyName(cfg.hotkeyGetAnswer()))
+                .arg(vkToKeyName(cfg.hotkeyToggle()))
+                .arg(vkToKeyName(cfg.hotkeyToggleBadges()))
+                .arg(vkToKeyName(cfg.hotkeyGhostWriter()))
+                .arg(vkToKeyName(cfg.hotkeyVoice()))
+                .arg(vkToKeyName(cfg.hotkeyTransparency()))
+                .arg(vkToKeyName(cfg.hotkeyClear()))
+                .arg(vkToKeyName(cfg.hotkeyPanic()))
+        );
     }
 }
 
@@ -1440,21 +1661,21 @@ void OverlayWindow::onRecordingFinished(const QString& filePath) {
 }
 
 void OverlayWindow::toggleBadgesVisibility() {
+    if (m_contentStack) {
+        int cur = m_contentStack->currentIndex();
+        int next = (cur == 0) ? 1 : 0;
+        m_contentStack->setCurrentIndex(next);
+        showStatusMessage(next == 1 ? "All Keys Directory Active" : "Ready");
+        update();
+        return;
+    }
+
     if (m_helpGroupsContainer && m_bottomHintLabel) {
         bool currentlyVisible = m_helpGroupsContainer->isVisible();
-        
-        // Toggle the help panels
         m_helpGroupsContainer->setVisible(!currentlyVisible);
         m_bottomHintLabel->setVisible(currentlyVisible);
-        
-        // Toggle screenshot frame and divider as well
-        if (m_screenshotFrame) {
-            m_screenshotFrame->setVisible(!currentlyVisible);
-        }
-        if (m_divider) {
-            m_divider->setVisible(!currentlyVisible);
-        }
-        
+        if (m_screenshotFrame) m_screenshotFrame->setVisible(!currentlyVisible);
+        if (m_divider) m_divider->setVisible(!currentlyVisible);
         showStatusMessage(currentlyVisible ? "View collapsed" : "View expanded");
         update();
     }

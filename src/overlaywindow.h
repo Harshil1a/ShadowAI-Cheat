@@ -9,6 +9,7 @@
 #include <QTimer>
 #include <QPushButton>
 #include <QElapsedTimer>
+#include <QStackedWidget>
 
 class AIManager;
 class ScreenCapture;
@@ -76,13 +77,17 @@ private:
     static QString markdownToHtml(const QString& text);
     static QString stripThinkTags(const QString& text);
     static QString extractCodeBlock(const QString& fullText, bool smartIndent);
+    void buildAllKeysHUD();
 
     // UI elements
-    QWidget*      m_container;
-    QWidget*      m_thumbGallery; // New: Container for multiple thumbs
-    QTextBrowser* m_answerDisplay;
-    QLabel*       m_statusLabel;
-    QWidget*      m_screenshotFrame;
+    QWidget*        m_container;
+    QWidget*        m_thumbGallery; // New: Container for multiple thumbs
+    QStackedWidget* m_contentStack = nullptr;
+    QTextBrowser*   m_answerDisplay;
+    QWidget*        m_allKeysHUD = nullptr;
+    QVBoxLayout*    m_allKeysLayout = nullptr;
+    QLabel*         m_statusLabel;
+    QWidget*        m_screenshotFrame;
     QWidget*      m_controlsPanel;
     QWidget*      m_helpGroupsContainer;
     QLabel*       m_bottomHintLabel;

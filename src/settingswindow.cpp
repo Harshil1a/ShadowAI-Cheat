@@ -262,7 +262,7 @@ void SettingsWindow::setupUI() {
         {"Shift+Alt+[?]  Take screenshot",       m_hkScreenshot},
         {"Shift+Alt+[?]  Get AI answer",         m_hkGetAnswer},
         {"Shift+Alt+[?]  Toggle audio recording", m_hkVoice},
-        {"Shift+Alt+[?]  Toggle help & screenshot", m_hkToggleBadges},
+        {"Shift+Alt+[?]  All Keys Directory HUD", m_hkToggleBadges},
         {"Shift+Alt+[?]  Copy screenshot",       m_hkCopyScreenshot},
         {"Shift+Alt+[?]  Ghost Writer auto-type", m_hkGhostWriter},
         {"Ctrl+Shift+[?] Emergency Panic Kill-Switch", m_hkPanic},
