@@ -445,7 +445,7 @@
     const btnWhatsapp = document.getElementById('btn-whatsapp-activate');
     const claimOutput = document.getElementById('claim-output');
 
-    let currentOrderCode = sessionStorage.getItem('shadow_order_code') || ('#' + Math.floor(1000 + Math.random() * 9000));
+    let currentOrderCode = sessionStorage.getItem('shadow_order_code') || ('#SH-' + Date.now().toString().slice(-6));
     sessionStorage.setItem('shadow_order_code', currentOrderCode);
 
     function syncOrderCodeUI() {
@@ -453,11 +453,20 @@
       const hintEl = document.getElementById('wa-order-hint');
       if (codeEl) codeEl.innerText = currentOrderCode;
       if (hintEl) hintEl.innerText = currentOrderCode;
+
+      // Auto-fetch verified Google email if user is signed in
+      if (currentAuthUser && currentAuthUser.email && claimEmailInput) {
+        claimEmailInput.value = currentAuthUser.email;
+        claimEmailInput.readOnly = true;
+        claimEmailInput.style.borderColor = '#00ff66';
+        claimEmailInput.style.color = '#00ff66';
+        claimEmailInput.title = 'Verified Google Account (Auto-linked)';
+      }
     }
 
     function updateWhatsAppUrl() {
       if (!btnWhatsapp) return;
-      const em = claimEmailInput ? claimEmailInput.value.trim() : '';
+      const em = (currentAuthUser && currentAuthUser.email) ? currentAuthUser.email : (claimEmailInput ? claimEmailInput.value.trim() : '');
       const utr = claimUtrInput ? claimUtrInput.value.trim() : '';
       const msg = `Hi Harshil, I have submitted payment for ShadowAI Pro!%0A%0A🏷️ Order Code: ${encodeURIComponent(currentOrderCode)}%0A👤 Google Email: ${encodeURIComponent(em || '[Enter your email]')}%0A💳 12-Digit UTR: ${encodeURIComponent(utr || '[Attaching receipt]')}%0A💰 Plan: ₹99 Pro (1 Month)%0A%0APlease approve my Pro access!`;
       btnWhatsapp.href = `https://wa.me/919317526356?text=${msg}`;
@@ -469,9 +478,9 @@
     if (buyBtn && upiModal) {
       buyBtn.addEventListener('click', (e) => {
         e.preventDefault();
-        // Generate fresh order code on each checkout attempt if not already set
+        // Generate conflict-proof order code on each checkout attempt if not already set
         if (!sessionStorage.getItem('shadow_order_code')) {
-          currentOrderCode = '#' + Math.floor(1000 + Math.random() * 9000);
+          currentOrderCode = '#SH-' + Date.now().toString().slice(-6);
           sessionStorage.setItem('shadow_order_code', currentOrderCode);
         }
         syncOrderCodeUI();

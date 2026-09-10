@@ -377,14 +377,14 @@
     <div style="background: #070c0a; border: 1px solid rgba(0, 229, 255, 0.3); border-radius: 6px; padding: 16px 20px; margin-bottom: 24px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;">
       <div style="display: flex; gap: 10px; align-items: center; flex: 1; min-width: 280px;">
         <span style="font-family: 'Orbitron'; font-size: 11px; color: #00e5ff; font-weight: 700; white-space: nowrap;">⚡ QUICK PRO GRANT:</span>
-        <input type="email" id="quick-grant-email" placeholder="Enter buyer email (e.g. rahul@gmail.com)" 
+        <input type="text" id="quick-grant-email" placeholder="Enter User ID (UUID) or Email (e.g. rahul@gmail.com)..." 
                style="flex: 1; background: #030508; border: 1px solid rgba(0,229,255,0.4); color: #00ff66; padding: 8px 12px; border-radius: 4px; font-family: monospace; font-size: 12px;">
         <button class="btn-gen" id="btn-quick-grant" style="padding: 8px 16px; font-size: 11px; white-space: nowrap;">+ GRANT PRO</button>
       </div>
       <div style="display: flex; gap: 8px; align-items: center;">
         <span style="font-size: 11px; color: #7ca88e;">🔍 SEARCH:</span>
-        <input type="text" id="admin-search-input" placeholder="Search Order # or Email..." 
-               style="background: #030508; border: 1px solid rgba(0,255,102,0.3); color: #e2fced; padding: 8px 12px; border-radius: 4px; font-family: monospace; font-size: 12px; width: 220px;">
+        <input type="text" id="admin-search-input" placeholder="Search by ID, Email, Order #, UTR..." 
+               style="background: #030508; border: 1px solid rgba(0,255,102,0.3); color: #e2fced; padding: 8px 12px; border-radius: 4px; font-family: monospace; font-size: 12px; width: 260px;">
       </div>
     </div>
 
@@ -408,6 +408,32 @@
         <tbody id="pending-table-body">
           <tr>
             <td colspan="5" style="text-align:center;color:#7ca88e;padding:20px;">No pending approvals right now. All orders clear!</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ALL REGISTERED USERS DIRECTORY -->
+    <div class="admin-card" style="margin-bottom: 24px; border-color: rgba(0, 255, 102, 0.35);">
+      <div class="admin-card-title">
+        <span style="color: #00ff66;">👥 ALL REGISTERED USERS (SEARCH BY ID / EMAIL & 1-CLICK GRANT)</span>
+        <span id="users-count-badge" style="font-size: 11px; background: rgba(0,255,102,0.15); color: #00ff66; border: 1px solid #00ff66; padding: 2px 8px; border-radius: 3px; font-weight: 800;">0 USERS</span>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>USER / RECORD ID</th>
+            <th>USER EMAIL (GOOGLE ACCOUNT)</th>
+            <th>STATUS</th>
+            <th>HARDWARE / QUERIES</th>
+            <th>JOINED / SYNCED</th>
+            <th>ACTION</th>
+          </tr>
+        </thead>
+        <tbody id="users-table-body">
+          <tr>
+            <td colspan="6" style="text-align:center;color:#7ca88e;padding:16px;">Loading registered users from database...</td>
           </tr>
         </tbody>
       </table>
@@ -633,46 +659,169 @@
       }
     });
 
-    // Quick Direct Pro Grant
+    // Global Direct Pro Grant & Revoke Functions
+    window.grantProDirect = async function(email, id) {
+      if (!email && !id) {
+        alert('Please specify a User ID or Email to grant Pro.');
+        return;
+      }
+      const targetLabel = email || id;
+      if (!confirm(`⚡ GRANT PRO ACCESS to [${targetLabel}]?\nThis will immediately activate Pro for their Google account and device.`)) return;
+
+      const randHex = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1).toUpperCase();
+      const generatedProKey = `SHADOW-PRO-${randHex()}-${randHex()}`;
+
+      try {
+        let granted = false;
+
+        // 1. If an ID is provided, update that license record directly
+        if (id && !id.startsWith('local-')) {
+          try {
+            await fetch(`${SUPABASE_URL}/rest/v1/licenses?id=eq.${id}`, {
+              method: 'PATCH',
+              headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                is_active: true,
+                license_key: generatedProKey,
+                plan_tier: 'PRO_MONTHLY'
+              })
+            });
+            granted = true;
+          } catch(e) {}
+        }
+
+        // 2. If email is provided, ensure active license exists for this email
+        if (email && email.includes('@')) {
+          const cleanEmail = email.toLowerCase().trim();
+          const checkRes = await fetch(`${SUPABASE_URL}/rest/v1/licenses?customer_email=eq.${encodeURIComponent(cleanEmail)}&select=id`, {
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+          });
+          const existing = await checkRes.json();
+          if (Array.isArray(existing) && existing.length > 0) {
+            await fetch(`${SUPABASE_URL}/rest/v1/licenses?customer_email=eq.${encodeURIComponent(cleanEmail)}`, {
+              method: 'PATCH',
+              headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                is_active: true,
+                plan_tier: 'PRO_MONTHLY'
+              })
+            });
+          } else {
+            await fetch(`${SUPABASE_URL}/rest/v1/licenses`, {
+              method: 'POST',
+              headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal'
+              },
+              body: JSON.stringify({
+                license_key: generatedProKey,
+                customer_email: cleanEmail,
+                plan_tier: 'PRO_MONTHLY',
+                is_active: true
+              })
+            });
+          }
+
+          // Also attempt to update profiles table if configured
+          try {
+            await fetch(`${SUPABASE_URL}/rest/v1/profiles?email=eq.${encodeURIComponent(cleanEmail)}`, {
+              method: 'PATCH',
+              headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ is_pro: true })
+            });
+          } catch(e) {}
+          granted = true;
+        }
+
+        alert(`🎉 PRO GRANTED SUCCESSFULLY!\nUser: ${targetLabel}\nAccount status is now PRO ACTIVE ✓.\nBoth desktop app and website are unlocked!`);
+        await loadLicenses();
+      } catch(e) {
+        alert('Grant failed: ' + e.message);
+      }
+    };
+
+    window.revokeUserPro = async function(email, id) {
+      const targetLabel = email || id;
+      if (!confirm(`⚠️ REVOKE PRO: Deactivate Pro subscription for [${targetLabel}]?`)) return;
+
+      try {
+        if (id && !id.startsWith('local-')) {
+          await fetch(`${SUPABASE_URL}/rest/v1/licenses?id=eq.${id}`, {
+            method: 'PATCH',
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ is_active: false })
+          });
+        }
+        if (email && email.includes('@')) {
+          const cleanEmail = email.toLowerCase().trim();
+          await fetch(`${SUPABASE_URL}/rest/v1/licenses?customer_email=eq.${encodeURIComponent(cleanEmail)}`, {
+            method: 'PATCH',
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ is_active: false })
+          });
+          try {
+            await fetch(`${SUPABASE_URL}/rest/v1/profiles?email=eq.${encodeURIComponent(cleanEmail)}`, {
+              method: 'PATCH',
+              headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ is_pro: false })
+            });
+          } catch(e) {}
+        }
+        alert(`✓ PRO REVOKED for ${targetLabel}.`);
+        await loadLicenses();
+      } catch(e) {
+        alert('Revoke failed: ' + e.message);
+      }
+    };
+
+    // Quick Direct Pro Grant Input Handler (supports Email OR User ID / UUID)
     const quickEmailInput = document.getElementById('quick-grant-email');
     const btnQuickGrant = document.getElementById('btn-quick-grant');
-    const searchInput = document.getElementById('admin-search-input');
 
     if (btnQuickGrant && quickEmailInput) {
       btnQuickGrant.addEventListener('click', async () => {
-        const email = quickEmailInput.value.trim().toLowerCase();
-        if (!email || !email.includes('@')) {
-          alert('Please enter a valid customer email.');
+        const inputVal = quickEmailInput.value.trim();
+        if (!inputVal) {
+          alert('Please enter a valid User ID (UUID) or Email.');
           return;
         }
 
         btnQuickGrant.disabled = true;
         btnQuickGrant.innerText = 'GRANTING...';
 
-        const randHex = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1).toUpperCase();
-        const newKey = `SHADOW-PRO-${randHex()}-${randHex()}`;
-
         try {
-          await fetch(`${SUPABASE_URL}/rest/v1/licenses`, {
-            method: 'POST',
-            headers: {
-              'apikey': SUPABASE_KEY,
-              'Authorization': `Bearer ${SUPABASE_KEY}`,
-              'Content-Type': 'application/json',
-              'Prefer': 'return=minimal'
-            },
-            body: JSON.stringify({
-              license_key: newKey,
-              customer_email: email,
-              plan_tier: 'PRO_MONTHLY',
-              is_active: true
-            })
-          });
-          alert(`✓ SUCCESS! Granted Pro to ${email}.\nTheir app will now automatically unlock on launch.`);
+          if (inputVal.includes('@')) {
+            await window.grantProDirect(inputVal.toLowerCase(), null);
+          } else {
+            await window.grantProDirect(null, inputVal);
+          }
           quickEmailInput.value = '';
-          loadLicenses();
-        } catch(e) {
-          alert('Grant failed: ' + e.message);
         } finally {
           btnQuickGrant.disabled = false;
           btnQuickGrant.innerText = '+ GRANT PRO';
@@ -680,48 +829,29 @@
       });
     }
 
-    if (searchInput) {
-      searchInput.addEventListener('input', () => {
+    const searchInputEl = document.getElementById('admin-search-input');
+    if (searchInputEl) {
+      searchInputEl.addEventListener('input', () => {
         loadLicenses();
       });
     }
 
     // Load & Render Tables
     const btnRefresh = document.getElementById('btn-refresh-table');
-    btnRefresh.addEventListener('click', loadLicenses);
+    if (btnRefresh) {
+      btnRefresh.addEventListener('click', loadLicenses);
+    }
 
     window.approveOrder = async function(id, email) {
-      if (!confirm(`⚡ APPROVE PRO ORDER for [${email}]?\nThis will immediately activate Pro for their Google account and device.`)) return;
-
-      const randHex = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1).toUpperCase();
-      const generatedProKey = `SHADOW-PRO-${randHex()}-${randHex()}`;
-
-      try {
-        await fetch(`${SUPABASE_URL}/rest/v1/licenses?id=eq.${id}`, {
-          method: 'PATCH',
-          headers: {
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            is_active: true,
-            license_key: generatedProKey,
-            plan_tier: 'PRO_MONTHLY'
-          })
-        });
-        alert(`🎉 ORDER APPROVED!\n${email} is now officially PRO ACTIVE.\nTheir waiting room and PC app will unlock automatically!`);
-        loadLicenses();
-      } catch(e) {
-        alert('Approval failed: ' + e.message);
-      }
+      await window.grantProDirect(email, id);
     };
 
     async function loadLicenses() {
       const pbody = document.getElementById('pending-table-body');
       const tbody = document.getElementById('license-table-body');
       const pbadge = document.getElementById('pending-count-badge');
-      const searchVal = searchInput ? searchInput.value.trim().toLowerCase() : '';
+      const searchInputEl = document.getElementById('admin-search-input');
+      const searchVal = searchInputEl ? searchInputEl.value.trim().toLowerCase() : '';
 
       try {
         let data = [];
@@ -751,10 +881,11 @@
         let filtered = allKeys;
         if (searchVal) {
           filtered = allKeys.filter(item => {
+            const id = (item.id || '').toLowerCase();
             const em = (item.customer_email || '').toLowerCase();
             const lk = (item.license_key || '').toLowerCase();
             const hw = (item.bound_hwid || '').toLowerCase();
-            return em.includes(searchVal) || lk.includes(searchVal) || hw.includes(searchVal);
+            return id.includes(searchVal) || em.includes(searchVal) || lk.includes(searchVal) || hw.includes(searchVal);
           });
         }
 
@@ -801,7 +932,136 @@
           }).join('');
         }
 
-        // 2. Render Active Subscribers & Hardware Locks
+        // 2. Fetch and Build Unified Users Directory (combining Profiles & Licenses)
+        let profilesData = [];
+        try {
+          const pres = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=*&order=created_at.desc`, {
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`
+            }
+          });
+          const pserver = await pres.json();
+          if (Array.isArray(pserver)) profilesData = pserver;
+        } catch(e) {}
+
+        const unifiedUsersMap = new Map();
+
+        // Add users from profiles
+        profilesData.forEach(p => {
+          const key = (p.email || p.id || '').toLowerCase().trim();
+          if (key) {
+            unifiedUsersMap.set(key, {
+              id: p.id,
+              email: p.email || 'Google User',
+              is_pro: !!p.is_pro,
+              daily_queries_used: p.daily_queries_used || 0,
+              created_at: p.created_at,
+              source: 'Google SSO'
+            });
+          }
+        });
+
+        // Merge users from licenses table
+        allKeys.forEach(lic => {
+          const emailKey = (lic.customer_email || '').toLowerCase().trim();
+          if (emailKey && !emailKey.includes('unassigned')) {
+            const isLicPro = !!lic.is_active && (!lic.license_key || !lic.license_key.startsWith('PENDING-'));
+            const isPending = !lic.is_active || (lic.license_key && lic.license_key.startsWith('PENDING-'));
+            const existing = unifiedUsersMap.get(emailKey);
+
+            if (existing) {
+              existing.is_pro = existing.is_pro || isLicPro;
+              existing.is_pending = isPending;
+              existing.id = existing.id || lic.id;
+              existing.bound_hwid = lic.bound_hwid || existing.bound_hwid;
+              existing.license_key = lic.license_key;
+            } else {
+              unifiedUsersMap.set(emailKey, {
+                id: lic.id,
+                email: lic.customer_email,
+                is_pro: isLicPro,
+                is_pending: isPending,
+                bound_hwid: lic.bound_hwid,
+                license_key: lic.license_key,
+                daily_queries_used: isLicPro ? 'UNLIMITED' : 0,
+                created_at: lic.created_at,
+                source: 'Account'
+              });
+            }
+          }
+        });
+
+        const allDirectoryUsers = Array.from(unifiedUsersMap.values());
+
+        // Filter directory by search query (Search by ID, Email, Order #, UTR, HWID)
+        let filteredDirectory = allDirectoryUsers;
+        if (searchVal) {
+          filteredDirectory = allDirectoryUsers.filter(u => {
+            const uid = (u.id || '').toLowerCase();
+            const uem = (u.email || '').toLowerCase();
+            const uhw = (u.bound_hwid || '').toLowerCase();
+            const ulk = (u.license_key || '').toLowerCase();
+            return uid.includes(searchVal) || uem.includes(searchVal) || uhw.includes(searchVal) || ulk.includes(searchVal);
+          });
+        }
+
+        const ubody = document.getElementById('users-table-body');
+        const ubadge = document.getElementById('users-count-badge');
+
+        if (ubadge) ubadge.innerText = `${filteredDirectory.length} USERS`;
+
+        if (filteredDirectory.length === 0) {
+          ubody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#7ca88e;padding:16px;">No users match search criteria.</td></tr>';
+        } else {
+          ubody.innerHTML = filteredDirectory.map(u => {
+            const created = u.created_at ? new Date(u.created_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recent';
+            
+            let statusBadge = '<span class="badge-status" style="background:rgba(255,255,255,0.06);color:#7ca88e;">COMMUNITY FREE</span>';
+            if (u.is_pro) {
+              statusBadge = '<span class="badge-status badge-active">PRO ACTIVE ✓</span>';
+            } else if (u.is_pending) {
+              statusBadge = '<span class="badge-status" style="background:rgba(0,229,255,0.15);color:#00e5ff;border:1px solid #00e5ff;">PENDING APPROVAL ⏳</span>';
+            }
+
+            let hwidInfo = '<span style="color:#7ca88e;font-size:11px;">No PC Bound</span>';
+            if (u.bound_hwid) {
+              if (u.bound_hwid.includes('Order')) {
+                hwidInfo = `<span style="color:#00e5ff;font-size:11px;">${u.bound_hwid.split('|')[0]}</span>`;
+              } else {
+                hwidInfo = `<span class="badge-status badge-bound" title="${u.bound_hwid}">🔒 PC LOCKED</span>`;
+              }
+            }
+
+            const shortId = u.id ? (u.id.length > 12 ? u.id.substring(0, 8) + '...' : u.id) : 'N/A';
+
+            return `
+              <tr>
+                <td>
+                  <code style="color:#00e5ff;background:rgba(0,229,255,0.08);padding:3px 6px;border-radius:3px;cursor:pointer;font-size:11px;" 
+                        title="Click to copy full ID: ${u.id}" 
+                        onclick="copyText('${u.id}', this)">${shortId} 📋</code>
+                </td>
+                <td>
+                  <strong style="color:#ffffff;">${u.email}</strong> 
+                  <span style="font-size:9px;color:#00ff66;background:rgba(0,255,102,0.1);padding:2px 5px;border-radius:2px;margin-left:4px;">${u.source} ✓</span>
+                </td>
+                <td>${statusBadge}</td>
+                <td>${hwidInfo}</td>
+                <td style="color:#7ca88e;font-size:11px;">${created}</td>
+                <td style="white-space:nowrap;">
+                  ${u.is_pro 
+                    ? `<button class="btn-action-revoke" onclick="revokeUserPro('${u.email}', '${u.id || ''}')">REVOKE PRO</button>`
+                    : `<button class="btn-gen" style="padding:5px 12px;font-size:10px;" onclick="grantProDirect('${u.email}', '${u.id || ''}')">+ GRANT PRO NOW ✓</button>`
+                  }
+                  <button class="btn-action-copy" style="margin-left:4px;" onclick="copyText('${u.id || u.email}', this)">COPY ID</button>
+                </td>
+              </tr>
+            `;
+          }).join('');
+        }
+
+        // 3. Render Active Subscribers & Hardware Locks
         if (activeItems.length === 0) {
           tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#7ca88e;padding:20px;">No active subscribers yet.</td></tr>';
           return;
