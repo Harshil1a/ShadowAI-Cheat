@@ -284,6 +284,7 @@
       letter-spacing: 2px;
       font-weight: 800;
     }
+  </style>
   <!-- SUPABASE JS CLIENT -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
@@ -308,8 +309,14 @@
         <span>LOG IN WITH GOOGLE (harshilthakur82@gmail.com)</span>
       </button>
 
-      <div style="margin-top:16px;font-size:11px;color:#7ca88e;">
-        <span>🔒 Zero Manual Entry • Exclusively secured by Google Identity for <strong>harshilthakur82@gmail.com</strong></span>
+      <div style="margin: 14px 0 10px 0; color: #7ca88e; font-size: 11px;">— OR ENTER MASTER PIN —</div>
+      <div style="display: flex; gap: 8px;">
+        <input type="password" id="master-pin-input" placeholder="PIN (8282)" style="flex:1;background:#030508;border:1px solid rgba(0,255,102,0.3);color:#00ff66;padding:10px;text-align:center;font-size:14px;border-radius:4px;letter-spacing:4px;">
+        <button class="btn-gen" id="btn-submit-pin" style="padding:10px 16px;">UNLOCK ⯈</button>
+      </div>
+
+      <div style="margin-top:14px;font-size:11px;color:#7ca88e;">
+        <span>🔒 Secured by Google Identity & Master PIN for <strong>harshilthakur82@gmail.com</strong></span>
       </div>
       <div id="pin-err" style="color:#ff4757;font-size:11px;margin-top:10px;"></div>
     </div>
@@ -366,33 +373,73 @@
       </div>
     </div>
 
+    <!-- QUICK PRO GRANT & SEARCH -->
+    <div style="background: #070c0a; border: 1px solid rgba(0, 229, 255, 0.3); border-radius: 6px; padding: 16px 20px; margin-bottom: 24px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;">
+      <div style="display: flex; gap: 10px; align-items: center; flex: 1; min-width: 280px;">
+        <span style="font-family: 'Orbitron'; font-size: 11px; color: #00e5ff; font-weight: 700; white-space: nowrap;">⚡ QUICK PRO GRANT:</span>
+        <input type="email" id="quick-grant-email" placeholder="Enter buyer email (e.g. rahul@gmail.com)" 
+               style="flex: 1; background: #030508; border: 1px solid rgba(0,229,255,0.4); color: #00ff66; padding: 8px 12px; border-radius: 4px; font-family: monospace; font-size: 12px;">
+        <button class="btn-gen" id="btn-quick-grant" style="padding: 8px 16px; font-size: 11px; white-space: nowrap;">+ GRANT PRO</button>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <span style="font-size: 11px; color: #7ca88e;">🔍 SEARCH:</span>
+        <input type="text" id="admin-search-input" placeholder="Search Order # or Email..." 
+               style="background: #030508; border: 1px solid rgba(0,255,102,0.3); color: #e2fced; padding: 8px 12px; border-radius: 4px; font-family: monospace; font-size: 12px; width: 220px;">
+      </div>
+    </div>
+
+    <!-- PENDING APPROVALS QUEUE (UPI / UTR) -->
+    <div class="admin-card" style="margin-bottom: 24px; border-color: rgba(0, 229, 255, 0.4); box-shadow: 0 0 25px rgba(0,229,255,0.08);">
+      <div class="admin-card-title">
+        <span style="color: #00e5ff;">⏳ PENDING PAYMENT APPROVALS (UPI / UTR QUEUE)</span>
+        <span id="pending-count-badge" style="font-size: 11px; background: rgba(0,229,255,0.15); color: #00e5ff; border: 1px solid #00e5ff; padding: 2px 8px; border-radius: 3px; font-weight: 800;">0 PENDING</span>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>ORDER #</th>
+            <th>BUYER EMAIL</th>
+            <th>PAYMENT REF / UTR</th>
+            <th>SUBMITTED</th>
+            <th>ACTION</th>
+          </tr>
+        </thead>
+        <tbody id="pending-table-body">
+          <tr>
+            <td colspan="5" style="text-align:center;color:#7ca88e;padding:20px;">No pending approvals right now. All orders clear!</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
     <!-- ACTIONS -->
     <div class="admin-actions">
       <button class="btn-gen" id="btn-create-key">+ GENERATE NEW PRO LICENSE KEY</button>
-      <button class="btn-refresh" id="btn-refresh-table">↻ REFRESH LICENSES</button>
+      <button class="btn-refresh" id="btn-refresh-table">↻ REFRESH ALL RECORDS</button>
     </div>
 
     <!-- TABLE -->
     <div class="admin-card">
       <div class="admin-card-title">
-        <span>ISSUED LICENSES & HARDWARE LOCKS</span>
+        <span>ACTIVE SUBSCRIBERS & HARDWARE LOCKS</span>
         <span id="load-status" style="font-size:11px;color:#7ca88e;">Live Supabase Sync</span>
       </div>
 
       <table>
         <thead>
           <tr>
-            <th>LICENSE KEY</th>
+            <th>SUBSCRIBER EMAIL</th>
             <th>STATUS</th>
-            <th>BOUND HARDWARE ID</th>
-            <th>CUSTOMER EMAIL</th>
-            <th>CREATED</th>
+            <th>BOUND HARDWARE ID (PC LOCK)</th>
+            <th>LICENSE KEY</th>
+            <th>ACTIVATED</th>
             <th>ACTIONS</th>
           </tr>
         </thead>
         <tbody id="license-table-body">
           <tr>
-            <td colspan="6" style="text-align:center;color:#7ca88e;padding:20px;">Loading licenses from database...</td>
+            <td colspan="6" style="text-align:center;color:#7ca88e;padding:20px;">Loading subscribers from database...</td>
           </tr>
         </tbody>
       </table>
@@ -432,6 +479,30 @@
     const savedAdmin = localStorage.getItem('shadow_admin_user');
     if (savedAdmin && savedAdmin.toLowerCase().trim() === MASTER_ADMIN_EMAIL) {
       handleVerifiedAdmin(MASTER_ADMIN_EMAIL, 'SESSION');
+    }
+
+    const pinInput = document.getElementById('master-pin-input');
+    const btnSubmitPin = document.getElementById('btn-submit-pin');
+
+    if (btnSubmitPin && pinInput) {
+      btnSubmitPin.addEventListener('click', () => {
+        if (pinInput.value.trim() === MASTER_PIN) {
+          handleVerifiedAdmin(MASTER_ADMIN_EMAIL, 'PIN');
+        } else {
+          pinErr.innerText = 'Invalid Master PIN. Please try again.';
+        }
+      });
+      pinInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          btnSubmitPin.click();
+        }
+      });
+    }
+
+    // Check URL param ?key=8282
+    const urlKey = new URLSearchParams(window.location.search).get('key');
+    if (urlKey === MASTER_PIN) {
+      handleVerifiedAdmin(MASTER_ADMIN_EMAIL, 'PIN');
     }
 
     // 1. Google OAuth Session Verification: STRICT SINGLE USER CHECK
@@ -562,13 +633,95 @@
       }
     });
 
-    // Load & Render Table
+    // Quick Direct Pro Grant
+    const quickEmailInput = document.getElementById('quick-grant-email');
+    const btnQuickGrant = document.getElementById('btn-quick-grant');
+    const searchInput = document.getElementById('admin-search-input');
+
+    if (btnQuickGrant && quickEmailInput) {
+      btnQuickGrant.addEventListener('click', async () => {
+        const email = quickEmailInput.value.trim().toLowerCase();
+        if (!email || !email.includes('@')) {
+          alert('Please enter a valid customer email.');
+          return;
+        }
+
+        btnQuickGrant.disabled = true;
+        btnQuickGrant.innerText = 'GRANTING...';
+
+        const randHex = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1).toUpperCase();
+        const newKey = `SHADOW-PRO-${randHex()}-${randHex()}`;
+
+        try {
+          await fetch(`${SUPABASE_URL}/rest/v1/licenses`, {
+            method: 'POST',
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify({
+              license_key: newKey,
+              customer_email: email,
+              plan_tier: 'PRO_MONTHLY',
+              is_active: true
+            })
+          });
+          alert(`✓ SUCCESS! Granted Pro to ${email}.\nTheir app will now automatically unlock on launch.`);
+          quickEmailInput.value = '';
+          loadLicenses();
+        } catch(e) {
+          alert('Grant failed: ' + e.message);
+        } finally {
+          btnQuickGrant.disabled = false;
+          btnQuickGrant.innerText = '+ GRANT PRO';
+        }
+      });
+    }
+
+    if (searchInput) {
+      searchInput.addEventListener('input', () => {
+        loadLicenses();
+      });
+    }
+
+    // Load & Render Tables
     const btnRefresh = document.getElementById('btn-refresh-table');
     btnRefresh.addEventListener('click', loadLicenses);
 
+    window.approveOrder = async function(id, email) {
+      if (!confirm(`⚡ APPROVE PRO ORDER for [${email}]?\nThis will immediately activate Pro for their Google account and device.`)) return;
+
+      const randHex = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1).toUpperCase();
+      const generatedProKey = `SHADOW-PRO-${randHex()}-${randHex()}`;
+
+      try {
+        await fetch(`${SUPABASE_URL}/rest/v1/licenses?id=eq.${id}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            is_active: true,
+            license_key: generatedProKey,
+            plan_tier: 'PRO_MONTHLY'
+          })
+        });
+        alert(`🎉 ORDER APPROVED!\n${email} is now officially PRO ACTIVE.\nTheir waiting room and PC app will unlock automatically!`);
+        loadLicenses();
+      } catch(e) {
+        alert('Approval failed: ' + e.message);
+      }
+    };
+
     async function loadLicenses() {
+      const pbody = document.getElementById('pending-table-body');
       const tbody = document.getElementById('license-table-body');
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#7ca88e;padding:20px;">Fetching records...</td></tr>';
+      const pbadge = document.getElementById('pending-count-badge');
+      const searchVal = searchInput ? searchInput.value.trim().toLowerCase() : '';
 
       try {
         let data = [];
@@ -589,82 +742,112 @@
           console.warn('Server fetch error:', err);
         }
 
-        // Supabase is single source of truth; only use local cache if network connection completely failed
         let allKeys = data;
         if (!fetchOk) {
           allKeys = JSON.parse(localStorage.getItem('shadow_admin_keys') || '[]');
         }
 
-        if (allKeys.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#7ca88e;padding:20px;">No licenses issued yet. Click [+ GENERATE NEW PRO LICENSE KEY] above!</td></tr>';
-          updateStats([]);
+        // Filter by search query if present
+        let filtered = allKeys;
+        if (searchVal) {
+          filtered = allKeys.filter(item => {
+            const em = (item.customer_email || '').toLowerCase();
+            const lk = (item.license_key || '').toLowerCase();
+            const hw = (item.bound_hwid || '').toLowerCase();
+            return em.includes(searchVal) || lk.includes(searchVal) || hw.includes(searchVal);
+          });
+        }
+
+        // Separate pending orders from active subscribers
+        const pendingItems = filtered.filter(item => !item.is_active || (item.license_key && item.license_key.startsWith('PENDING-')));
+        const activeItems = filtered.filter(item => item.is_active && (!item.license_key || !item.license_key.startsWith('PENDING-')));
+
+        if (pbadge) pbadge.innerText = `${pendingItems.length} PENDING`;
+        updateStats(activeItems);
+
+        // 1. Render Pending Approvals Queue
+        if (pendingItems.length === 0) {
+          pbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#7ca88e;padding:16px;">✓ No pending approvals right now. All orders clear!</td></tr>';
+        } else {
+          pbody.innerHTML = pendingItems.map(item => {
+            let orderCode = '#N/A';
+            let utr = 'N/A';
+            if (item.bound_hwid && item.bound_hwid.includes('Order')) {
+              const parts = item.bound_hwid.split('|');
+              orderCode = parts[0].trim();
+              if (parts[1]) utr = parts[1].replace('UTR:', '').trim();
+            } else if (item.license_key && item.license_key.startsWith('PENDING-')) {
+              const kparts = item.license_key.split('-');
+              if (kparts[1]) orderCode = '#' + kparts[1];
+              if (kparts[2]) utr = kparts[2];
+            }
+
+            const created = new Date(item.created_at).toLocaleDateString('en-IN', {
+              month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
+
+            return `
+              <tr style="background: rgba(0, 229, 255, 0.04);">
+                <td><strong style="color:#00e5ff;font-family:'Orbitron',monospace;font-size:13px;">${orderCode}</strong></td>
+                <td><strong style="color:#ffffff;">${item.customer_email}</strong></td>
+                <td><code style="color:#00ff66;background:#030805;padding:3px 6px;border-radius:3px;border:1px dashed rgba(0,255,102,0.4);">${utr}</code></td>
+                <td style="color:#7ca88e;font-size:11px;">${created}</td>
+                <td style="white-space:nowrap;">
+                  <button class="btn-gen" style="padding:6px 14px;font-size:11px;" onclick="approveOrder('${item.id}', '${item.customer_email}')">APPROVE & GRANT PRO ✓</button>
+                  <button class="btn-action-delete" style="padding:6px 10px;" onclick="deleteLicense('${item.id}', '${item.license_key}')">REJECT</button>
+                </td>
+              </tr>
+            `;
+          }).join('');
+        }
+
+        // 2. Render Active Subscribers & Hardware Locks
+        if (activeItems.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#7ca88e;padding:20px;">No active subscribers yet.</td></tr>';
           return;
         }
 
-      updateStats(allKeys);
+        tbody.innerHTML = activeItems.map(item => {
+          const createdDate = new Date(item.created_at);
+          const now = new Date();
+          const diffDays = Math.max(0, (now - createdDate) / (1000 * 60 * 60 * 24));
+          const isMonthly = !item.plan_tier || item.plan_tier === 'PRO_MONTHLY';
+          const isExpired = isMonthly && diffDays >= 30;
+          const daysLeft = Math.max(0, Math.ceil(30 - diffDays));
 
-      tbody.innerHTML = allKeys.map(item => {
-        const createdDate = new Date(item.created_at);
-        const now = new Date();
-        const diffDays = Math.max(0, (now - createdDate) / (1000 * 60 * 60 * 24));
-        const isMonthly = !item.plan_tier || item.plan_tier === 'PRO_MONTHLY';
-        const isExpired = isMonthly && diffDays >= 30;
-        const daysLeft = Math.max(0, Math.ceil(30 - diffDays));
+          let statusBadge = `<span class="badge-status badge-active">PRO ACTIVE (${daysLeft}d left)</span>`;
+          if (isExpired) {
+            statusBadge = '<span class="badge-status" style="background:rgba(255,165,2,0.15);color:#ffa502;border:1px solid #ffa502;">EXPIRED (30d)</span>';
+          } else if (!item.is_active) {
+            statusBadge = '<span class="badge-status badge-revoked">REVOKED</span>';
+          }
 
-        // Auto-revoke in database if monthly key exceeded 30 days and is still marked active
-        if (isExpired && item.is_active && item.id && !item.id.startsWith('local-')) {
-          fetch(`${SUPABASE_URL}/rest/v1/licenses?id=eq.${item.id}`, {
-            method: 'PATCH',
-            headers: {
-              'apikey': SUPABASE_KEY,
-              'Authorization': `Bearer ${SUPABASE_KEY}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ is_active: false })
-          }).catch(() => {});
-          item.is_active = false;
-        }
+          let hwidDisplay = '<span style="color:#a855f7;font-size:11px;">🟢 READY (NO PC BOUND)</span>';
+          if (item.bound_hwid) {
+            const shortHwid = item.bound_hwid.length > 18 ? item.bound_hwid.substring(0, 16) + '...' : item.bound_hwid;
+            hwidDisplay = `<span class="badge-status badge-bound" title="${item.bound_hwid}">🔒 PC: ${shortHwid}</span>`;
+          }
 
-        let statusBadge = '<span class="badge-status badge-active">ACTIVE</span>';
-        if (!item.is_active && isExpired) {
-          statusBadge = '<span class="badge-status" style="background:rgba(255,165,2,0.15);color:#ffa502;border:1px solid #ffa502;">EXPIRED (30d)</span>';
-        } else if (!item.is_active) {
-          statusBadge = '<span class="badge-status badge-revoked">REVOKED</span>';
-        } else if (isMonthly) {
-          statusBadge = `<span class="badge-status badge-active" title="${daysLeft} days remaining">ACTIVE (${daysLeft}d left)</span>`;
-        } else {
-          statusBadge = '<span class="badge-status badge-active" style="border-color:#a855f7;color:#a855f7;">LIFETIME</span>';
-        }
+          const created = new Date(item.created_at).toLocaleDateString('en-IN', {
+            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+          });
 
-        let hwidDisplay = '<span style="color:#a855f7;font-size:11px;">🟢 READY (NO DEVICE LOCKED)</span>';
-        if (item.bound_hwid) {
-          const shortHwid = item.bound_hwid.length > 16 ? item.bound_hwid.substring(0, 14) + '...' : item.bound_hwid;
-          hwidDisplay = `<span class="badge-status badge-bound">🔒 ${shortHwid}</span>`;
-        }
-
-        const created = new Date(item.created_at).toLocaleDateString('en-IN', {
-          month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-        });
-
-        return `
-          <tr>
-            <td><strong style="color:#00ff66;letter-spacing:1px;">${item.license_key}</strong></td>
-            <td>${statusBadge}</td>
-            <td>${hwidDisplay}</td>
-            <td style="color:#7ca88e;">${item.customer_email || 'unassigned'}</td>
-            <td style="color:#7ca88e;font-size:11px;">${created}</td>
-            <td style="white-space:nowrap;">
-              <button class="btn-action-copy" onclick="copyText('${item.license_key}', this)">COPY</button>
-              ${item.is_active 
-                ? `<button class="btn-action-revoke" onclick="toggleRevoke('${item.id}', false)">REVOKE</button>`
-                : `<button class="btn-action-copy" onclick="toggleRevoke('${item.id}', true)">RESTORE</button>`
-              }
-              ${item.bound_hwid ? `<button class="btn-action-reset" title="Unbind hardware ID so key can be used on a new laptop" onclick="resetHwid('${item.id}', '${item.license_key}')">UNBIND HWID</button>` : ''}
-              <button class="btn-action-delete" title="Permanently delete from database" onclick="deleteLicense('${item.id}', '${item.license_key}')">DELETE</button>
-            </td>
-          </tr>
-        `;
-      }).join('');
+          return `
+            <tr>
+              <td><strong style="color:#ffffff;">${item.customer_email || 'unassigned'}</strong></td>
+              <td>${statusBadge}</td>
+              <td>${hwidDisplay}</td>
+              <td><code style="color:#00ff66;font-size:11px;">${item.license_key}</code></td>
+              <td style="color:#7ca88e;font-size:11px;">${created}</td>
+              <td style="white-space:nowrap;">
+                <button class="btn-action-copy" onclick="copyText('${item.license_key}', this)">COPY KEY</button>
+                ${item.bound_hwid ? `<button class="btn-action-reset" title="Unbind PC HWID lock so customer can activate on a new laptop" onclick="resetHwid('${item.id}', '${item.license_key}')">UNBIND HWID</button>` : ''}
+                <button class="btn-action-revoke" onclick="toggleRevoke('${item.id}', false)">REVOKE PRO</button>
+                <button class="btn-action-delete" title="Permanently delete from database" onclick="deleteLicense('${item.id}', '${item.license_key}')">DELETE</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
 
       } catch (err) {
         tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ff4757;padding:20px;">Error loading data: ${err.message}</td></tr>`;

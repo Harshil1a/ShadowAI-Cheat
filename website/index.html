@@ -419,6 +419,15 @@
         <p class="upi-desc">Scan the QR code below with any UPI app (<strong>PhonePe, Google Pay, Paytm, BHIM,
             CRED</strong>) to pay ₹99 directly:</p>
 
+        <!-- Unique Order Code Banner -->
+        <div style="background: rgba(0, 229, 255, 0.08); border: 1px solid #00e5ff; border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-size: 10px; color: #7ca88e; letter-spacing: 1px;">YOUR UNIQUE ORDER CODE:</div>
+            <div id="checkout-order-code" style="font-family: 'Orbitron', monospace; font-size: 18px; font-weight: 800; color: #00e5ff; letter-spacing: 2px;">#4821</div>
+          </div>
+          <span style="font-size: 10px; color: #00ff66; background: rgba(0, 255, 102, 0.12); padding: 4px 8px; border-radius: 4px; font-weight: bold; border: 1px solid rgba(0,255,102,0.3);">⚡ 1-CLICK PRO</span>
+        </div>
+
         <!-- Dynamic QR Frame -->
         <div class="upi-qr-wrapper">
           <div class="qr-glow-frame">
@@ -446,8 +455,8 @@
         <div class="upi-divider"></div>
 
         <!-- Step 2: Instant WhatsApp & UTR Verification -->
-        <div class="upi-claim-box">
-          <span class="claim-title">// STEP 2: VERIFY PAYMENT & GET PRO KEY INSTANTLY</span>
+        <div class="upi-claim-box" id="upi-claim-section">
+          <span class="claim-title">// STEP 2: SUBMIT PAYMENT DETAILS (AUTO-VERIFIED)</span>
 
           <div class="whatsapp-activation-box">
             <a id="btn-whatsapp-activate"
@@ -457,22 +466,57 @@
                 <span class="wa-icon">💬</span>
                 <span>SEND PROOF ON WHATSAPP (+91 9317526356)</span>
               </div>
-              <span class="wa-badge">⚡ INSTANT ~1 MIN ACTIVATION BY HARSHIL</span>
+              <span class="wa-badge">⚡ INSTANT ADMIN ALERT & ACTIVATION</span>
             </a>
-            <p class="wa-note">Send payment screenshot or 12-digit UTR on WhatsApp to get your official license key
-              directly from Harshil.</p>
+            <p class="wa-note">Include your Order Code <strong id="wa-order-hint" style="color:#00e5ff;">#4821</strong> in your payment remarks or WhatsApp message for instant 1-click approval.</p>
           </div>
 
-          <div class="or-separator"><span>OR SUBMIT UTR FOR CLOUD LOG</span></div>
+          <div class="or-separator"><span>OR SUBMIT DETAILS ON SITE FOR AUTO-PING</span></div>
 
-          <div class="claim-input-group">
+          <div class="claim-input-group" id="claim-inputs-container">
             <input type="text" id="claim-utr-input" placeholder="12-Digit UPI UTR / Ref No." maxlength="16"
               autocomplete="off">
             <input type="email" id="claim-email-input" placeholder="your-email@gmail.com" required autocomplete="off">
-            <button class="btn-terminal-sm" id="btn-claim-license" type="button">SUBMIT_UTR ⯈</button>
+            <button class="btn-terminal-sm" id="btn-claim-license" type="button">SUBMIT_PAYMENT ⯈</button>
           </div>
-          <div class="claim-output" id="claim-output">Status: Ready. Click the WhatsApp button above or submit your
-            12-digit UTR.</div>
+          <div class="claim-output" id="claim-output">Enter your email & 12-digit UTR to register your approval request.</div>
+        </div>
+
+        <!-- LIVE APPROVAL WAITING ROOM (shown after submission) -->
+        <div id="approval-waiting-room" style="display: none; background: rgba(3, 8, 12, 0.95); border: 1px solid rgba(0, 229, 255, 0.4); border-radius: 8px; padding: 20px; margin-top: 14px; text-align: center; box-shadow: 0 0 30px rgba(0,229,255,0.15);">
+          <div style="font-family: 'Orbitron', monospace; font-size: 13px; color: #00e5ff; letter-spacing: 1px; margin-bottom: 6px;">
+            ⏳ VERIFICATION IN PROGRESS
+          </div>
+          <div style="font-size: 11px; color: #7ca88e; margin-bottom: 14px;">
+            Order <strong id="wait-order-code" style="color: #ffffff; font-family: monospace;">#4821</strong> • Account: <strong id="wait-email" style="color: #00ff66;">user@gmail.com</strong>
+          </div>
+
+          <!-- Timer Bar -->
+          <div style="background: rgba(0, 229, 255, 0.08); border: 1px solid rgba(0, 229, 255, 0.25); border-radius: 6px; padding: 14px; margin-bottom: 14px;">
+            <div style="font-size: 10px; color: #7ca88e; letter-spacing: 1px; margin-bottom: 4px;">ESTIMATED APPROVAL TIME:</div>
+            <div id="approval-timer" style="font-family: 'Orbitron', monospace; font-size: 24px; font-weight: 800; color: #00ff66; letter-spacing: 2px;">
+              14:59
+            </div>
+            <div style="font-size: 10px; color: #7ca88e; margin-top: 4px;">Window: 15 min – 3 hrs max • Admin notified on WhatsApp</div>
+          </div>
+
+          <!-- Live Heartbeat Ping -->
+          <div id="poller-status-box" style="display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 11px; color: #7ca88e; margin-bottom: 12px;">
+            <span style="width: 8px; height: 8px; background: #00ff66; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #00ff66;"></span>
+            <span id="poller-status-text">Checking cloud approval in real-time...</span>
+          </div>
+
+          <!-- Celebration State (shown on approval) -->
+          <div id="approval-success-box" style="display: none; background: rgba(0, 255, 102, 0.12); border: 1px solid #00ff66; border-radius: 6px; padding: 16px; margin-top: 10px;">
+            <div style="font-size: 32px; margin-bottom: 6px;">🎉</div>
+            <div style="font-family: 'Orbitron', monospace; font-size: 14px; color: #00ff66; font-weight: bold; margin-bottom: 6px;">PAYMENT VERIFIED & PRO ACTIVE!</div>
+            <p style="font-size: 12px; color: #e2fced; margin: 0 0 10px 0; line-height: 1.4;">
+              Your account <strong id="success-email" style="color: #00ff66;"></strong> is now unlocked with <strong>Unlimited Pro AI queries</strong> and bound to your computer.
+            </p>
+            <div style="font-size: 11px; color: #00e5ff; font-weight: bold; background: rgba(0,229,255,0.1); padding: 8px; border-radius: 4px;">
+              🚀 Launch ShadowAI on your PC ➔ Pro is already active!
+            </div>
+          </div>
         </div>
 
       </div>

@@ -445,11 +445,21 @@
     const btnWhatsapp = document.getElementById('btn-whatsapp-activate');
     const claimOutput = document.getElementById('claim-output');
 
+    let currentOrderCode = sessionStorage.getItem('shadow_order_code') || ('#' + Math.floor(1000 + Math.random() * 9000));
+    sessionStorage.setItem('shadow_order_code', currentOrderCode);
+
+    function syncOrderCodeUI() {
+      const codeEl = document.getElementById('checkout-order-code');
+      const hintEl = document.getElementById('wa-order-hint');
+      if (codeEl) codeEl.innerText = currentOrderCode;
+      if (hintEl) hintEl.innerText = currentOrderCode;
+    }
+
     function updateWhatsAppUrl() {
       if (!btnWhatsapp) return;
       const em = claimEmailInput ? claimEmailInput.value.trim() : '';
       const utr = claimUtrInput ? claimUtrInput.value.trim() : '';
-      const msg = `Hi Harshil, I have paid ₹99 for ShadowAI Pro!%0A%0AMy Google Email: ${encodeURIComponent(em || '[Enter your email]')}%0AMy 12-Digit UPI UTR: ${encodeURIComponent(utr || '[Attaching payment screenshot]')}`;
+      const msg = `Hi Harshil, I have submitted payment for ShadowAI Pro!%0A%0A🏷️ Order Code: ${encodeURIComponent(currentOrderCode)}%0A👤 Google Email: ${encodeURIComponent(em || '[Enter your email]')}%0A💳 12-Digit UTR: ${encodeURIComponent(utr || '[Attaching receipt]')}%0A💰 Plan: ₹99 Pro (1 Month)%0A%0APlease approve my Pro access!`;
       btnWhatsapp.href = `https://wa.me/919317526356?text=${msg}`;
     }
 
@@ -459,6 +469,12 @@
     if (buyBtn && upiModal) {
       buyBtn.addEventListener('click', (e) => {
         e.preventDefault();
+        // Generate fresh order code on each checkout attempt if not already set
+        if (!sessionStorage.getItem('shadow_order_code')) {
+          currentOrderCode = '#' + Math.floor(1000 + Math.random() * 9000);
+          sessionStorage.setItem('shadow_order_code', currentOrderCode);
+        }
+        syncOrderCodeUI();
         upiModal.classList.add('open');
         updateWhatsAppUrl();
       });
@@ -494,6 +510,66 @@
       });
     }
 
+    // Live Poller & Timer state
+    let approvalPollInterval = null;
+    let countdownTimerInterval = null;
+
+    function startWaitingRoom(email, utr, orderCode) {
+      const claimSection = document.getElementById('upi-claim-section');
+      const waitingRoom = document.getElementById('approval-waiting-room');
+      const waitOrder = document.getElementById('wait-order-code');
+      const waitEmail = document.getElementById('wait-email');
+      const timerEl = document.getElementById('approval-timer');
+      const successBox = document.getElementById('approval-success-box');
+      const pollerBox = document.getElementById('poller-status-box');
+      const successEmail = document.getElementById('success-email');
+
+      if (claimSection) claimSection.style.display = 'none';
+      if (waitingRoom) waitingRoom.style.display = 'block';
+      if (waitOrder) waitOrder.innerText = orderCode;
+      if (waitEmail) waitEmail.innerText = email;
+      if (successEmail) successEmail.innerText = email;
+
+      // 15:00 countdown timer
+      let timeLeft = 900; // 15 minutes
+      if (countdownTimerInterval) clearInterval(countdownTimerInterval);
+      countdownTimerInterval = setInterval(() => {
+        if (timeLeft <= 0) {
+          if (timerEl) timerEl.innerText = '00:00 (Verifying...)';
+          return;
+        }
+        timeLeft--;
+        const mins = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+        const secs = (timeLeft % 60).toString().padStart(2, '0');
+        if (timerEl) timerEl.innerText = `${mins}:${secs}`;
+      }, 1000);
+
+      // Real-time Supabase poller every 4 seconds
+      if (approvalPollInterval) clearInterval(approvalPollInterval);
+      approvalPollInterval = setInterval(async () => {
+        try {
+          const res = await fetch(`${SUPABASE_URL}/rest/v1/licenses?customer_email=eq.${encodeURIComponent(email)}&is_active=eq.true&select=*`, {
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+          });
+          const rows = await res.json();
+          if (Array.isArray(rows) && rows.length > 0) {
+            // PRO APPROVED!
+            clearInterval(approvalPollInterval);
+            clearInterval(countdownTimerInterval);
+            if (pollerBox) pollerBox.style.display = 'none';
+            if (timerEl) {
+              timerEl.innerText = 'APPROVED ✓';
+              timerEl.style.color = '#00ff66';
+            }
+            if (successBox) successBox.style.display = 'block';
+            localStorage.setItem('shadow_user_is_pro', 'true');
+          }
+        } catch(e) {
+          console.warn('Approval poller notice:', e);
+        }
+      }, 4000);
+    }
+
     // Submit UTR and Log for Verification
     if (btnClaimKey && claimEmailInput && claimOutput) {
       btnClaimKey.addEventListener('click', () => {
@@ -510,12 +586,12 @@
 
         btnClaimKey.disabled = true;
         btnClaimKey.innerText = 'LOGGING...';
-        claimOutput.innerHTML = '<span style="color:#00e5ff;">RECORDING:</span> Registering transaction in cloud verification database...';
+        claimOutput.innerHTML = '<span style="color:#00e5ff;">RECORDING:</span> Registering order #' + currentOrderCode + ' in cloud database...';
 
         localStorage.setItem('shadow_user_email', email);
         localStorage.setItem('shadow_user_utr', utr);
 
-        // Sync to Supabase Cloud Database
+        // Sync pending order to Supabase Cloud Database
         try {
           fetch(`${SUPABASE_URL}/rest/v1/licenses`, {
             method: 'POST',
@@ -526,32 +602,29 @@
               'Prefer': 'return=minimal'
             },
             body: JSON.stringify({
-              license_key: `PENDING-${utr}`,
+              license_key: `PENDING-${currentOrderCode.replace('#','')}-${utr}`,
               customer_email: email,
               plan_tier: 'PRO_MONTHLY',
-              is_active: false
+              is_active: false,
+              bound_hwid: `Order ${currentOrderCode} | UTR: ${utr}`
             })
           }).catch(e => console.warn('Supabase sync notice:', e));
         } catch (e) {}
 
+        // Launch WhatsApp alert in new tab
+        updateWhatsAppUrl();
+        if (btnWhatsapp) {
+          window.open(btnWhatsapp.href, '_blank');
+        }
+
+        // Switch to Live Waiting Room
         setTimeout(() => {
-          updateWhatsAppUrl();
-          claimOutput.innerHTML = `
-            <div style="color:#00ff66;font-weight:700;margin-bottom:6px;">✓ PAYMENT SUBMITTED FOR APPROVAL</div>
-            <div style="font-size:13px;letter-spacing:1px;color:#00e5ff;padding:8px;background:#030805;border:1px dashed #00ff66;border-radius:4px;font-family:monospace;margin:6px 0;text-align:center;">
-              UTR: <strong>${utr}</strong>
-            </div>
-            <p style="color:#e2fced;font-size:11px;margin:6px 0;">Assigned to: <strong>${email}</strong></p>
-            <p style="color:#7ca88e;font-size:11px;margin-bottom:8px;">Now click the green <strong>SEND PROOF ON WHATSAPP</strong> button above to get your key activated by Harshil in ~1 minute!</p>
-            <a href="${btnWhatsapp ? btnWhatsapp.href : 'https://wa.me/919317526356'}" target="_blank" style="display:block;background:#25D366;color:#ffffff;text-align:center;font-weight:bold;padding:9px;border-radius:4px;text-decoration:none;font-family:monospace;">
-              OPEN WHATSAPP NOW 💬
-            </a>
-          `;
-          btnClaimKey.disabled = false;
-          btnClaimKey.innerText = 'SUBMIT_UTR ⯈';
-        }, 800);
+          startWaitingRoom(email, utr, currentOrderCode);
+        }, 600);
       });
     }
+
+    syncOrderCodeUI();
 
 
     // Google SSO via Supabase Client
