@@ -187,6 +187,36 @@
       background: #ff4757;
       color: #ffffff;
     }
+    .btn-action-delete {
+      background: rgba(255, 71, 87, 0.15);
+      color: #ff4757;
+      border: 1px solid rgba(255, 71, 87, 0.6);
+      padding: 4px 8px;
+      font-size: 10px;
+      border-radius: 3px;
+      cursor: pointer;
+      margin-left: 4px;
+      font-weight: 700;
+    }
+    .btn-action-delete:hover {
+      background: #ff4757;
+      color: #ffffff;
+      box-shadow: 0 0 10px rgba(255, 71, 87, 0.5);
+    }
+    .btn-action-reset {
+      background: rgba(0, 229, 255, 0.1);
+      color: #00e5ff;
+      border: 1px solid rgba(0, 229, 255, 0.5);
+      padding: 4px 8px;
+      font-size: 10px;
+      border-radius: 3px;
+      cursor: pointer;
+      margin-left: 4px;
+    }
+    .btn-action-reset:hover {
+      background: #00e5ff;
+      color: #030508;
+    }
     /* Modal for Key Generation */
     .pin-gate {
       position: fixed;
@@ -622,12 +652,14 @@
             <td>${hwidDisplay}</td>
             <td style="color:#7ca88e;">${item.customer_email || 'unassigned'}</td>
             <td style="color:#7ca88e;font-size:11px;">${created}</td>
-            <td>
+            <td style="white-space:nowrap;">
               <button class="btn-action-copy" onclick="copyText('${item.license_key}', this)">COPY</button>
               ${item.is_active 
                 ? `<button class="btn-action-revoke" onclick="toggleRevoke('${item.id}', false)">REVOKE</button>`
                 : `<button class="btn-action-copy" onclick="toggleRevoke('${item.id}', true)">RESTORE</button>`
               }
+              ${item.bound_hwid ? `<button class="btn-action-reset" title="Unbind hardware ID so key can be used on a new laptop" onclick="resetHwid('${item.id}', '${item.license_key}')">UNBIND HWID</button>` : ''}
+              <button class="btn-action-delete" title="Permanently delete from database" onclick="deleteLicense('${item.id}', '${item.license_key}')">DELETE</button>
             </td>
           </tr>
         `;
@@ -670,6 +702,46 @@
         loadLicenses();
       } catch (e) {
         alert('Action failed: ' + e.message);
+      }
+    };
+
+    window.deleteLicense = async function(id, licenseKey) {
+      if (!confirm(`⚠️ PERMANENT DELETE: Are you sure you want to completely DELETE license key [${licenseKey}] from database? This cannot be undone.`)) return;
+      try {
+        if (id && !id.startsWith('local-')) {
+          await fetch(`${SUPABASE_URL}/rest/v1/licenses?id=eq.${id}`, {
+            method: 'DELETE',
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`
+            }
+          });
+        }
+        const localKeys = JSON.parse(localStorage.getItem('shadow_admin_keys') || '[]').filter(k => k.id !== id && k.license_key !== licenseKey);
+        localStorage.setItem('shadow_admin_keys', JSON.stringify(localKeys));
+        loadLicenses();
+      } catch (e) {
+        alert('Delete failed: ' + e.message);
+      }
+    };
+
+    window.resetHwid = async function(id, licenseKey) {
+      if (!confirm(`🔓 UNBIND DEVICE: Clear hardware lock for [${licenseKey}] so the user can activate on their new laptop?`)) return;
+      try {
+        if (id && !id.startsWith('local-')) {
+          await fetch(`${SUPABASE_URL}/rest/v1/licenses?id=eq.${id}`, {
+            method: 'PATCH',
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ bound_hwid: null })
+          });
+        }
+        loadLicenses();
+      } catch (e) {
+        alert('Reset HWID failed: ' + e.message);
       }
     };
   </script>
