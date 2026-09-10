@@ -382,15 +382,27 @@
         .then(data => {
           if (Array.isArray(data) && data.length > 0) {
             const lic = data[0];
-            if (lic.is_active) {
+            const createdDate = new Date(lic.created_at);
+            const diffDays = Math.max(0, (new Date() - createdDate) / (1000 * 60 * 60 * 24));
+            const isMonthly = !lic.plan_tier || lic.plan_tier === 'PRO_MONTHLY';
+            const isExpired = isMonthly && diffDays >= 30;
+            const daysLeft = Math.max(0, Math.ceil(30 - diffDays));
+
+            if (lic.is_active && !isExpired) {
+              const timeDisplay = isMonthly ? `${daysLeft} Days Remaining` : 'Lifetime Access';
               resultBox.innerHTML = `
                 <span style="color:#00ff66; font-weight:bold;">[LIVE SUPABASE API: VERIFIED ACTIVE ✓]</span><br>
-                Key: <code>${lic.license_key}</code> • Tier: <strong>${lic.plan_tier || 'PRO_MONTHLY'}</strong> • Status: <span style="color:#00ff66;">ACTIVE IN CLOUD</span>
+                Key: <code>${lic.license_key}</code> • Tier: <strong>${lic.plan_tier || 'PRO_MONTHLY'}</strong> • Validity: <span style="color:#00e5ff;">${timeDisplay}</span>
+              `;
+            } else if (isExpired) {
+              resultBox.innerHTML = `
+                <span style="color:#ffa502; font-weight:bold;">[LIVE SUPABASE API: EXPIRED (30-DAY LIMIT)]</span><br>
+                Key <code>${lic.license_key}</code> has reached its 30-day monthly limit. Please renew your subscription to reactivate.
               `;
             } else {
               resultBox.innerHTML = `
                 <span style="color:#ff4757; font-weight:bold;">[LIVE SUPABASE API: REVOKED]</span><br>
-                Key <code>${lic.license_key}</code> exists in the cloud database but has been marked revoked or expired.
+                Key <code>${lic.license_key}</code> exists in the cloud database but has been marked revoked or deactivated.
               `;
             }
           } else if (key === 'SHADOW-PRO-DEMO-2026' || key === 'SHADOW-PRO-HARSHIL-ADMIN') {

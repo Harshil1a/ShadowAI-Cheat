@@ -11,6 +11,7 @@
 #include <QNetworkRequest>
 #include <QNetworkReply>
 #include <QSysInfo>
+#include <QDateTime>
 
 AccountManager& AccountManager::instance() {
     static AccountManager inst;
@@ -107,6 +108,7 @@ void AccountManager::activateLicenseKey(const QString& rawKey) {
         bool isActive = false;
         QString boundHwid;
 
+        bool isExpired = false;
         if (reply->error() == QNetworkReply::NoError) {
             QByteArray resp = reply->readAll();
             QJsonDocument doc = QJsonDocument::fromJson(resp);
@@ -115,6 +117,15 @@ void AccountManager::activateLicenseKey(const QString& rawKey) {
                 QJsonObject row = doc.array().first().toObject();
                 isActive = row.value("is_active").toBool(true);
                 boundHwid = row.value("bound_hwid").toString().trimmed().toUpper();
+
+                QString planTier = row.value("plan_tier").toString("PRO_MONTHLY").toUpper();
+                QString createdAtStr = row.value("created_at").toString();
+                QDateTime createdAt = QDateTime::fromString(createdAtStr, Qt::ISODate);
+                if (planTier == "PRO_MONTHLY" && createdAt.isValid()) {
+                    if (createdAt.addDays(30) < QDateTime::currentDateTimeUtc()) {
+                        isExpired = true;
+                    }
+                }
             }
         }
         reply->deleteLater();
@@ -124,8 +135,13 @@ void AccountManager::activateLicenseKey(const QString& rawKey) {
             return;
         }
 
+        if (isExpired) {
+            emit licenseActivationResult(false, "❌ MONTHLY LICENSE EXPIRED: Your 30-day Pro access has ended. Please renew on website.");
+            return;
+        }
+
         if (!isActive) {
-            emit licenseActivationResult(false, "❌ This license key has been revoked or expired.");
+            emit licenseActivationResult(false, "❌ This license key has been revoked or deactivated.");
             return;
         }
 
@@ -322,8 +338,20 @@ void AccountManager::syncAccountStatus() {
             QJsonDocument doc = QJsonDocument::fromJson(data);
             if (doc.isArray() && !doc.array().isEmpty()) {
                 QJsonObject row = doc.array().first().toObject();
-                key = row.value("license_key").toString().trimmed().toUpper();
-                isPro = true;
+                QString planTier = row.value("plan_tier").toString("PRO_MONTHLY").toUpper();
+                QString createdAtStr = row.value("created_at").toString();
+                QDateTime createdAt = QDateTime::fromString(createdAtStr, Qt::ISODate);
+                bool isExpired = false;
+                if (planTier == "PRO_MONTHLY" && createdAt.isValid()) {
+                    if (createdAt.addDays(30) < QDateTime::currentDateTimeUtc()) {
+                        isExpired = true;
+                    }
+                }
+
+                if (!isExpired) {
+                    key = row.value("license_key").toString().trimmed().toUpper();
+                    isPro = true;
+                }
             }
         }
         reply->deleteLater();

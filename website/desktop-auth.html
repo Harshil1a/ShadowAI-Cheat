@@ -290,8 +290,18 @@
           });
           const rows = await res.json();
           if (Array.isArray(rows) && rows.length > 0) {
-            isPro = true;
-            licenseKey = rows[0].license_key;
+            const row = rows[0];
+            const createdDate = new Date(row.created_at);
+            const diffDays = (new Date() - createdDate) / (1000 * 60 * 60 * 24);
+            const isMonthly = !row.plan_tier || row.plan_tier === 'PRO_MONTHLY';
+            const isExpired = isMonthly && diffDays >= 30;
+
+            if (!isExpired) {
+              isPro = true;
+              licenseKey = row.license_key;
+            } else {
+              console.log('Customer license reached 30-day expiration period.');
+            }
           }
         } catch(e) {
           console.warn('License lookup error:', e);
