@@ -709,24 +709,49 @@
     window.deleteLicense = async function(id, licenseKey) {
       if (!confirm(`⚠️ PERMANENT DELETE: Are you sure you want to completely DELETE license key [${licenseKey}] from database? This cannot be undone.`)) return;
       try {
-        if (id && !id.startsWith('local-')) {
-          await fetch(`${SUPABASE_URL}/rest/v1/licenses?id=eq.${id}`, {
+        let deletedRows = [];
+        const deleteUrl = (id && !id.startsWith('local-'))
+          ? `${SUPABASE_URL}/rest/v1/licenses?id=eq.${id}`
+          : `${SUPABASE_URL}/rest/v1/licenses?license_key=eq.${encodeURIComponent(licenseKey)}`;
+
+        const res = await fetch(deleteUrl, {
+          method: 'DELETE',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Prefer': 'return=representation'
+          }
+        });
+        try {
+          deletedRows = await res.json();
+        } catch(e) {}
+
+        if ((!deletedRows || deletedRows.length === 0) && licenseKey) {
+          const res2 = await fetch(`${SUPABASE_URL}/rest/v1/licenses?license_key=eq.${encodeURIComponent(licenseKey)}`, {
             method: 'DELETE',
             headers: {
               'apikey': SUPABASE_KEY,
-              'Authorization': `Bearer ${SUPABASE_KEY}`
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+              'Prefer': 'return=representation'
             }
           });
+          try {
+            deletedRows = await res2.json();
+          } catch(e) {}
         }
-        if (licenseKey) {
-          await fetch(`${SUPABASE_URL}/rest/v1/licenses?license_key=eq.${encodeURIComponent(licenseKey)}`, {
-            method: 'DELETE',
-            headers: {
-              'apikey': SUPABASE_KEY,
-              'Authorization': `Bearer ${SUPABASE_KEY}`
-            }
-          });
+
+        // If Supabase RLS blocked the deletion (0 rows deleted)
+        if (!deletedRows || deletedRows.length === 0) {
+          alert('⚠️ SUPABASE RLS NOTICE:\nRow Level Security in Supabase blocked deletion.\n\nTo enable DELETE, paste this 1 command in your Supabase SQL Editor:\n\nCREATE POLICY "Allow delete on licenses" ON public.licenses FOR DELETE USING (true);\n\nRevoking key in the meantime.');
+          if (id && !id.startsWith('local-')) {
+            await fetch(`${SUPABASE_URL}/rest/v1/licenses?id=eq.${id}`, {
+              method: 'PATCH',
+              headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ is_active: false })
+            });
+          }
         }
+
         const localKeys = JSON.parse(localStorage.getItem('shadow_admin_keys') || '[]').filter(k => k.id !== id && k.license_key !== licenseKey);
         localStorage.setItem('shadow_admin_keys', JSON.stringify(localKeys));
         await loadLicenses();
