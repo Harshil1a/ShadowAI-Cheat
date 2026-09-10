@@ -285,7 +285,7 @@
 
       if (!isMasterAdmin) {
         try {
-          const res = await fetch(`${SUPABASE_URL}/rest/v1/licenses?user_email=eq.${encodeURIComponent(email)}&is_active=eq.true&select=*`, {
+          const res = await fetch(`${SUPABASE_URL}/rest/v1/licenses?customer_email=eq.${encodeURIComponent(email)}&is_active=eq.true&select=*`, {
             headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
           });
           const rows = await res.json();

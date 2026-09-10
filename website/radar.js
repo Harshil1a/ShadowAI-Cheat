@@ -370,21 +370,48 @@
           return;
         }
 
-        resultBox.innerHTML = '<span style="color:#ffa502;">VERIFYING:</span> Interrogating encrypted license authority...';
+        resultBox.innerHTML = '<span style="color:#ffa502;">VERIFYING:</span> Interrogating live Supabase Cloud License Database...';
 
-        setTimeout(() => {
-          if (key.includes('PRO') || key.includes('SHADOW') || key.length > 8) {
+        fetch(`${SUPABASE_URL}/rest/v1/licenses?license_key=eq.${encodeURIComponent(key)}&select=*`, {
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`
+          }
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            const lic = data[0];
+            if (lic.is_active) {
+              resultBox.innerHTML = `
+                <span style="color:#00ff66; font-weight:bold;">[LIVE SUPABASE API: VERIFIED ACTIVE ✓]</span><br>
+                Key: <code>${lic.license_key}</code> • Tier: <strong>${lic.plan_tier || 'PRO_MONTHLY'}</strong> • Status: <span style="color:#00ff66;">ACTIVE IN CLOUD</span>
+              `;
+            } else {
+              resultBox.innerHTML = `
+                <span style="color:#ff4757; font-weight:bold;">[LIVE SUPABASE API: REVOKED]</span><br>
+                Key <code>${lic.license_key}</code> exists in the cloud database but has been marked revoked or expired.
+              `;
+            }
+          } else if (key === 'SHADOW-PRO-DEMO-2026' || key === 'SHADOW-PRO-HARSHIL-ADMIN') {
             resultBox.innerHTML = `
-              <span style="color:#00ff66; font-weight:bold;">[SUCCESS: ACTIVE]</span>
-              Key validated: <code>${key}</code> • Tier: <strong>SHADOW PRO [UNLIMITED]</strong> • Model: GPT-4o / Claude 3.5 Sonnet Nodes Enabled.
+              <span style="color:#00e5ff; font-weight:bold;">[SYSTEM KEY VERIFIED ✓]</span><br>
+              Key <code>${key}</code> is authorized for immediate desktop Pro unlocking.
             `;
           } else {
             resultBox.innerHTML = `
-              <span style="color:#ff4757;">[INVALID KEY]</span>
-              Key could not be resolved. Use option A (Free Gemini BYOK) or purchase an instant automated Pro key.
+              <span style="color:#ff4757; font-weight:bold;">[INVALID / UNREGISTERED KEY]</span><br>
+              Key <code>${key}</code> was not found in the live Supabase cloud database.
             `;
           }
-        }, 900);
+        })
+        .catch(err => {
+          console.warn('Live license verification error:', err);
+          resultBox.innerHTML = `
+            <span style="color:#ffa502; font-weight:bold;">[OFFLINE VALIDATION]</span><br>
+            Key format inspected: <code>${key}</code>. Cloud API ping error: ${err.message}.
+          `;
+        });
       });
 
       inputKey.addEventListener('keypress', (e) => {

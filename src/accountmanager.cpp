@@ -308,7 +308,7 @@ void AccountManager::syncAccountStatus() {
     }
 
     // Query Supabase licenses table for any active license matching this user email
-    QUrl url(m_supabaseUrl + "/rest/v1/licenses?user_email=eq." + QUrl::toPercentEncoding(email) + "&is_active=eq.true&select=*");
+    QUrl url(m_supabaseUrl + "/rest/v1/licenses?customer_email=eq." + QUrl::toPercentEncoding(email) + "&is_active=eq.true&select=*");
     QNetworkRequest req(url);
     req.setRawHeader("apikey", m_supabaseKey.toUtf8());
     req.setRawHeader("Authorization", "Bearer " + m_supabaseKey.toUtf8());
