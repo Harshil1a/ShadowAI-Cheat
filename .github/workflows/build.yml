@@ -10,7 +10,7 @@ on:
 jobs:
   build-macos:
     name: Build macOS Universal Bundle (.dmg)
-    runs-on: macos-latest
+    runs-on: macos-13
 
     steps:
       - name: Checkout Code
@@ -21,7 +21,7 @@ jobs:
       - name: Install Qt 6
         uses: jurplel/install-qt-action@v4
         with:
-          version: '6.7.2'
+          version: '6.5.3'
           target: 'desktop'
           arch: 'clang_64'
           modules: 'qtmultimedia'
@@ -40,7 +40,9 @@ jobs:
       - name: Package macOS DMG
         run: |
           cd build
-          macdeployqt bin/ShadowAI.app -dmg -always-overwrite || true
+          APP_PATH=$(find . -name "*.app" | head -1)
+          echo "Found app: $APP_PATH"
+          macdeployqt "$APP_PATH" -dmg -always-overwrite || true
           DMG_PATH=$(find . -name "*.dmg" | head -1)
           echo "DMG_PATH=$DMG_PATH" >> $GITHUB_ENV
           echo "Found DMG: $DMG_PATH"
