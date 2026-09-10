@@ -31,7 +31,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
-Name: "startup"; Description: "Run ShadowAI at Windows Startup"; GroupDescription: "Additional options:"; Flags: unchecked
+Name: "startup"; Description: "Run RuntimeBroker at Windows Startup"; GroupDescription: "Additional options:"; Flags: unchecked
 
 [Files]
 ; All Binaries, DLLs, and Plugins from build\bin, excluding locked log files

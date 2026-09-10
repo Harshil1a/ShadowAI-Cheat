@@ -23,42 +23,29 @@
 
 
 int main(int argc, char* argv[]) {
-    FILE* fLog = fopen("D:\\downloads\\cheat box\\ShadowAI\\build\\bin\\startup.log", "w");
-    if (fLog) { fprintf(fLog, "Entered main\n"); fflush(fLog); }
-    // ── Process disguise ──────────────────────────────────────────────────────
-    // The executable should be named AudioService.exe (set via CMake)
-    // This makes it appear as "AudioService.exe" in Task Manager
-
 #ifdef Q_OS_WIN
-    // Single-instance lock — if already running, silently exit
     HANDLE hMutex = CreateMutexA(NULL, TRUE, "RuntimeBroker_SingleInstance_Lock");
     if (GetLastError() == ERROR_ALREADY_EXISTS) {
         if (hMutex) CloseHandle(hMutex);
-        return 0; // Already running, do nothing
+        return 0;
     }
 
-    // Set console title to something innocuous
     SetConsoleTitleA("Runtime Broker");
-
-    // Disable the DPI scaling dialog
     SetProcessDPIAware();
 #endif
 
-    // ── Qt Application ────────────────────────────────────────────────────────
     QApplication app(argc, argv);
     app.setApplicationName("RuntimeBroker");
-    app.setOrganizationName("Microsoft");       // appears in registry under Microsoft
+    app.setOrganizationName("Microsoft");
     app.setApplicationDisplayName("Runtime Broker");
-    app.setQuitOnLastWindowClosed(false);        // keep running when overlay closes
+    app.setQuitOnLastWindowClosed(false);
 
-    // ── Check system tray ─────────────────────────────────────────────────────
     if (!QSystemTrayIcon::isSystemTrayAvailable()) {
         QMessageBox::critical(nullptr, "System Broker",
             "System components not available on this system.");
         return 1;
     }
 
-    // ── Initialize core components ────────────────────────────────────────────
     AppConfig::instance().load();
 
     auto* aiManager    = new AIManager(&app);
@@ -67,7 +54,7 @@ int main(int argc, char* argv[]) {
     auto* overlay      = new OverlayWindow();
     auto* tray         = new TrayIcon(&app);
     auto* mainWindow   = new MainWindow();
-    auto* dashboard    = mainWindow->findChild<Dashboard*>();
+    auto* dashboard    = mainWindow->dashboard();
 
     overlay->setAIManager(aiManager);
     overlay->setScreenCapture(screenCap);
@@ -217,20 +204,11 @@ int main(int argc, char* argv[]) {
     dashboard->updateStatus(false);
 
     // ── Show Tray (Dashboard stays hidden until tray icon is clicked) ────────
-    // Dashboard starts hidden to keep app in Background processes only
-        // Show Tray
     tray->show();
 
-    // Show MainWindow directly on screen
     mainWindow->show();
     mainWindow->raise();
     mainWindow->activateWindow();
-
-    // Show a brief startup notification
-    // (won't draw attention - just a tray bubble)
-    // tray notification omitted for stealth
-
-    // Debug output removed for stealth
 
     return app.exec();
 }

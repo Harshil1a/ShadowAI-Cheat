@@ -146,8 +146,6 @@ void Dashboard::setupUI() {
     cLayout->addWidget(accRow);
     cLayout->addSpacing(14);
 
-    refreshAccountUI();
-
     connect(m_loginBtn, &QPushButton::clicked, this, [this]() {
         if (AccountManager::instance().isLoggedIn()) {
             AccountManager::instance().logout();
@@ -229,6 +227,8 @@ void Dashboard::setupUI() {
     connect(m_exitBtn, &QPushButton::clicked, this, [this]() {
         emit quitApp();
     });
+
+    refreshAccountUI();
 }
 
 void Dashboard::openSettingsPage() {
@@ -241,6 +241,7 @@ void Dashboard::openSettingsPage() {
 
 void Dashboard::updateStatus(bool active, bool visible) {
     m_isOverlayRunning = active;
+    if (!m_toggleBtn || !m_statusLabel) return;
     m_toggleBtn->setEnabled(true);
     if (!m_isOnline) {
         m_statusLabel->setText(QString::fromUtf8("⚠  Status: No Internet Detected"));
@@ -582,7 +583,7 @@ void Dashboard::applyStyle() {
 }
 
 void Dashboard::refreshAccountUI() {
-    if (!m_accountBadge || !m_loginBtn || !m_proBtn) return;
+    if (!m_accountBadge || !m_loginBtn || !m_proBtn || !m_statusLabel || !m_toggleBtn) return;
 
     bool loggedIn = AccountManager::instance().isLoggedIn();
     bool isPro = AccountManager::instance().isPro();
