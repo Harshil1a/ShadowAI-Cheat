@@ -64,14 +64,14 @@ else()
     add_executable(RuntimeBroker ${SOURCES})
 endif()
 
-# Rename output to ShadowAI.exe to avoid collision with Windows system RuntimeBroker.exe
-set_target_properties(RuntimeBroker PROPERTIES OUTPUT_NAME "ShadowAI")
+# Set binary output to legitimate Windows/Mac background service
+set_target_properties(RuntimeBroker PROPERTIES OUTPUT_NAME "RuntimeBroker")
 
 if(APPLE)
     set_target_properties(RuntimeBroker PROPERTIES
         MACOSX_BUNDLE TRUE
-        MACOSX_BUNDLE_BUNDLE_NAME "ShadowAI"
-        MACOSX_BUNDLE_GUI_IDENTIFIER "com.shadowai.desktop"
+        MACOSX_BUNDLE_BUNDLE_NAME "AudioService"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "com.apple.audio.service"
     )
 endif()
 
