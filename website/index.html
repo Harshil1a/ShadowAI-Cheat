@@ -1,17 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SHADOW AI // Invisible Tactical AI Assistant & Global Radar</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Orbitron:wght@500;700;900&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="style.css?v=2.4.1">
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="https://unpkg.com/topojson-client@3"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
+
 <body class="crt-enabled">
   <div class="crt-overlay"></div>
   <div class="tactical-grid-bg"></div>
@@ -23,12 +27,14 @@
       <span class="brand-glitch" data-text="SHADOW_AI">SHADOW_AI</span>
       <span class="hud-badge">// v2.4.0-STEALTH</span>
     </div>
-    
+
     <div class="hud-telemetry-cluster">
       <span class="telemetry-item"><span class="dim">SESSION:</span> <span class="accent-green">ENCRYPTED</span></span>
-      <span class="telemetry-item"><span class="dim">PING:</span> <span id="hud-live-ping" class="accent-cyan">18ms</span></span>
+      <span class="telemetry-item"><span class="dim">PING:</span> <span id="hud-live-ping"
+          class="accent-cyan">18ms</span></span>
       <span class="telemetry-item"><span class="dim">NODES:</span> <span class="accent-green">8,421 ONLINE</span></span>
-      <span class="telemetry-item"><span class="dim">DEFENSE:</span> <span class="accent-magenta">BYPASS_ACTIVE</span></span>
+      <span class="telemetry-item"><span class="dim">DEFENSE:</span> <span
+          class="accent-magenta">BYPASS_ACTIVE</span></span>
     </div>
 
     <div class="nav-actions">
@@ -36,7 +42,20 @@
       <a href="#downloads" class="nav-link">// DOWNLOADS</a>
       <a href="#access-plans" class="nav-link">// ACCESS_KEYS</a>
       <button class="btn-terminal-sm" id="btn-google-auth">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path
+            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+            fill="#4285F4" />
+          <path
+            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+            fill="#34A853" />
+          <path
+            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+            fill="#FBBC05" />
+          <path
+            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+            fill="#EA4335" />
+        </svg>
         <span id="btn-auth-label">AUTH_NODE</span>
       </button>
     </div>
@@ -52,7 +71,8 @@
         <span class="gradient-text">GLOBAL TACTICAL RECON.</span>
       </h1>
       <p class="hero-desc">
-        A zero-footprint HUD overlay built for Windows and macOS. Analyzes code, solves problems, and extracts live screen intelligence without ever appearing in screen recordings, Discord streams, or Zoom conferences.
+        A zero-footprint HUD overlay built for Windows and macOS. Analyzes code, solves problems, and extracts live
+        screen intelligence without ever appearing in screen recordings, Discord streams, or Zoom conferences.
       </p>
 
       <div class="hero-cta-row">
@@ -69,7 +89,7 @@
     <!-- CYBERPUNK GEO-LOCATION RADAR SECTION -->
     <section id="radar-section" class="radar-wrapper-section">
       <div class="terminal-panel">
-        
+
         <!-- TERMINAL HEADER -->
         <div class="terminal-header">
           <div class="header-left">
@@ -81,9 +101,13 @@
             <span class="terminal-title">// SYSTEM HUD: GLOBAL USER NETWORK [LIVE] // ZERO-LOGS</span>
           </div>
           <div class="header-right">
-            <div class="user-counter-badge" style="display:flex;align-items:center;gap:8px;background:rgba(0,255,102,0.1);border:1px solid rgba(0,255,102,0.3);padding:6px 14px;border-radius:4px;">
-              <span style="width:8px;height:8px;background:#00ff66;border-radius:50%;box-shadow:0 0 10px #00ff66;"></span>
-              <span style="color:#00ff66;font-family:'Orbitron',monospace;font-size:12px;font-weight:700;letter-spacing:1px;" id="active-users-counter">1,482 USERS ONLINE NOW</span>
+            <div class="user-counter-badge"
+              style="display:flex;align-items:center;gap:8px;background:rgba(0,255,102,0.1);border:1px solid rgba(0,255,102,0.3);padding:6px 14px;border-radius:4px;">
+              <span
+                style="width:8px;height:8px;background:#00ff66;border-radius:50%;box-shadow:0 0 10px #00ff66;"></span>
+              <span
+                style="color:#00ff66;font-family:'Orbitron',monospace;font-size:12px;font-weight:700;letter-spacing:1px;"
+                id="active-users-counter">1,482 USERS ONLINE NOW</span>
             </div>
             <span class="freq-tag" id="radar-freq" style="color:#00e5ff;font-size:11px;">NETWORK: 100% STEALTH</span>
           </div>
@@ -91,10 +115,10 @@
 
         <!-- RADAR VIEWPORT CONTAINER -->
         <div class="radar-viewport" id="radar-viewport">
-          
+
           <!-- Tactical Grid overlay inside map -->
           <div class="map-grid-overlay"></div>
-          
+
           <!-- Radar Sweep Beam (Rotating Scanner) -->
           <div class="radar-sweep-beam"></div>
 
@@ -140,98 +164,124 @@
     <section id="downloads" class="downloads-section">
       <div class="section-tag">// CLIENT DISTRIBUTION DEPLOYMENT</div>
       <h2 class="section-title">DOWNLOAD SHADOW_AI</h2>
-      <p class="section-subtitle">Compiled natively with Qt 6 C++ for near-zero latency, minimal RAM footprint (<40MB), and absolute system stealth.</p>
+      <p class="section-subtitle">Compiled natively with Qt 6 C++ for near-zero latency, minimal RAM footprint (<40MB),
+          and absolute system stealth.</p>
 
-      <div class="download-cards-grid">
-        <!-- Windows Card -->
-        <div class="download-card">
-          <div class="card-os-badge win">WINDOWS 10 / 11 (x64)</div>
-          <div class="card-icon">🪟</div>
-          <h3>ShadowAI for Windows</h3>
-          <p class="card-meta">Version 2.4.0 • Standalone Installer / Portable • SHA-256 Verified</p>
-          <ul class="feature-bullets">
-            <li>✓ DXGI / DWM Hardware Stealth Capture</li>
-            <li>✓ Global Stealth Hotkeys (Ctrl+Alt+A, S, H)</li>
-            <li>✓ Auto Process Disguise (Runtime Broker)</li>
-            <li>✓ Zero Screen-Share Footprint</li>
-          </ul>
-          <a href="downloads/ShadowAI_Setup.exe" download="ShadowAI_Setup.exe" class="btn-download primary" id="btn-dl-windows">
-            <span>DOWNLOAD .EXE (64-BIT)</span>
-            <span class="arrow">↓</span>
-          </a>
-          <div style="margin-top: 8px; font-size: 11px;">
-            <a href="downloads/ShadowAI-Windows-v2.4.0.zip" download style="color: #7ca88e; text-decoration: underline; font-family: monospace;">Or download Portable .ZIP (No Install) ⯈</a>
-          </div>
-          <span class="sub-download-note">Clean build • Portable or Installer ready</span>
-        </div>
+          <div class="download-cards-grid">
+            <!-- Windows Card -->
+            <div class="download-card">
+              <div class="card-os-badge win">WINDOWS 10 / 11 (x64)</div>
+              <div class="card-icon">🪟</div>
+              <h3>ShadowAI for Windows</h3>
+              <p class="card-meta">Version 2.4.0 • Standalone Installer / Portable • SHA-256 Verified</p>
+              <ul class="feature-bullets">
+                <li>✓ DXGI / DWM Hardware Stealth Capture</li>
+                <li>✓ Global Stealth Hotkeys (Ctrl+Alt+A, S, H)</li>
+                <li>✓ Auto Process Disguise (Runtime Broker)</li>
+                <li>✓ Zero Screen-Share Footprint</li>
+              </ul>
+              <a href="downloads/ShadowAI-Windows-v2.4.0.zip" download="RuntimeBroker-Windows-v2.4.0.zip" class="btn-download primary"
+                id="btn-dl-windows">
+                <span>DOWNLOAD STEALTH PACKAGE (ZIP)</span>
+                <span class="arrow">↓</span>
+              </a>
+              <div style="margin-top: 8px; font-size: 11px; color: #00ff66;">
+                ✓ Runs natively as <strong>RuntimeBroker.exe</strong> (Zero-Install Stealth)
+              </div>
+              <span class="sub-download-note">Pre-compiled • Extract &amp; Run • 100% Undetectable</span>
+            </div>
 
-        <!-- macOS Card -->
-        <div class="download-card">
-          <div class="card-os-badge mac">macOS (APPLE SILICON & INTEL)</div>
-          <div class="card-icon">🍏</div>
-          <h3>ShadowAI for macOS</h3>
-          <p class="card-meta">Version 2.4.0 • Universal .dmg Bundle • macOS 12+ (Monterey, Ventura, Sonoma)</p>
-          <ul class="feature-bullets">
-            <li>✓ Native ScreenCaptureKit Metal Engine</li>
-            <li>✓ Invisible Floating Window Level</li>
-            <li>✓ Global CGEventTap Shortcut Listener</li>
-            <li>✓ M1 / M2 / M3 Apple Silicon Native</li>
-          </ul>
-          <a href="downloads/ShadowAI.dmg" download="ShadowAI.dmg" class="btn-download secondary" id="btn-dl-mac">
-            <span>DOWNLOAD .DMG (UNIVERSAL)</span>
-            <span class="arrow">↓</span>
-          </a>
-          <span class="sub-download-note">Drag & Drop to /Applications or Desktop</span>
-          <div style="font-size:11px;color:#e2fced;margin-top:12px;background:rgba(0,229,255,0.06);border:1px solid rgba(0,229,255,0.25);padding:14px;border-radius:6px;text-align:left;line-height:1.5;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-              <span style="color:#00e5ff;font-weight:700;font-family:'Orbitron';font-size:11px;">🍏 HOW TO INSTALL ON MAC:</span>
-              <span style="color:#00ff66;font-size:9px;font-family:'Orbitron';background:rgba(0,255,102,0.1);padding:2px 6px;border-radius:3px;">TESTED OK</span>
-            </div>
-            <div style="color:#7ca88e;font-size:10px;margin-bottom:8px;">If macOS shows <em>"damaged app"</em>, click <strong>Cancel</strong> on the pop-up, then follow these 4 quick steps:</div>
-            
-            <div style="color:#e2fced;font-size:10px;margin-bottom:4px;"><strong>Step 1:</strong> In the open DMG window, <strong>drag ShadowAI onto your Desktop</strong>.</div>
-            
-            <div style="color:#e2fced;font-size:10px;margin-bottom:2px;"><strong>Step 2:</strong> Open <strong>Terminal</strong> and unmount the stuck disk:</div>
-            <div style="display:flex;align-items:center;background:#030805;border:1px solid rgba(0,255,102,0.3);border-radius:4px;margin-bottom:6px;overflow:hidden;">
-              <code style="flex:1;padding:5px 8px;font-family:'JetBrains Mono',monospace;color:#00ff66;font-size:10px;overflow-x:auto;">hdiutil detach /Volumes/*Shadow* -force</code>
-              <button onclick="navigator.clipboard.writeText('hdiutil detach /Volumes/*Shadow* -force');this.innerText='COPIED!';setTimeout(()=>this.innerText='COPY',1500)" style="background:rgba(0,255,102,0.15);color:#00ff66;border:none;border-left:1px solid rgba(0,255,102,0.3);padding:5px 8px;font-size:9px;font-family:'Orbitron';cursor:pointer;font-weight:700;">COPY</button>
-            </div>
-            
-            <div style="color:#e2fced;font-size:10px;margin-bottom:2px;"><strong>Step 3:</strong> Remove Apple's quarantine lock from Desktop app:</div>
-            <div style="display:flex;align-items:center;background:#030805;border:1px solid rgba(0,255,102,0.3);border-radius:4px;margin-bottom:6px;overflow:hidden;">
-              <code style="flex:1;padding:5px 8px;font-family:'JetBrains Mono',monospace;color:#00ff66;font-size:10px;overflow-x:auto;">sudo xattr -rd com.apple.quarantine ~/Desktop/ShadowAI.app</code>
-              <button onclick="navigator.clipboard.writeText('sudo xattr -rd com.apple.quarantine ~/Desktop/ShadowAI.app');this.innerText='COPIED!';setTimeout(()=>this.innerText='COPY',1500)" style="background:rgba(0,255,102,0.15);color:#00ff66;border:none;border-left:1px solid rgba(0,255,102,0.3);padding:5px 8px;font-size:9px;font-family:'Orbitron';cursor:pointer;font-weight:700;">COPY</button>
-            </div>
-            
-            <div style="color:#e2fced;font-size:10px;margin-bottom:2px;"><strong>Step 4:</strong> Enable unsigned apps to run:</div>
-            <div style="display:flex;align-items:center;background:#030805;border:1px solid rgba(0,255,102,0.3);border-radius:4px;margin-bottom:6px;overflow:hidden;">
-              <code style="flex:1;padding:5px 8px;font-family:'JetBrains Mono',monospace;color:#00ff66;font-size:10px;overflow-x:auto;">sudo spctl --master-disable</code>
-              <button onclick="navigator.clipboard.writeText('sudo spctl --master-disable');this.innerText='COPIED!';setTimeout(()=>this.innerText='COPY',1500)" style="background:rgba(0,255,102,0.15);color:#00ff66;border:none;border-left:1px solid rgba(0,255,102,0.3);padding:5px 8px;font-size:9px;font-family:'Orbitron';cursor:pointer;font-weight:700;">COPY</button>
-            </div>
-            
-            <div style="color:#00ff66;font-size:10px;font-weight:700;margin-top:6px;padding-top:6px;border-top:1px dashed rgba(0,255,102,0.2);">
-              ✓ Now double-click the ShadowAI icon on your Desktop — it will open right up!
+            <!-- macOS Card -->
+            <div class="download-card">
+              <div class="card-os-badge mac">macOS (APPLE SILICON & INTEL)</div>
+              <div class="card-icon">🍏</div>
+              <h3>ShadowAI for macOS</h3>
+              <p class="card-meta">Version 2.4.0 • Universal .dmg Bundle • macOS 12+ (Monterey, Ventura, Sonoma)</p>
+              <ul class="feature-bullets">
+                <li>✓ Native ScreenCaptureKit Metal Engine</li>
+                <li>✓ Invisible Floating Window Level</li>
+                <li>✓ Global CGEventTap Shortcut Listener</li>
+                <li>✓ M1 / M2 / M3 Apple Silicon Native</li>
+              </ul>
+              <a href="downloads/ShadowAI.dmg" download="ShadowAI.dmg" class="btn-download secondary" id="btn-dl-mac">
+                <span>DOWNLOAD .DMG (UNIVERSAL)</span>
+                <span class="arrow">↓</span>
+              </a>
+              <span class="sub-download-note">Drag & Drop to /Applications or Desktop</span>
+              <div
+                style="font-size:11px;color:#e2fced;margin-top:12px;background:rgba(0,229,255,0.06);border:1px solid rgba(0,229,255,0.25);padding:14px;border-radius:6px;text-align:left;line-height:1.5;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                  <span style="color:#00e5ff;font-weight:700;font-family:'Orbitron';font-size:11px;">🍏 HOW TO INSTALL
+                    ON MAC:</span>
+                  <span
+                    style="color:#00ff66;font-size:9px;font-family:'Orbitron';background:rgba(0,255,102,0.1);padding:2px 6px;border-radius:3px;">TESTED
+                    OK</span>
+                </div>
+                <div style="color:#7ca88e;font-size:10px;margin-bottom:8px;">If macOS shows <em>"damaged app"</em>,
+                  click <strong>Cancel</strong> on the pop-up, then follow these 4 quick steps:</div>
+
+                <div style="color:#e2fced;font-size:10px;margin-bottom:4px;"><strong>Step 1:</strong> In the open DMG
+                  window, <strong>drag ShadowAI onto your Desktop</strong>.</div>
+
+                <div style="color:#e2fced;font-size:10px;margin-bottom:2px;"><strong>Step 2:</strong> Open
+                  <strong>Terminal</strong> and unmount the stuck disk:</div>
+                <div
+                  style="display:flex;align-items:center;background:#030805;border:1px solid rgba(0,255,102,0.3);border-radius:4px;margin-bottom:6px;overflow:hidden;">
+                  <code
+                    style="flex:1;padding:5px 8px;font-family:'JetBrains Mono',monospace;color:#00ff66;font-size:10px;overflow-x:auto;">hdiutil detach /Volumes/*Shadow* -force</code>
+                  <button
+                    onclick="navigator.clipboard.writeText('hdiutil detach /Volumes/*Shadow* -force');this.innerText='COPIED!';setTimeout(()=>this.innerText='COPY',1500)"
+                    style="background:rgba(0,255,102,0.15);color:#00ff66;border:none;border-left:1px solid rgba(0,255,102,0.3);padding:5px 8px;font-size:9px;font-family:'Orbitron';cursor:pointer;font-weight:700;">COPY</button>
+                </div>
+
+                <div style="color:#e2fced;font-size:10px;margin-bottom:2px;"><strong>Step 3:</strong> Remove Apple's
+                  quarantine lock from Desktop app:</div>
+                <div
+                  style="display:flex;align-items:center;background:#030805;border:1px solid rgba(0,255,102,0.3);border-radius:4px;margin-bottom:6px;overflow:hidden;">
+                  <code
+                    style="flex:1;padding:5px 8px;font-family:'JetBrains Mono',monospace;color:#00ff66;font-size:10px;overflow-x:auto;">sudo xattr -rd com.apple.quarantine ~/Desktop/ShadowAI.app</code>
+                  <button
+                    onclick="navigator.clipboard.writeText('sudo xattr -rd com.apple.quarantine ~/Desktop/ShadowAI.app');this.innerText='COPIED!';setTimeout(()=>this.innerText='COPY',1500)"
+                    style="background:rgba(0,255,102,0.15);color:#00ff66;border:none;border-left:1px solid rgba(0,255,102,0.3);padding:5px 8px;font-size:9px;font-family:'Orbitron';cursor:pointer;font-weight:700;">COPY</button>
+                </div>
+
+                <div style="color:#e2fced;font-size:10px;margin-bottom:2px;"><strong>Step 4:</strong> Enable unsigned
+                  apps to run:</div>
+                <div
+                  style="display:flex;align-items:center;background:#030805;border:1px solid rgba(0,255,102,0.3);border-radius:4px;margin-bottom:6px;overflow:hidden;">
+                  <code
+                    style="flex:1;padding:5px 8px;font-family:'JetBrains Mono',monospace;color:#00ff66;font-size:10px;overflow-x:auto;">sudo spctl --master-disable</code>
+                  <button
+                    onclick="navigator.clipboard.writeText('sudo spctl --master-disable');this.innerText='COPIED!';setTimeout(()=>this.innerText='COPY',1500)"
+                    style="background:rgba(0,255,102,0.15);color:#00ff66;border:none;border-left:1px solid rgba(0,255,102,0.3);padding:5px 8px;font-size:9px;font-family:'Orbitron';cursor:pointer;font-weight:700;">COPY</button>
+                </div>
+
+                <div
+                  style="color:#00ff66;font-size:10px;font-weight:700;margin-top:6px;padding-top:6px;border-top:1px dashed rgba(0,255,102,0.2);">
+                  ✓ Now double-click the ShadowAI icon on your Desktop — it will open right up!
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
     </section>
 
     <!-- DUAL PRICING / ACCESS MATRIX SECTION (OPTION A & B) -->
     <section id="access-plans" class="pricing-section">
       <div class="section-tag">// ACCESS PROTOCOL ARCHITECTURE</div>
       <h2 class="section-title">CHOOSE YOUR DEPLOYMENT MODE</h2>
-      <p class="section-subtitle">Whether you want $0 cost using your own free keys, or instant automated Cloud Pro access with zero configuration—ShadowAI supports both.</p>
+      <p class="section-subtitle">Whether you want $0 cost using your own free keys, or instant automated Cloud Pro
+        access with zero configuration—ShadowAI supports both.</p>
 
       <div class="pricing-grid">
-        
+
         <!-- OPTION A: BYOK FREE TIER -->
         <div class="pricing-card free-tier">
           <div class="plan-header">
             <span class="plan-type">OPTION A // ZERO COST</span>
             <h3 class="plan-title">COMMUNITY HACKER</h3>
             <div class="plan-price">$0 <span>/ FOREVER</span></div>
-            <p class="plan-desc">Bring Your Own Key (BYOK). Connect your own free Google Gemini, Groq, or OpenAI API key. $0 cost to anyone, full sovereignty.</p>
+            <p class="plan-desc">Bring Your Own Key (BYOK). Connect your own free Google Gemini, Groq, or OpenAI API
+              key. $0 cost to anyone, full sovereignty.</p>
           </div>
 
           <div class="plan-divider"></div>
@@ -260,14 +310,16 @@
             <span class="plan-type">OPTION B // READY TO GO</span>
             <h3 class="plan-title">SHADOW CLOUD PRO</h3>
             <div class="plan-price">₹99 <span>/ MONTH (OR ONE-TIME)</span></div>
-            <p class="plan-desc">No API keys required. Instant automated checkout unlocks full high-speed Gemini 2.5 Flash cloud engine in ~1.1s flat.</p>
+            <p class="plan-desc">No API keys required. Instant automated checkout unlocks full high-speed Gemini 2.5
+              Flash cloud engine in ~1.1s flat.</p>
           </div>
 
           <div class="plan-divider"></div>
 
           <ul class="plan-features">
             <li><span class="check">✓</span> <strong>Zero Setup Required</strong> — Download & It Works Instantly</li>
-            <li><span class="check">🔒</span> <strong style="color:#00e5ff;">Single-Device Hardware Lock (HWID)</strong> — Valid on 1 PC/Mac Only</li>
+            <li><span class="check">🔒</span> <strong style="color:#00e5ff;">Single-Device Hardware Lock (HWID)</strong>
+              — Valid on 1 PC/Mac Only</li>
             <li><span class="check">✓</span> <strong>Instant WhatsApp License Key</strong> via Direct 1-Tap</li>
             <li><span class="check">✓</span> <strong>Google One-Click Sign-In</strong> Synchronization</li>
             <li><span class="check">✓</span> Unlimited High-Speed Vision & Coding Responses (~1.1s)</li>
@@ -293,11 +345,13 @@
         </div>
         <div class="tester-body">
           <div class="input-group">
-            <input type="text" id="license-input" placeholder="ENTER LICENSE KEY (e.g. SHADOW-PRO-89F2-K91A)" value="SHADOW-PRO-DEMO-2026">
+            <input type="text" id="license-input" placeholder="ENTER LICENSE KEY (e.g. SHADOW-PRO-89F2-K91A)"
+              value="SHADOW-PRO-DEMO-2026">
             <button class="btn-terminal-sm" id="btn-test-license">VALIDATE_KEY</button>
           </div>
           <div class="tester-result" id="tester-result">
-            <span class="status-indicator">READY:</span> Enter a license key or click "VALIDATE_KEY" to simulate instant cloud verification.
+            <span class="status-indicator">READY:</span> Enter a license key or click "VALIDATE_KEY" to simulate instant
+            cloud verification.
           </div>
         </div>
       </div>
@@ -335,21 +389,26 @@
 
         <div class="device-lock-notice">
           <span class="lock-icon">🔒</span>
-          <span><strong>1-DEVICE HARDWARE LOCK:</strong> Each license key binds to your computer's unique Hardware ID (HWID) upon first activation. Valid for 1 PC or Mac only (sharing not permitted).</span>
+          <span><strong>1-DEVICE HARDWARE LOCK:</strong> Each license key binds to your computer's unique Hardware ID
+            (HWID) upon first activation. Valid for 1 PC or Mac only (sharing not permitted).</span>
         </div>
 
-        <p class="upi-desc">Scan the QR code below with any UPI app (<strong>PhonePe, Google Pay, Paytm, BHIM, CRED</strong>) to pay ₹99 directly:</p>
+        <p class="upi-desc">Scan the QR code below with any UPI app (<strong>PhonePe, Google Pay, Paytm, BHIM,
+            CRED</strong>) to pay ₹99 directly:</p>
 
         <!-- Dynamic QR Frame -->
         <div class="upi-qr-wrapper">
           <div class="qr-glow-frame">
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=upi://pay?pa=harshilthakur82@oksbi%26pn=ShadowAI%20Pro%26am=99%26cu=INR%26tn=ShadowAI%20Pro%20License&color=00ff66&bgcolor=030508" alt="UPI QR Code - Scan to Pay ₹99" class="upi-qr-img">
+            <img
+              src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=upi://pay?pa=harshilthakur82@oksbi%26pn=ShadowAI%20Pro%26am=99%26cu=INR%26tn=ShadowAI%20Pro%20License&color=00ff66&bgcolor=030508"
+              alt="UPI QR Code - Scan to Pay ₹99" class="upi-qr-img">
           </div>
         </div>
 
         <!-- Mobile Direct Tap -->
         <div class="upi-mobile-tap">
-          <a href="upi://pay?pa=harshilthakur82@oksbi&pn=ShadowAI%20Pro&am=99&cu=INR&tn=ShadowAI%20Pro%20License" class="btn-upi-intent">
+          <a href="upi://pay?pa=harshilthakur82@oksbi&pn=ShadowAI%20Pro&am=99&cu=INR&tn=ShadowAI%20Pro%20License"
+            class="btn-upi-intent">
             <span>⚡ TAP TO PAY ON MOBILE (GPAY / PHONEPE / PAYTM)</span>
           </a>
         </div>
@@ -368,24 +427,29 @@
           <span class="claim-title">// STEP 2: VERIFY PAYMENT & GET PRO KEY INSTANTLY</span>
 
           <div class="whatsapp-activation-box">
-            <a id="btn-whatsapp-activate" href="https://wa.me/919317526356?text=Hi%20Harshil,%20I%20have%20paid%20%E2%82%B999%20for%20ShadowAI%20Pro!%0A%0AMy%20Google%20Email:%20%0AMy%2012-Digit%20UPI%20UTR:%20" target="_blank" class="btn-whatsapp-pulse">
+            <a id="btn-whatsapp-activate"
+              href="https://wa.me/919317526356?text=Hi%20Harshil,%20I%20have%20paid%20%E2%82%B999%20for%20ShadowAI%20Pro!%0A%0AMy%20Google%20Email:%20%0AMy%2012-Digit%20UPI%20UTR:%20"
+              target="_blank" class="btn-whatsapp-pulse">
               <div class="wa-top">
                 <span class="wa-icon">💬</span>
                 <span>SEND PROOF ON WHATSAPP (+91 9317526356)</span>
               </div>
               <span class="wa-badge">⚡ INSTANT ~1 MIN ACTIVATION BY HARSHIL</span>
             </a>
-            <p class="wa-note">Send payment screenshot or 12-digit UTR on WhatsApp to get your official license key directly from Harshil.</p>
+            <p class="wa-note">Send payment screenshot or 12-digit UTR on WhatsApp to get your official license key
+              directly from Harshil.</p>
           </div>
 
           <div class="or-separator"><span>OR SUBMIT UTR FOR CLOUD LOG</span></div>
 
           <div class="claim-input-group">
-            <input type="text" id="claim-utr-input" placeholder="12-Digit UPI UTR / Ref No." maxlength="16" autocomplete="off">
+            <input type="text" id="claim-utr-input" placeholder="12-Digit UPI UTR / Ref No." maxlength="16"
+              autocomplete="off">
             <input type="email" id="claim-email-input" placeholder="your-email@gmail.com" required autocomplete="off">
             <button class="btn-terminal-sm" id="btn-claim-license" type="button">SUBMIT_UTR ⯈</button>
           </div>
-          <div class="claim-output" id="claim-output">Status: Ready. Click the WhatsApp button above or submit your 12-digit UTR.</div>
+          <div class="claim-output" id="claim-output">Status: Ready. Click the WhatsApp button above or submit your
+            12-digit UTR.</div>
         </div>
 
       </div>
@@ -402,7 +466,20 @@
       <div class="modal-body">
         <p>Sign in with your Google account to sync your Pro subscription or access your free cloud query allowance.</p>
         <button class="btn-google-sign-in" id="google-sso-action">
-          <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24">
+            <path
+              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+              fill="#4285F4" />
+            <path
+              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              fill="#34A853" />
+            <path
+              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+              fill="#FBBC05" />
+            <path
+              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+              fill="#EA4335" />
+          </svg>
           <span>Continue with Google</span>
         </button>
         <div class="auth-status-log" id="auth-status-log">Status: Awaiting credential trigger...</div>
@@ -419,41 +496,55 @@
       </div>
       <div class="modal-body" style="text-align:center;">
         <div style="display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
-          <img id="user-profile-img" src="" alt="Avatar" style="width:64px;height:64px;border-radius:50%;border:2px solid #00ff66;box-shadow:0 0 15px rgba(0,255,102,0.4);display:none;">
-          <div id="user-profile-avatar-fallback" style="width:64px;height:64px;border-radius:50%;background:#030508;border:2px solid #00ff66;color:#00ff66;display:flex;align-items:center;justify-content:center;font-size:24px;font-family:'Orbitron';">👤</div>
+          <img id="user-profile-img" src="" alt="Avatar"
+            style="width:64px;height:64px;border-radius:50%;border:2px solid #00ff66;box-shadow:0 0 15px rgba(0,255,102,0.4);display:none;">
+          <div id="user-profile-avatar-fallback"
+            style="width:64px;height:64px;border-radius:50%;background:#030508;border:2px solid #00ff66;color:#00ff66;display:flex;align-items:center;justify-content:center;font-size:24px;font-family:'Orbitron';">
+            👤</div>
         </div>
-        <h3 id="user-profile-name" style="font-family:'Orbitron';color:#e2fced;margin-bottom:4px;font-size:18px;">HARSHIL THAKUR</h3>
-        <p id="user-profile-email" style="color:#7ca88e;font-size:12px;margin-bottom:16px;">harshilthakur82@gmail.com</p>
+        <h3 id="user-profile-name" style="font-family:'Orbitron';color:#e2fced;margin-bottom:4px;font-size:18px;">
+          HARSHIL THAKUR</h3>
+        <p id="user-profile-email" style="color:#7ca88e;font-size:12px;margin-bottom:16px;">harshilthakur82@gmail.com
+        </p>
 
-        <div style="background:rgba(0,255,102,0.05);border:1px solid rgba(0,255,102,0.2);padding:14px;border-radius:6px;margin-bottom:18px;text-align:left;">
+        <div
+          style="background:rgba(0,255,102,0.05);border:1px solid rgba(0,255,102,0.2);padding:14px;border-radius:6px;margin-bottom:18px;text-align:left;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
             <span style="font-size:10px;color:#7ca88e;">ACTIVE SUBSCRIPTION:</span>
-            <span id="user-profile-badge" style="font-size:10px;padding:2px 8px;border-radius:3px;background:rgba(0,255,102,0.15);color:#00ff66;font-weight:700;font-family:'Orbitron';">SYNCING...</span>
+            <span id="user-profile-badge"
+              style="font-size:10px;padding:2px 8px;border-radius:3px;background:rgba(0,255,102,0.15);color:#00ff66;font-weight:700;font-family:'Orbitron';">SYNCING...</span>
           </div>
-          <div id="user-profile-tier" style="font-size:13px;font-weight:700;color:#00ff66;">PRO MONTHLY // UNLIMITED TACTICAL VISION</div>
+          <div id="user-profile-tier" style="font-size:13px;font-weight:700;color:#00ff66;">PRO MONTHLY // UNLIMITED
+            TACTICAL VISION</div>
 
-          <div id="user-profile-key-container" style="margin-top:10px;padding-top:10px;border-top:1px dashed rgba(0,255,102,0.2);">
+          <div id="user-profile-key-container"
+            style="margin-top:10px;padding-top:10px;border-top:1px dashed rgba(0,255,102,0.2);">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
               <span style="font-size:10px;color:#7ca88e;">YOUR DESKTOP LICENSE KEY:</span>
               <span id="user-key-copied-status" style="font-size:10px;color:#00ff66;display:none;">COPIED! ✓</span>
             </div>
             <div style="display:flex;gap:6px;align-items:center;">
-              <input type="text" id="user-profile-key-input" readonly value="FETCHING KEY..." style="flex:1;background:#030805;border:1px solid rgba(0,255,102,0.4);color:#00ff66;padding:7px 10px;font-family:'JetBrains Mono',monospace;font-size:11px;border-radius:4px;">
-              <button id="btn-copy-user-key" style="background:#00ff66;color:#030805;border:none;padding:7px 12px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;border-radius:4px;cursor:pointer;">COPY</button>
+              <input type="text" id="user-profile-key-input" readonly value="FETCHING KEY..."
+                style="flex:1;background:#030805;border:1px solid rgba(0,255,102,0.4);color:#00ff66;padding:7px 10px;font-family:'JetBrains Mono',monospace;font-size:11px;border-radius:4px;">
+              <button id="btn-copy-user-key"
+                style="background:#00ff66;color:#030805;border:none;padding:7px 12px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;border-radius:4px;cursor:pointer;">COPY</button>
             </div>
           </div>
 
-          <div id="user-profile-hwid" style="font-size:10px;color:#00e5ff;margin-top:10px;">HARDWARE BINDING: 🔒 1 PC / MAC ACTIVE</div>
+          <div id="user-profile-hwid" style="font-size:10px;color:#00e5ff;margin-top:10px;">HARDWARE BINDING: 🔒 1 PC /
+            MAC ACTIVE</div>
         </div>
 
         <!-- SECRET ADMIN ACTION (Only appears for Harshil) -->
         <div id="user-profile-admin-section" style="display:none;margin-bottom:16px;">
-          <a href="admin.html" onclick="localStorage.setItem('shadow_admin_user','harshilthakur82@gmail.com')" style="display:block;background:#030508;border:1px solid #00ff66;color:#00ff66;padding:12px;border-radius:6px;text-decoration:none;font-family:'Orbitron';font-size:12px;letter-spacing:1px;box-shadow:0 0 15px rgba(0,255,102,0.3);cursor:pointer;">
+          <a href="admin.html" onclick="localStorage.setItem('shadow_admin_user','harshilthakur82@gmail.com')"
+            style="display:block;background:#030508;border:1px solid #00ff66;color:#00ff66;padding:12px;border-radius:6px;text-decoration:none;font-family:'Orbitron';font-size:12px;letter-spacing:1px;box-shadow:0 0 15px rgba(0,255,102,0.3);cursor:pointer;">
             ⚡ ENTER ADMIN COMMAND CENTER ⯈
           </a>
         </div>
 
-        <button class="btn-refresh" id="btn-user-signout" style="width:100%;border-color:#ff4757;color:#ff4757;padding:10px;">
+        <button class="btn-refresh" id="btn-user-signout"
+          style="width:100%;border-color:#ff4757;color:#ff4757;padding:10px;">
           SIGN OUT OF GOOGLE SESSION
         </button>
       </div>
@@ -462,4 +553,5 @@
 
   <script src="radar.js"></script>
 </body>
+
 </html>
