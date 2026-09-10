@@ -1432,3 +1432,480 @@ body {
   letter-spacing: 0.5px;
 }
 
+/* ==========================================================================
+   MOBILE RESPONSIVE SYSTEM (TABLETS & SMARTPHONES: <= 768px)
+   Proportionate typography, touch-friendly UI, and zero-overflow layout
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  /* Base typography scaling */
+  body {
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  /* Fixed HUD Navigation Bar */
+  .hud-top-bar {
+    height: 48px;
+    padding: 0 12px;
+  }
+
+  .brand-cluster {
+    gap: 8px;
+  }
+
+  .brand-glitch {
+    font-size: 13px;
+    letter-spacing: 1px;
+  }
+
+  .hud-badge {
+    display: none; /* Hide non-essential version badge on mobile nav */
+  }
+
+  .hud-telemetry-cluster {
+    display: none;
+  }
+
+  .nav-actions {
+    gap: 8px;
+  }
+
+  /* Hide raw text links on mobile to prevent navbar explosion */
+  .nav-actions .nav-link {
+    display: none;
+  }
+
+  .btn-terminal-sm {
+    padding: 4px 8px;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    gap: 5px;
+  }
+
+  .btn-terminal-sm svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  /* Main Container Padding */
+  .main-container {
+    padding: 64px 14px 40px;
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Hero Section Typography */
+  .hero-section {
+    padding: 16px 0 32px;
+  }
+
+  .hero-tag {
+    font-size: 9.5px;
+    letter-spacing: 1px;
+    padding: 3px 10px;
+    margin-bottom: 14px;
+  }
+
+  .hero-title {
+    font-size: clamp(20px, 6vw, 26px);
+    line-height: 1.22;
+    letter-spacing: 0.5px;
+    margin-bottom: 14px;
+    word-break: break-word;
+  }
+
+  .hero-desc {
+    font-size: 12px;
+    line-height: 1.6;
+    margin-bottom: 24px;
+    padding: 0 4px;
+    max-width: 100%;
+  }
+
+  .hero-cta-row {
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .btn-cta-primary,
+  .btn-cta-secondary {
+    width: 100%;
+    max-width: 320px;
+    justify-content: center;
+    padding: 12px 18px;
+    font-size: 11.5px;
+    letter-spacing: 0.5px;
+  }
+
+  /* Radar HUD & Terminal Window */
+  .radar-wrapper-section {
+    margin: 24px 0 48px;
+  }
+
+  .terminal-header {
+    height: auto;
+    min-height: 42px;
+    padding: 8px 10px;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .header-left {
+    gap: 8px;
+  }
+
+  .terminal-title {
+    font-size: 9.5px;
+    letter-spacing: 0.5px;
+  }
+
+  .header-right {
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .user-counter-badge {
+    padding: 3px 8px !important;
+  }
+
+  #active-users-counter {
+    font-size: 9px !important;
+    letter-spacing: 0.5px !important;
+  }
+
+  #radar-freq {
+    display: none;
+  }
+
+  .radar-viewport {
+    height: 280px;
+  }
+
+  .callout-box {
+    width: calc(100vw - 48px);
+    max-width: 230px;
+    padding: 8px 10px;
+    font-size: 9.5px;
+    line-height: 1.4;
+    transform: translate(10px, -20px);
+  }
+
+  .callout-header {
+    font-size: 10px;
+  }
+
+  .callout-footer {
+    font-size: 8.5px;
+  }
+
+  .radar-bottom-bar {
+    position: relative;
+    height: auto;
+    padding: 8px 10px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .radar-stat {
+    font-size: 9px;
+    line-height: 1.35;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  /* Section Titles & Subtitles */
+  .section-tag {
+    font-size: 9.5px;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+
+  .section-title {
+    font-size: clamp(18px, 5.5vw, 22px);
+    letter-spacing: 0.5px;
+    line-height: 1.25;
+    margin-bottom: 8px;
+  }
+
+  .section-subtitle {
+    font-size: 11.5px;
+    line-height: 1.55;
+    margin-bottom: 24px;
+  }
+
+  /* Downloads Cards Grid */
+  .downloads-section {
+    padding: 24px 0;
+  }
+
+  .download-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .download-card {
+    padding: 18px 14px;
+  }
+
+  .card-os-badge {
+    font-size: 9px;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    margin-bottom: 12px;
+  }
+
+  .download-card h3 {
+    font-size: 16px;
+    margin-bottom: 6px;
+  }
+
+  .card-meta {
+    font-size: 10.5px;
+    line-height: 1.45;
+    margin-bottom: 12px;
+  }
+
+  .feature-bullets {
+    margin-bottom: 16px;
+  }
+
+  .feature-bullets li {
+    font-size: 11px;
+    line-height: 1.45;
+    margin-bottom: 6px;
+  }
+
+  .btn-download {
+    padding: 11px 14px;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+  }
+
+  .sub-download-note {
+    font-size: 10px;
+    margin-top: 8px;
+  }
+
+  /* Pricing Matrix Section */
+  .pricing-section {
+    padding: 24px 0;
+  }
+
+  .pricing-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+
+  .pricing-card {
+    padding: 20px 14px;
+  }
+
+  .popular-badge {
+    font-size: 8px;
+    padding: 2px 8px;
+    top: -9px;
+    right: 14px;
+  }
+
+  .plan-type {
+    font-size: 9px;
+    letter-spacing: 1px;
+  }
+
+  .plan-title {
+    font-size: 16px;
+    margin-bottom: 6px;
+  }
+
+  .plan-price {
+    font-size: 26px;
+    margin-bottom: 6px;
+  }
+
+  .plan-price span {
+    font-size: 11px;
+  }
+
+  .plan-desc {
+    font-size: 11px;
+    line-height: 1.5;
+    margin-bottom: 16px;
+  }
+
+  .plan-divider {
+    margin-bottom: 16px;
+  }
+
+  .plan-features {
+    margin-bottom: 20px;
+  }
+
+  .plan-features li {
+    font-size: 11px;
+    line-height: 1.45;
+    margin-bottom: 8px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .btn-plan {
+    padding: 12px 14px;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+  }
+
+  .helper-text {
+    font-size: 9.5px;
+    margin-top: 8px;
+  }
+
+  /* Automated License Verifier Tester Box */
+  .license-tester-box {
+    padding: 16px 12px;
+    margin: 20px 0;
+  }
+
+  .tester-header {
+    font-size: 9.5px;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .badge-live {
+    font-size: 8px;
+    padding: 2px 5px;
+  }
+
+  .input-group {
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  #license-input {
+    width: 100%;
+    font-size: 10.5px;
+    padding: 10px 12px;
+  }
+
+  #btn-test-license {
+    width: 100%;
+    font-size: 11px;
+    padding: 11px 14px;
+    justify-content: center;
+  }
+
+  .tester-result {
+    font-size: 10.5px;
+    line-height: 1.5;
+    padding: 10px 12px;
+    margin-top: 10px;
+  }
+
+  /* HUD Footer */
+  .hud-footer {
+    padding: 18px 12px;
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+
+  .footer-left,
+  .footer-right {
+    font-size: 9.5px;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .dot-sep {
+    display: none;
+  }
+
+  /* UPI Payment Modal */
+  .upi-modal-card {
+    padding: 20px 14px;
+    width: 95%;
+    max-width: 360px;
+  }
+
+  .modal-title {
+    font-size: 14px;
+  }
+
+  .upi-qr-wrapper img {
+    width: 135px;
+    height: 135px;
+  }
+
+  .upi-vpa-text {
+    font-size: 11.5px;
+  }
+
+  .upi-claim-box input {
+    font-size: 11px;
+    padding: 8px 10px;
+  }
+
+  .btn-whatsapp-pulse {
+    font-size: 11.5px;
+    padding: 10px 12px;
+  }
+
+  .device-lock-notice {
+    font-size: 10px;
+    padding: 8px 10px;
+  }
+}
+
+/* ==========================================================================
+   EXTRA SMALL SMARTPHONES (<= 480px: iPhone SE, compact Androids)
+   ========================================================================== */
+
+@media (max-width: 480px) {
+  body {
+    font-size: 12px;
+  }
+
+  .hero-title {
+    font-size: 21px;
+    line-height: 1.25;
+  }
+
+  .hero-desc {
+    font-size: 11.5px;
+  }
+
+  .section-title {
+    font-size: 19px;
+  }
+
+  .plan-title {
+    font-size: 15px;
+  }
+
+  .plan-price {
+    font-size: 24px;
+  }
+
+  .plan-features li {
+    font-size: 10.5px;
+  }
+
+  .download-card h3 {
+    font-size: 15px;
+  }
+
+  .btn-cta-primary,
+  .btn-cta-secondary,
+  .btn-plan,
+  .btn-download {
+    font-size: 10.5px;
+  }
+}
+
+
