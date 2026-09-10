@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install Qt 6
         uses: jurplel/install-qt-action@v4
@@ -39,12 +41,23 @@ jobs:
         run: |
           cd build
           macdeployqt bin/ShadowAI.app -dmg -always-overwrite || true
-          find . -name "*.dmg"
+          DMG_PATH=$(find . -name "*.dmg" | head -1)
+          echo "DMG_PATH=$DMG_PATH" >> $GITHUB_ENV
+          echo "Found DMG: $DMG_PATH"
 
-      - name: Upload macOS Artifact
+      - name: Deploy DMG to website/downloads
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        run: |
+          cp "$DMG_PATH" website/downloads/ShadowAI.dmg
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add website/downloads/ShadowAI.dmg
+          git diff --cached --quiet || git commit -m "ci: auto-deploy fresh macOS DMG [skip ci]"
+          git push origin master
+
+      - name: Upload macOS Artifact (backup)
         uses: actions/upload-artifact@v4
         with:
           name: ShadowAI-macOS-DMG
           path: build/**/*.dmg
           if-no-files-found: warn
-
