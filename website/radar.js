@@ -608,14 +608,87 @@
         profileImg.style.display = 'block';
         if (profileFallback) profileFallback.style.display = 'none';
       }
-      if (profileTier) {
-        profileTier.innerText = isMasterAdmin ? 'MASTER OPERATOR // UNLIMITED ACCESS' : 'STANDARD TIER // 5 CLOUD RADAR QUERIES/DAY';
+      // Fetch Live License & Plan from Supabase Cloud
+      const badgeEl = document.getElementById('user-profile-badge');
+      const tierEl = document.getElementById('user-profile-tier');
+      const keyContainer = document.getElementById('user-profile-key-container');
+      const keyInput = document.getElementById('user-profile-key-input');
+      const hwidEl = document.getElementById('user-profile-hwid');
+      const btnCopyKey = document.getElementById('btn-copy-user-key');
+      const copiedStatus = document.getElementById('user-key-copied-status');
+
+      if (btnCopyKey && keyInput) {
+        btnCopyKey.onclick = () => {
+          if (keyInput.value && !keyInput.value.startsWith('FETCHING') && !keyInput.value.startsWith('NO ACTIVE')) {
+            navigator.clipboard.writeText(keyInput.value);
+            if (copiedStatus) {
+              copiedStatus.style.display = 'inline';
+              setTimeout(() => { copiedStatus.style.display = 'none'; }, 2000);
+            }
+          }
+        };
       }
+
       if (profileAdminSec) {
         profileAdminSec.style.display = isMasterAdmin ? 'block' : 'none';
       }
       if (isMasterAdmin) {
         localStorage.setItem('shadow_admin_user', 'harshilthakur82@gmail.com');
+        if (badgeEl) { badgeEl.innerText = 'LIFETIME ADMIN'; badgeEl.style.color = '#00e5ff'; }
+        if (tierEl) { tierEl.innerText = 'MASTER OPERATOR // UNLIMITED TACTICAL SUITE'; tierEl.style.color = '#00ff66'; }
+        if (keyInput) keyInput.value = 'SHADOW-PRO-HARSHIL-ADMIN';
+        if (hwidEl) hwidEl.innerHTML = 'HARDWARE BINDING: <span style="color:#00ff66;">ALL ACCESS UNLOCKED</span>';
+      } else {
+        // Query Supabase for customer's license by email
+        fetch(`${SUPABASE_URL}/rest/v1/licenses?customer_email=eq.${encodeURIComponent(email)}&order=created_at.desc&limit=1&select=*`, {
+          headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+        })
+        .then(r => r.json())
+        .then(rows => {
+          if (Array.isArray(rows) && rows.length > 0) {
+            const row = rows[0];
+            const planTier = (row.plan_tier || 'PRO_MONTHLY').toUpperCase();
+            const isActive = row.is_active;
+            const boundHwid = row.bound_hwid || '';
+            const createdAt = new Date(row.created_at);
+            const daysUsed = Math.floor((new Date() - createdAt) / (1000 * 60 * 60 * 24));
+            const daysLeft = Math.max(0, 30 - daysUsed);
+
+            if (!isActive) {
+              if (badgeEl) { badgeEl.innerText = 'REVOKED'; badgeEl.style.color = '#ff4757'; }
+              if (tierEl) { tierEl.innerText = 'KEY REVOKED OR SUSPENDED'; tierEl.style.color = '#ff4757'; }
+              if (keyInput) keyInput.value = row.license_key;
+              if (hwidEl) hwidEl.innerText = 'HARDWARE BINDING: INACTIVE';
+            } else if (planTier === 'PRO_MONTHLY' && daysLeft === 0) {
+              if (badgeEl) { badgeEl.innerText = 'EXPIRED (30d)'; badgeEl.style.color = '#ff9900'; }
+              if (tierEl) { tierEl.innerText = 'PRO MONTHLY (EXPIRED - PLEASE RENEW)'; tierEl.style.color = '#ff9900'; }
+              if (keyInput) keyInput.value = row.license_key;
+              if (hwidEl) hwidEl.innerText = 'HARDWARE BINDING: EXPIRED';
+            } else {
+              // Active Pro!
+              const leftText = planTier === 'PRO_MONTHLY' ? `ACTIVE (${daysLeft}d left)` : 'ACTIVE (LIFETIME)';
+              if (badgeEl) { badgeEl.innerText = leftText; badgeEl.style.color = '#00ff66'; }
+              if (tierEl) { tierEl.innerText = `${planTier.replace('_', ' ')} // UNLIMITED AI & VISION`; tierEl.style.color = '#00ff66'; }
+              if (keyInput) keyInput.value = row.license_key;
+              if (hwidEl) {
+                if (boundHwid) {
+                  hwidEl.innerHTML = `HARDWARE BINDING: <span style="color:#00ff66;">🔒 LOCKED (ID: ${boundHwid.slice(0, 8)}...)</span>`;
+                } else {
+                  hwidEl.innerHTML = `HARDWARE BINDING: <span style="color:#00e5ff;">🔓 UNBOUND (Locks on first login)</span>`;
+                }
+              }
+            }
+          } else {
+            // Free Community user
+            if (badgeEl) { badgeEl.innerText = 'FREE TIER'; badgeEl.style.color = '#7ca88e'; }
+            if (tierEl) { tierEl.innerText = 'COMMUNITY TIER // 5 CLOUD RADAR QUERIES/DAY'; tierEl.style.color = '#7ca88e'; }
+            if (keyInput) keyInput.value = 'NO ACTIVE LICENSE — UPGRADE BELOW';
+            if (hwidEl) hwidEl.innerHTML = 'HARDWARE BINDING: <span style="color:#7ca88e;">NONE</span>';
+          }
+        })
+        .catch(err => {
+          console.warn('License check error:', err);
+        });
       }
     }
 

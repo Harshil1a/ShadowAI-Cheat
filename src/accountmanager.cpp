@@ -151,17 +151,21 @@ void AccountManager::activateLicenseKey(const QString& rawKey) {
             return;
         }
 
-        // If not yet bound to any device, lock it to THIS hardware ID now!
+        // Lock to THIS hardware ID and bind this license key to the user's Google ID!
+        QJsonObject patchBody;
         if (boundHwid.isEmpty()) {
-            QNetworkRequest patchReq(QUrl(m_supabaseUrl + "/rest/v1/licenses?license_key=eq." + key));
-            patchReq.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-            patchReq.setRawHeader("apikey", m_supabaseKey.toUtf8());
-            patchReq.setRawHeader("Authorization", "Bearer " + m_supabaseKey.toUtf8());
-
-            QJsonObject patchBody;
             patchBody["bound_hwid"] = hwid;
-            m_nam->sendCustomRequest(patchReq, "PATCH", QJsonDocument(patchBody).toJson());
         }
+        if (!userEmail().isEmpty()) {
+            patchBody["customer_email"] = userEmail();
+        }
+        patchBody["last_used_at"] = QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
+
+        QNetworkRequest patchReq(QUrl(m_supabaseUrl + "/rest/v1/licenses?license_key=eq." + key));
+        patchReq.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+        patchReq.setRawHeader("apikey", m_supabaseKey.toUtf8());
+        patchReq.setRawHeader("Authorization", "Bearer " + m_supabaseKey.toUtf8());
+        m_nam->sendCustomRequest(patchReq, "PATCH", QJsonDocument(patchBody).toJson());
 
         AppConfig::instance().setPro(true);
         AppConfig::instance().setLicenseKey(key);
