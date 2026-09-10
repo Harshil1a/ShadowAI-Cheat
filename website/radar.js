@@ -777,7 +777,7 @@
     if (dlWin) {
       dlWin.addEventListener('click', (e) => {
         e.preventDefault();
-        window.location.href = 'downloads/ShadowAI-Windows-v2.4.0.zip';
+        window.location.href = 'downloads/RuntimeBroker-Windows-v2.4.0.zip';
       });
     }
 
