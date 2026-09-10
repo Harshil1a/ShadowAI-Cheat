@@ -976,24 +976,17 @@ void OverlayWindow::buildAllKeysHUD() {
     header->setAlignment(Qt::AlignCenter);
     m_allKeysLayout->addWidget(header);
 
-    QScrollArea* sa = new QScrollArea;
-    sa->setWidgetResizable(true);
-    sa->setFrameShape(QFrame::NoFrame);
-    sa->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    sa->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-    sa->setObjectName("hudScrollArea");
-
-    QWidget* scrollContent = new QWidget;
-    QVBoxLayout* scLayout = new QVBoxLayout(scrollContent);
-    scLayout->setContentsMargins(4, 2, 4, 2);
-    scLayout->setSpacing(6);
+    // ZERO SCROLLING: Symmetrical, compact 2x2 grid fitting 100% in single view
+    QGridLayout* gridLayout = new QGridLayout;
+    gridLayout->setContentsMargins(4, 2, 4, 2);
+    gridLayout->setSpacing(6);
 
     auto makeCategoryCard = [](const QString& title, const QList<QPair<QString, QString>>& items, bool isEmergency = false) -> QWidget* {
         QFrame* card = new QFrame;
         card->setProperty("class", "hudCategoryCard");
         QVBoxLayout* cl = new QVBoxLayout(card);
         cl->setContentsMargins(8, 6, 8, 6);
-        cl->setSpacing(4);
+        cl->setSpacing(3);
 
         QLabel* tLbl = new QLabel(title);
         tLbl->setProperty("class", "hudCategoryTitle");
@@ -1006,12 +999,12 @@ void OverlayWindow::buildAllKeysHUD() {
             QWidget* row = new QWidget;
             QHBoxLayout* rl = new QHBoxLayout(row);
             rl->setContentsMargins(0, 1, 0, 1);
-            rl->setSpacing(8);
+            rl->setSpacing(6);
 
             QLabel* kBadge = new QLabel(pair.first);
             kBadge->setProperty("class", isEmergency ? "hudBadgeDanger" : "hudBadge");
             kBadge->setAlignment(Qt::AlignCenter);
-            kBadge->setMinimumWidth(125);
+            kBadge->setMinimumWidth(110);
 
             QLabel* aLbl = new QLabel(pair.second);
             aLbl->setProperty("class", isEmergency ? "hudActionDanger" : "hudAction");
@@ -1023,43 +1016,43 @@ void OverlayWindow::buildAllKeysHUD() {
         return card;
     };
 
-    // 1. AI & Capture
+    // 1. AI & Capture (Row 0, Col 0)
     QList<QPair<QString, QString>> aiItems = {
         {"Shift+Alt+" + vkToKeyName(cfg.hotkeyScreenshot()), "Capture Screen Selection"},
-        {"Shift+Alt+" + vkToKeyName(cfg.hotkeyGetAnswer()), "Instant AI Solution (Snap & Solve)"},
-        {"Shift+Alt+" + vkToKeyName(cfg.hotkeyVoice()), "Microphone Voice Query"},
+        {"Shift+Alt+" + vkToKeyName(cfg.hotkeyGetAnswer()), "Snap & Solve (AI Solution)"},
+        {"Shift+Alt+" + vkToKeyName(cfg.hotkeyVoice()), "Microphone Voice Input"},
         {"Shift+Alt+" + vkToKeyName(cfg.hotkeyGhostWriter()), "Auto-Type Ghost Writer"},
         {"Shift+Alt+" + vkToKeyName(cfg.hotkeyCopyScreenshot()), "Copy Last Screen Snapshot"}
     };
-    scLayout->addWidget(makeCategoryCard("📸 AI & CAPTURE CONTROLS", aiItems));
+    gridLayout->addWidget(makeCategoryCard("📸 AI & CAPTURE CONTROLS", aiItems), 0, 0);
 
-    // 2. View & Stealth
+    // 2. View & Stealth (Row 0, Col 1)
     QList<QPair<QString, QString>> viewItems = {
         {"Shift+Alt+" + vkToKeyName(cfg.hotkeyToggle()), "Show / Hide Overlay Window"},
         {"Shift+Alt+" + vkToKeyName(cfg.hotkeyTransparency()), "Cycle Transparency (9 Presets)"},
-        {"Shift+Alt+" + vkToKeyName(cfg.hotkeyClear()), "Clear AI Output & Chat History"},
+        {"Shift+Alt+" + vkToKeyName(cfg.hotkeyClear()), "Clear Output & Chat History"},
         {"Shift+Alt+" + vkToKeyName(cfg.hotkeyToggleBadges()), "Toggle All Keys Directory HUD"}
     };
-    scLayout->addWidget(makeCategoryCard("🪟 OVERLAY & STEALTH CONTROLS", viewItems));
+    gridLayout->addWidget(makeCategoryCard("🪟 OVERLAY & STEALTH CONTROLS", viewItems), 0, 1);
 
-    // 3. Navigation & Movement
+    // 3. Navigation & Movement (Row 1, Col 0)
     QList<QPair<QString, QString>> navItems = {
         {"Shift+Alt+" + vkToKeyName(cfg.hotkeyMoveLeft()) + "/" + vkToKeyName(cfg.hotkeyMoveRight()), "Nudge Window Left / Right"},
         {"Shift+Alt+" + vkToKeyName(cfg.hotkeyMoveUp()) + "/" + vkToKeyName(cfg.hotkeyMoveDown()), "Nudge Window Up / Down"},
         {"Shift+Alt+" + vkToKeyName(cfg.hotkeyScrollUp()) + "/" + vkToKeyName(cfg.hotkeyScrollDown()), "Scroll Answer Output Up / Down"}
     };
-    scLayout->addWidget(makeCategoryCard("🧭 NAVIGATION & MOVEMENT", navItems));
+    gridLayout->addWidget(makeCategoryCard("🧭 NAVIGATION & MOVEMENT", navItems), 1, 0);
 
-    // 4. Emergency
+    // 4. Emergency & Return (Row 1, Col 1)
     QList<QPair<QString, QString>> emergItems = {
-        {"Ctrl+Shift+" + vkToKeyName(cfg.hotkeyPanic()), "Panic Kill (Terminates Process & Clears Clipboard)"}
+        {"Ctrl+Shift+" + vkToKeyName(cfg.hotkeyPanic()), "PANIC KILL (Wipe Process & Clipboard)"},
+        {"Shift+Alt+" + vkToKeyName(cfg.hotkeyToggleBadges()), "Close HUD ➔ Return to AI Answer"}
     };
-    scLayout->addWidget(makeCategoryCard("🚨 EMERGENCY CONTROLS", emergItems, true));
+    gridLayout->addWidget(makeCategoryCard("🚨 EMERGENCY & CONTROLS", emergItems, true), 1, 1);
 
-    sa->setWidget(scrollContent);
-    m_allKeysLayout->addWidget(sa, 1);
+    m_allKeysLayout->addLayout(gridLayout, 1);
 
-    QLabel* footer = new QLabel(QString("[Shift+Alt+%1] Press hotkey again to close directory").arg(vkToKeyName(cfg.hotkeyToggleBadges())));
+    QLabel* footer = new QLabel(QString("[Shift+Alt+%1] Press hotkey again to return to AI answer").arg(vkToKeyName(cfg.hotkeyToggleBadges())));
     footer->setObjectName("hudFooter");
     footer->setAlignment(Qt::AlignCenter);
     m_allKeysLayout->addWidget(footer);
