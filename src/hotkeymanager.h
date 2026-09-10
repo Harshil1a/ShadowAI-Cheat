@@ -32,5 +32,7 @@ signals:
     void copyScreenshot();
     void ghostWriter();
     void panicTriggered();
+    void hideStrip();
+
 };
 

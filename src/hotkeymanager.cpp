@@ -156,6 +156,10 @@ bool HotkeyManager::handleHookKey(int vk, bool isDown) {
             emit ghostWriter();
             return true;
         }
+        if (vk == cfg.hotkeyHideStrip()) {
+            emit hideStrip();
+            return true;
+        }
 
     } else {
         // Key UP (Release) events

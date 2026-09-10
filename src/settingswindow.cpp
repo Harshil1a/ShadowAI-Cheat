@@ -253,6 +253,7 @@ void SettingsWindow::setupUI() {
     m_hkClear       = new KeyCaptureEdit(hkGroup);
     m_hkVoice       = new KeyCaptureEdit(hkGroup);
     m_hkToggleBadges = new KeyCaptureEdit(hkGroup);
+    m_hkHideStrip   = new KeyCaptureEdit(hkGroup);
     m_hkCopyScreenshot = new KeyCaptureEdit(hkGroup);
     m_hkGhostWriter = new KeyCaptureEdit(hkGroup);
     m_hkPanic       = new KeyCaptureEdit(hkGroup);
@@ -263,6 +264,7 @@ void SettingsWindow::setupUI() {
         {"Shift+Alt+[?]  Get AI answer",         m_hkGetAnswer},
         {"Shift+Alt+[?]  Toggle audio recording", m_hkVoice},
         {"Shift+Alt+[?]  All Keys Directory HUD", m_hkToggleBadges},
+        {"Shift+Alt+[?]  Hide Key Strip (clean view)", m_hkHideStrip},
         {"Shift+Alt+[?]  Copy screenshot",       m_hkCopyScreenshot},
         {"Shift+Alt+[?]  Ghost Writer auto-type", m_hkGhostWriter},
         {"Ctrl+Shift+[?] Emergency Panic Kill-Switch", m_hkPanic},
@@ -667,6 +669,7 @@ void SettingsWindow::loadValues() {
     m_hkClear->setVK(cfg.hotkeyClear());
     m_hkVoice->setVK(cfg.hotkeyVoice());
     m_hkToggleBadges->setVK(cfg.hotkeyToggleBadges());
+    m_hkHideStrip->setVK(cfg.hotkeyHideStrip());
     m_hkCopyScreenshot->setVK(cfg.hotkeyCopyScreenshot());
     m_hkGhostWriter->setVK(cfg.hotkeyGhostWriter());
     m_hkPanic->setVK(cfg.hotkeyPanic());
@@ -747,6 +750,7 @@ void SettingsWindow::onSave() {
     if (m_hkClear->capturedVK())        cfg.setHotkeyClear(m_hkClear->capturedVK());
     if (m_hkVoice->capturedVK())        cfg.setHotkeyVoice(m_hkVoice->capturedVK());
     if (m_hkToggleBadges->capturedVK()) cfg.setHotkeyToggleBadges(m_hkToggleBadges->capturedVK());
+    if (m_hkHideStrip->capturedVK())    cfg.setHotkeyHideStrip(m_hkHideStrip->capturedVK());
     if (m_hkCopyScreenshot->capturedVK()) cfg.setHotkeyCopyScreenshot(m_hkCopyScreenshot->capturedVK());
     if (m_hkGhostWriter->capturedVK())   cfg.setHotkeyGhostWriter(m_hkGhostWriter->capturedVK());
     if (m_hkPanic->capturedVK())         cfg.setHotkeyPanic(m_hkPanic->capturedVK());

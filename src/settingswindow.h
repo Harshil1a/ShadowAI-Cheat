@@ -88,6 +88,8 @@ protected:
     KeyCaptureEdit* m_hkClear;
     KeyCaptureEdit* m_hkVoice;
     KeyCaptureEdit* m_hkToggleBadges;
+    KeyCaptureEdit* m_hkHideStrip;
+
     KeyCaptureEdit* m_hkCopyScreenshot;
     KeyCaptureEdit* m_hkGhostWriter;
     KeyCaptureEdit* m_hkPanic;

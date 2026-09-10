@@ -43,8 +43,10 @@ public:
     void toggleVoiceRecord();
     void stopVoiceRecordOnRelease();
     void toggleBadgesVisibility();
+    void toggleHideStrip();
     void copyScreenshotToClipboard();
     void doGhostWriter();
+
 
     void* nativeHandle(); // returns HWND
     void  setCaptureProtection(bool enable);

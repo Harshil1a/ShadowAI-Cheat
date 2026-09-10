@@ -98,6 +98,9 @@ public:
     int hotkeyPanic() const;
     void setHotkeyPanic(int vk);
 
+    int hotkeyHideStrip() const;
+    void setHotkeyHideStrip(int vk);
+
     // Daily Free Queries (3 per day)
     int freeQueriesCountToday();
     int freeQueriesRemaining();
@@ -175,6 +178,7 @@ private:
     int m_hotkeyCopyScreenshot;
     int m_hotkeyGhostWriter;
     int m_hotkeyPanic;
+    int m_hotkeyHideStrip;
 
     int m_ghostWriterMinDelay;
     int m_ghostWriterMaxDelay;

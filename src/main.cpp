@@ -125,6 +125,9 @@ int main(int argc, char* argv[]) {
     QObject::connect(hotkeyMgr, &HotkeyManager::toggleBadges,
                      overlay,   &OverlayWindow::toggleBadgesVisibility);
 
+    QObject::connect(hotkeyMgr, &HotkeyManager::hideStrip,
+                     overlay,   &OverlayWindow::toggleHideStrip);
+
     QObject::connect(hotkeyMgr, &HotkeyManager::copyScreenshot,
                      overlay,   &OverlayWindow::copyScreenshotToClipboard);
 

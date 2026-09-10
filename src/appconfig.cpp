@@ -21,6 +21,7 @@
 #define DEFAULT_VK_COPYSCREENSHOT 0x43  // C
 #define DEFAULT_VK_GHOSTWRITER 0x56  // V
 #define DEFAULT_VK_PANIC       0x2E  // Delete (VK_DELETE)
+#define DEFAULT_VK_HIDESTRIP   0x4C  // L
 
 AppConfig& AppConfig::instance() {
     static AppConfig inst;
@@ -69,6 +70,7 @@ void AppConfig::load() {
     m_hotkeyCopyScreenshot = m_settings.value("hotkeys/copyScreenshot", DEFAULT_VK_COPYSCREENSHOT).toInt();
     m_hotkeyGhostWriter = m_settings.value("hotkeys/ghostWriter", DEFAULT_VK_GHOSTWRITER).toInt();
     m_hotkeyPanic       = m_settings.value("hotkeys/panic",       DEFAULT_VK_PANIC).toInt();
+    m_hotkeyHideStrip   = m_settings.value("hotkeys/hideStrip",   DEFAULT_VK_HIDESTRIP).toInt();
 
     m_ghostWriterMinDelay = m_settings.value("ghostwriter/minDelay", 15).toInt();
     m_ghostWriterMaxDelay = m_settings.value("ghostwriter/maxDelay", 30).toInt();
@@ -117,6 +119,7 @@ void AppConfig::save() {
     m_settings.setValue("hotkeys/copyScreenshot", m_hotkeyCopyScreenshot);
     m_settings.setValue("hotkeys/ghostWriter", m_hotkeyGhostWriter);
     m_settings.setValue("hotkeys/panic",       m_hotkeyPanic);
+    m_settings.setValue("hotkeys/hideStrip",   m_hotkeyHideStrip);
     m_settings.setValue("ghostwriter/minDelay", m_ghostWriterMinDelay);
     m_settings.setValue("ghostwriter/maxDelay", m_ghostWriterMaxDelay);
     m_settings.setValue("ghostwriter/smartIndent", m_ghostWriterSmartIndent);
@@ -234,6 +237,9 @@ void AppConfig::setUseProCloudEngine(bool enable) { m_useProCloudEngine = enable
 
 int AppConfig::hotkeyPanic() const { return m_hotkeyPanic; }
 void AppConfig::setHotkeyPanic(int vk) { m_hotkeyPanic = vk; }
+
+int AppConfig::hotkeyHideStrip() const { return m_hotkeyHideStrip; }
+void AppConfig::setHotkeyHideStrip(int vk) { m_hotkeyHideStrip = vk; }
 
 int AppConfig::freeQueriesCountToday() {
     QString today = QDate::currentDate().toString("yyyy-MM-dd");

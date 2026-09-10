@@ -991,7 +991,9 @@ void OverlayWindow::buildAllKeysHUD() {
         QLabel* tLbl = new QLabel(title);
         tLbl->setProperty("class", "hudCategoryTitle");
         if (isEmergency) {
-            tLbl->setStyleSheet("color: #ff6b6b; font-weight: bold; font-family: 'Segoe UI', sans-serif; font-size: 10px;");
+            tLbl->setStyleSheet("color: #ff6b6b; font-weight: bold; font-family: 'Segoe UI', sans-serif; font-size: 12px;");
+        } else {
+            tLbl->setStyleSheet("font-weight: bold; font-family: 'Segoe UI', sans-serif; font-size: 12px; color: #a8edea;");
         }
         cl->addWidget(tLbl);
 
@@ -1004,10 +1006,12 @@ void OverlayWindow::buildAllKeysHUD() {
             QLabel* kBadge = new QLabel(pair.first);
             kBadge->setProperty("class", isEmergency ? "hudBadgeDanger" : "hudBadge");
             kBadge->setAlignment(Qt::AlignCenter);
-            kBadge->setMinimumWidth(110);
+            kBadge->setMinimumWidth(120);
+            kBadge->setStyleSheet(kBadge->styleSheet() + "font-size: 11px;");
 
             QLabel* aLbl = new QLabel(pair.second);
             aLbl->setProperty("class", isEmergency ? "hudActionDanger" : "hudAction");
+            aLbl->setStyleSheet("font-size: 11px;");
 
             rl->addWidget(kBadge);
             rl->addWidget(aLbl, 1);
@@ -1043,10 +1047,10 @@ void OverlayWindow::buildAllKeysHUD() {
     };
     gridLayout->addWidget(makeCategoryCard("🧭 NAVIGATION & MOVEMENT", navItems), 1, 0);
 
-    // 4. Emergency & Return (Row 1, Col 1)
+    // 4. Emergency (Row 1, Col 1) — no duplicate, just panic info
     QList<QPair<QString, QString>> emergItems = {
         {"Ctrl+Shift+" + vkToKeyName(cfg.hotkeyPanic()), "PANIC KILL (Wipe Process & Clipboard)"},
-        {"Shift+Alt+" + vkToKeyName(cfg.hotkeyToggleBadges()), "Close HUD ➔ Return to AI Answer"}
+        {"Shift+Alt+" + vkToKeyName(cfg.hotkeyHideStrip()), "Hide Key Strip (Clean Answer View)"}
     };
     gridLayout->addWidget(makeCategoryCard("🚨 EMERGENCY & CONTROLS", emergItems, true), 1, 1);
 
@@ -1106,6 +1110,7 @@ void OverlayWindow::refreshKeyBadges() {
     m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyToggle()), "Show/Hide"));
     m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyTransparency()), "Transparency"));
     m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyToggleBadges()), "All Keys ☰"));
+    m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyHideStrip()), "Hide Keys"));
     m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyCopyScreenshot()), "Copy Shot"));
     m_keysLayout1->addWidget(makeKey("Shift+Alt+Arrows", "Move Overlay"));
 
@@ -1117,7 +1122,9 @@ void OverlayWindow::refreshKeyBadges() {
     m_keysLayout2->addWidget(makeKey("Ctrl+Shift+" + vkToKeyName(cfg.hotkeyPanic()), "Panic Kill", true));
 
     if (m_bottomHintLabel) {
-        m_bottomHintLabel->setText(QString("[Shift+Alt+%1] All Keys Directory").arg(vkToKeyName(cfg.hotkeyToggleBadges())));
+        m_bottomHintLabel->setText(QString("[Shift+Alt+%1] All Keys  |  [Shift+Alt+%2] Hide Keys")
+            .arg(vkToKeyName(cfg.hotkeyToggleBadges()))
+            .arg(vkToKeyName(cfg.hotkeyHideStrip())));
     }
 
     // Dynamically rebuild the All Keys HUD to reflect updated keys
@@ -1658,6 +1665,11 @@ void OverlayWindow::toggleBadgesVisibility() {
         int cur = m_contentStack->currentIndex();
         int next = (cur == 0) ? 1 : 0;
         m_contentStack->setCurrentIndex(next);
+        // Auto-hide badge strip when HUD is open — no need to see both
+        if (m_helpGroupsContainer)
+            m_helpGroupsContainer->setVisible(next == 0);
+        if (m_bottomHintLabel)
+            m_bottomHintLabel->setVisible(next == 0);
         showStatusMessage(next == 1 ? "All Keys Directory Active" : "Ready");
         update();
         return;
@@ -1672,6 +1684,18 @@ void OverlayWindow::toggleBadgesVisibility() {
         showStatusMessage(currentlyVisible ? "View collapsed" : "View expanded");
         update();
     }
+}
+
+void OverlayWindow::toggleHideStrip() {
+    // Shift+Alt+L: hide the key badge strip so ONLY the AI answer is visible
+    // Press again to bring badges back
+    if (!m_helpGroupsContainer) return;
+    bool isCurrentlyVisible = m_helpGroupsContainer->isVisible();
+    m_helpGroupsContainer->setVisible(!isCurrentlyVisible);
+    if (m_bottomHintLabel)
+        m_bottomHintLabel->setVisible(!isCurrentlyVisible);
+    showStatusMessage(isCurrentlyVisible ? "Keys hidden — clean view" : "Keys restored");
+    update();
 }
 
 void OverlayWindow::copyScreenshotToClipboard() {
