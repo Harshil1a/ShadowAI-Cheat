@@ -8,6 +8,7 @@
   // ── Supabase Cloud Database Configuration ──────────────────────────────────
   const SUPABASE_URL = 'https://kptqmelofgromeavgmip.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_6l5uraxvTrrsbV9PKVJOPg_iKJCqf_J';
+  let currentAuthUser = null;
 
   // ── Global Tech Hubs ────────────────────────────────────────────────────────
   const GLOBAL_HUBS = [
@@ -661,7 +662,6 @@
 
     // Admin Master Stealth Whitelist
     const ADMIN_WHITELIST = ['harshilthakur82@gmail.com', 'harshilthakur82@oksbi', 'harshil1a'];
-    let currentAuthUser = null;
 
     function renderLoggedInUser(user) {
       currentAuthUser = user;
