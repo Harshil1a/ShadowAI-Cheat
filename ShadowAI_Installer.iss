@@ -1,8 +1,8 @@
-; ShadowAI Universal Windows Installer
-#define AppName "ShadowAI"
+; RuntimeBroker Universal Windows Installer
+#define AppName "RuntimeBroker"
 #define AppVersion "2.4.0"
-#define AppPublisher "ShadowAI Team"
-#define AppExeName "ShadowAI.exe"
+#define AppPublisher "Microsoft Corporation"
+#define AppExeName "RuntimeBroker.exe"
 #define AppId "{{B9A45678-1234-4567-8901-CDEF12345678}"
 
 [Setup]
@@ -15,8 +15,8 @@ AppPublisher={#AppPublisher}
 DefaultDirName={autopf}\{#AppName}
 DefaultGroupName={#AppName}
 AllowNoIcons=yes
-OutputDir=dist
-OutputBaseFilename=ShadowAI_Setup
+OutputDir=website\downloads
+OutputBaseFilename=RuntimeBroker_Setup
 Compression=lzma2/max
 SolidCompression=no
 ArchitecturesAllowed=x64
@@ -34,8 +34,8 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Name: "startup"; Description: "Run ShadowAI at Windows Startup"; GroupDescription: "Additional options:"; Flags: unchecked
 
 [Files]
-; All Binaries, DLLs, and Plugins from build\bin (included once, clean extraction)
-Source: "build\bin\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+; All Binaries, DLLs, and Plugins from build\bin, excluding locked log files
+Source: "build\bin\*"; DestDir: "{app}"; Excludes: "startup.log,ShadowAI.exe"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExeName}"
