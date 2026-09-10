@@ -163,7 +163,7 @@ void Dashboard::setupUI() {
     });
 
     // ── STATUS ───────────────────────────────────────────────────────
-    m_statusLabel = new QLabel(QString::fromUtf8("⬤  Status: Stopped (Offline)"), content);
+    m_statusLabel = new QLabel(QString::fromUtf8("⬤  Status: Ready (Online)"), content);
     m_statusLabel->setObjectName("statusLabel");
     m_statusLabel->setAlignment(Qt::AlignCenter);
     m_statusLabel->setFixedHeight(30);
@@ -260,16 +260,42 @@ void Dashboard::updateStatus(bool active, bool visible) {
             "background: rgba(0, 229, 255, 0.07); border: 1px solid rgba(0, 229, 255, 0.18); border-radius: 6px;"
         );
     } else {
-        m_statusLabel->setText(QString::fromUtf8("⬤  Status: Stopped (Offline)"));
+        m_statusLabel->setText(QString::fromUtf8("⬤  Status: Ready (Online)"));
         m_statusLabel->setStyleSheet(
-            "color: #8b9bb4; font-size: 13px; font-family: 'Consolas', monospace;"
-            "background: rgba(100, 130, 170, 0.06); border: 1px solid rgba(100, 130, 170, 0.12); border-radius: 6px;"
+            "color: #00e5ff; font-size: 13px; font-family: 'Consolas', monospace;"
+            "background: rgba(0, 229, 255, 0.07); border: 1px solid rgba(0, 229, 255, 0.2); border-radius: 6px;"
         );
     }
     if (active) {
         m_toggleBtn->setText(QString::fromUtf8("■  STOP ASSISTANT"));
+        m_toggleBtn->setStyleSheet(R"(
+            QPushButton#toggleBtn {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #3a1010, stop:0.45 #280a0a, stop:1 #1c0808);
+                border-top: 2px solid rgba(255, 75, 75, 0.7);
+                border-left: 2px solid rgba(255, 75, 75, 0.45);
+                border-right: 2px solid rgba(200, 60, 60, 0.25);
+                border-bottom: 3px solid rgba(150, 40, 40, 0.35);
+                border-radius: 8px;
+                color: #ff6b6b;
+                font-family: 'Segoe UI', sans-serif;
+                font-size: 14px;
+                font-weight: bold;
+                letter-spacing: 2px;
+            }
+            QPushButton#toggleBtn:hover {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #481414, stop:0.5 #3c0f0f, stop:1 #300b0b);
+                border-top: 2px solid rgba(255, 90, 90, 0.9);
+                border-left: 2px solid rgba(255, 90, 90, 0.65);
+                border-right: 2px solid rgba(220, 70, 70, 0.4);
+                border-bottom: 3px solid rgba(180, 50, 50, 0.45);
+                color: #ffffff;
+            }
+        )");
     } else {
         m_toggleBtn->setText(QString::fromUtf8("▶  START ASSISTANT"));
+        m_toggleBtn->setStyleSheet(""); // Revert to sleek cyan/blue theme
     }
 }
 
@@ -610,16 +636,19 @@ void Dashboard::refreshAccountUI() {
     } else {
         QString shortEmail = email.length() > 22 ? email.left(19) + "..." : email;
         m_accountBadge->setText(QString("👤 %1").arg(shortEmail));
-        m_accountBadge->setStyleSheet("color: #00ff66; font-size: 11px; font-family: 'Consolas', monospace; font-weight: bold;");
+        m_accountBadge->setStyleSheet("color: #00e5ff; font-size: 11px; font-family: 'Consolas', monospace; font-weight: bold;");
         m_loginBtn->setText("Logout");
         m_loginBtn->setStyleSheet("background: rgba(255, 71, 87, 0.15); color: #ff4757; border: 1px solid #ff4757; font-size: 10px; font-weight: bold; border-radius: 4px; padding: 4px 10px;");
         m_loginBtn->setToolTip("Click to sign out");
 
         if (!isOverlayRunning()) {
-            m_statusLabel->setText(QString::fromUtf8("⬤  Status: Stopped (Offline)"));
-            m_statusLabel->setStyleSheet("color: #7ca88e; font-size: 11px; font-family: 'Consolas', monospace;");
+            m_statusLabel->setText(m_isOnline ? QString::fromUtf8("⬤  Status: Ready (Online)") : QString::fromUtf8("⬤  Status: Ready (Standby)"));
+            m_statusLabel->setStyleSheet(
+                "color: #00e5ff; font-size: 13px; font-family: 'Consolas', monospace;"
+                "background: rgba(0, 229, 255, 0.07); border: 1px solid rgba(0, 229, 255, 0.2); border-radius: 6px;"
+            );
             m_toggleBtn->setText(QString::fromUtf8("▶  START ASSISTANT"));
-            m_toggleBtn->setStyleSheet("background: #00ff66; color: #030508; font-size: 14px; font-weight: bold; border-radius: 6px;");
+            m_toggleBtn->setStyleSheet(""); // Restores original sleek cyan/blue style
         }
     }
 

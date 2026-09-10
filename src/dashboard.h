@@ -65,7 +65,7 @@ private:
 
     QNetworkAccessManager* m_nam       = nullptr;
     bool            m_isOverlayRunning = false;
-    bool            m_isOnline         = false;
+    bool            m_isOnline         = true;
 
     // For frameless window dragging
     bool            m_dragging         = false;
