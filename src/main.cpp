@@ -18,6 +18,7 @@
 #include "appconfig.h"
 #include "dashboard.h"
 #include "mainwindow.h"
+#include "accountmanager.h"
 
 
 
@@ -71,17 +72,37 @@ int main(int argc, char* argv[]) {
     overlay->setAIManager(aiManager);
     overlay->setScreenCapture(screenCap);
 
+    // ── Helper: Compulsory Google Login Gate ────────────────────────────────
+    auto requireLogin = [mainWindow, dashboard]() -> bool {
+        if (!AccountManager::instance().isLoggedIn()) {
+            mainWindow->show();
+            mainWindow->raise();
+            mainWindow->activateWindow();
+            dashboard->updateStatus(false, false);
+            AccountManager::instance().startGoogleLogin();
+            return false;
+        }
+        return true;
+    };
+
     // ── Connect hotkeys to overlay ────────────────────────────────────────────
-    QObject::connect(hotkeyMgr, &HotkeyManager::toggleOverlay, overlay, [overlay, dashboard]() {
+    QObject::connect(hotkeyMgr, &HotkeyManager::toggleOverlay, overlay, [overlay, dashboard, requireLogin]() {
+        if (!requireLogin()) return;
         overlay->toggleVisibility();
         dashboard->updateStatus(true, overlay->isVisible());
     });
 
     QObject::connect(hotkeyMgr, &HotkeyManager::takeScreenshot,
-                     overlay,   &OverlayWindow::doScreenshot);
+                     overlay,   [overlay, requireLogin]() {
+        if (!requireLogin()) return;
+        overlay->doScreenshot();
+    });
 
     QObject::connect(hotkeyMgr, &HotkeyManager::getAnswer,
-                     overlay,   &OverlayWindow::doGetAnswer);
+                     overlay,   [overlay, requireLogin]() {
+        if (!requireLogin()) return;
+        overlay->doGetAnswer();
+    });
 
     QObject::connect(hotkeyMgr, &HotkeyManager::scrollUp,
                      overlay,   &OverlayWindow::scrollContentUp);
@@ -120,10 +141,14 @@ int main(int argc, char* argv[]) {
                      overlay,   &OverlayWindow::copyScreenshotToClipboard);
 
     QObject::connect(hotkeyMgr, &HotkeyManager::ghostWriter,
-                     overlay,   &OverlayWindow::doGhostWriter);
+                     overlay,   [overlay, requireLogin]() {
+        if (!requireLogin()) return;
+        overlay->doGhostWriter();
+    });
 
     // ── Connect tray ──────────────────────────────────────────────────────────
-    QObject::connect(tray, &TrayIcon::toggleOverlay, overlay, [overlay, dashboard]() {
+    QObject::connect(tray, &TrayIcon::toggleOverlay, overlay, [overlay, dashboard, requireLogin]() {
+        if (!requireLogin()) return;
         overlay->toggleVisibility();
         dashboard->updateStatus(true, overlay->isVisible());
     });
@@ -157,7 +182,8 @@ int main(int argc, char* argv[]) {
 
     // ── Dashboard connections ────────────────────────────────────────────────
     // Unified state management for Start/Stop Assistant
-    QObject::connect(dashboard, &Dashboard::toggleOverlay, overlay, [overlay, hotkeyMgr, dashboard]() {
+    QObject::connect(dashboard, &Dashboard::toggleOverlay, overlay, [overlay, hotkeyMgr, dashboard, requireLogin]() {
+        if (!requireLogin()) return;
         if (dashboard->isOverlayRunning()) {
             // Stop Assistant completely (hide and unregister hotkeys)
             overlay->hide();

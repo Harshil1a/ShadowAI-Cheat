@@ -214,6 +214,12 @@ void Dashboard::setupUI() {
         emit quitApp();
     });
     connect(m_toggleBtn, &QPushButton::clicked, this, [this]() {
+        if (!AccountManager::instance().isLoggedIn()) {
+            m_statusLabel->setText(QString::fromUtf8("🔒 Google Sign-In Required to Activate Assistant"));
+            m_statusLabel->setStyleSheet("color: #ffa502; font-size: 11px; font-weight: bold; font-family: 'Consolas', monospace;");
+            AccountManager::instance().startGoogleLogin();
+            return;
+        }
         emit toggleOverlay();
     });
     connect(m_settingsBtn, &QPushButton::clicked, this, [this]() {
@@ -588,16 +594,32 @@ void Dashboard::refreshAccountUI() {
     }
 
     if (!loggedIn) {
-        m_accountBadge->setText(QString::fromUtf8("👤 GUEST // FREE (BYOK)"));
-        m_accountBadge->setStyleSheet("color: #7ca88e; font-size: 11px; font-family: 'Consolas', monospace;");
-        m_loginBtn->setText("Login");
-        m_loginBtn->setToolTip("Sign in with Google");
+        m_accountBadge->setText(QString::fromUtf8("🔒 SIGN-IN REQUIRED"));
+        m_accountBadge->setStyleSheet("color: #ffa502; font-size: 11px; font-weight: bold; font-family: 'Consolas', monospace; border: 1px dashed rgba(255,165,2,0.5); padding: 2px 8px; border-radius: 4px;");
+        m_loginBtn->setText("Sign in with Google");
+        m_loginBtn->setStyleSheet("background: #00ff66; color: #030805; font-weight: 800; font-size: 11px; border-radius: 4px; padding: 4px 12px;");
+        m_loginBtn->setToolTip("Mandatory: Sign in with your Google account to unlock assistant");
+
+        if (!isOverlayRunning()) {
+            m_statusLabel->setText(QString::fromUtf8("🔒 Status: Locked (Google Login Required)"));
+            m_statusLabel->setStyleSheet("color: #ffa502; font-size: 11px; font-weight: bold; font-family: 'Consolas', monospace;");
+            m_toggleBtn->setText(QString::fromUtf8("🔒 SIGN IN WITH GOOGLE TO START"));
+            m_toggleBtn->setStyleSheet("background: rgba(255, 165, 2, 0.12); color: #ffa502; border: 1px solid #ffa502; font-size: 13px; font-weight: bold; border-radius: 6px;");
+        }
     } else {
         QString shortEmail = email.length() > 22 ? email.left(19) + "..." : email;
         m_accountBadge->setText(QString("👤 %1").arg(shortEmail));
         m_accountBadge->setStyleSheet("color: #00ff66; font-size: 11px; font-family: 'Consolas', monospace; font-weight: bold;");
         m_loginBtn->setText("Logout");
+        m_loginBtn->setStyleSheet("background: rgba(255, 71, 87, 0.15); color: #ff4757; border: 1px solid #ff4757; font-size: 10px; font-weight: bold; border-radius: 4px; padding: 4px 10px;");
         m_loginBtn->setToolTip("Click to sign out");
+
+        if (!isOverlayRunning()) {
+            m_statusLabel->setText(QString::fromUtf8("⬤  Status: Stopped (Offline)"));
+            m_statusLabel->setStyleSheet("color: #7ca88e; font-size: 11px; font-family: 'Consolas', monospace;");
+            m_toggleBtn->setText(QString::fromUtf8("▶  START ASSISTANT"));
+            m_toggleBtn->setStyleSheet("background: #00ff66; color: #030508; font-size: 14px; font-weight: bold; border-radius: 6px;");
+        }
     }
 
     if (isPro) {
