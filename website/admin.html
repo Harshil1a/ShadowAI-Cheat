@@ -572,33 +572,34 @@
 
       try {
         let data = [];
+        let fetchOk = false;
         try {
           const res = await fetch(`${SUPABASE_URL}/rest/v1/licenses?select=*&order=created_at.desc`, {
-          headers: {
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`
+            }
+          });
+          const serverData = await res.json();
+          if (Array.isArray(serverData)) {
+            data = serverData;
+            fetchOk = true;
           }
-        });
-        const serverData = await res.json();
-        if (Array.isArray(serverData)) data = serverData;
-      } catch (err) {
-        console.warn('Server fetch error:', err);
-      }
-
-      // Merge local generated keys
-      const localKeys = JSON.parse(localStorage.getItem('shadow_admin_keys') || '[]');
-      const allKeys = [...data];
-      for (const lk of localKeys) {
-        if (!allKeys.some(k => k.license_key === lk.license_key)) {
-          allKeys.push(lk);
+        } catch (err) {
+          console.warn('Server fetch error:', err);
         }
-      }
 
-      if (allKeys.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#7ca88e;padding:20px;">No licenses issued yet. Click [+ GENERATE NEW PRO LICENSE KEY] above!</td></tr>';
-        updateStats([]);
-        return;
-      }
+        // Supabase is single source of truth; only use local cache if network connection completely failed
+        let allKeys = data;
+        if (!fetchOk) {
+          allKeys = JSON.parse(localStorage.getItem('shadow_admin_keys') || '[]');
+        }
+
+        if (allKeys.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#7ca88e;padding:20px;">No licenses issued yet. Click [+ GENERATE NEW PRO LICENSE KEY] above!</td></tr>';
+          updateStats([]);
+          return;
+        }
 
       updateStats(allKeys);
 
@@ -717,9 +718,18 @@
             }
           });
         }
+        if (licenseKey) {
+          await fetch(`${SUPABASE_URL}/rest/v1/licenses?license_key=eq.${encodeURIComponent(licenseKey)}`, {
+            method: 'DELETE',
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`
+            }
+          });
+        }
         const localKeys = JSON.parse(localStorage.getItem('shadow_admin_keys') || '[]').filter(k => k.id !== id && k.license_key !== licenseKey);
         localStorage.setItem('shadow_admin_keys', JSON.stringify(localKeys));
-        loadLicenses();
+        await loadLicenses();
       } catch (e) {
         alert('Delete failed: ' + e.message);
       }
