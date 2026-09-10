@@ -95,6 +95,15 @@ public:
     int hotkeyGhostWriter() const;
     void setHotkeyGhostWriter(int vk);
 
+    int hotkeyPanic() const;
+    void setHotkeyPanic(int vk);
+
+    // Daily Free Queries (3 per day)
+    int freeQueriesCountToday();
+    int freeQueriesRemaining();
+    bool canUseFreeQuery();
+    int recordFreeQuery();
+
     int ghostWriterMinDelay() const;
     void setGhostWriterMinDelay(int ms);
 
@@ -165,6 +174,7 @@ private:
     int m_hotkeyToggleBadges;
     int m_hotkeyCopyScreenshot;
     int m_hotkeyGhostWriter;
+    int m_hotkeyPanic;
 
     int m_ghostWriterMinDelay;
     int m_ghostWriterMaxDelay;

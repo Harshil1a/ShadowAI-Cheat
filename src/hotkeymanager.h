@@ -31,5 +31,6 @@ signals:
     void toggleBadges();
     void copyScreenshot();
     void ghostWriter();
+    void panicTriggered();
 };
 

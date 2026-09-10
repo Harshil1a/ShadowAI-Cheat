@@ -444,21 +444,10 @@ void OverlayWindow::setupUI() {
     };
 
     QFrame* group1 = makeGroup("Overlay & View Controls");
-    QHBoxLayout* hl1 = group1->findChild<QHBoxLayout*>("keysLayout");
-    hl1->addWidget(makeKey("Shift+Alt+H", "Show/Hide"));
-    hl1->addWidget(makeKey("Shift+Alt+T", "Transparency"));
-    hl1->addWidget(makeKey("Shift+Alt+B", "Toggle Help & Screenshot"));
-    hl1->addWidget(makeKey("Shift+Alt+C", "Copy Screenshot"));
-    hl1->addWidget(makeKey("Shift+Alt+Arrows", "Move Overlay"));
+    m_keysLayout1 = group1->findChild<QHBoxLayout*>("keysLayout");
     
-    QFrame* group2 = makeGroup("Interaction Controls");
-    QHBoxLayout* hl2 = group2->findChild<QHBoxLayout*>("keysLayout");
-    hl2->addWidget(makeKey("Shift+Alt+S", "Screenshot"));
-    hl2->addWidget(makeKey("Shift+Alt+A", "Get Answer"));
-    hl2->addWidget(makeKey("Shift+Alt+V", "Auto-type"));
-    hl2->addWidget(makeKey("Shift+Alt+R", "System Rec"));
-    hl2->addWidget(makeKey("Shift+Alt+I/K", "Scroll"));
-    hl2->addWidget(makeKey("Shift+Alt+Z", "Clear"));
+    QFrame* group2 = makeGroup("Interaction & Emergency Controls");
+    m_keysLayout2 = group2->findChild<QHBoxLayout*>("keysLayout");
 
     // Container for helper groups so they can be hidden together
     m_helpGroupsContainer = new QWidget;
@@ -474,6 +463,8 @@ void OverlayWindow::setupUI() {
     m_bottomHintLabel->setObjectName("bottomHintLabel");
     m_bottomHintLabel->setAlignment(Qt::AlignCenter);
     m_bottomHintLabel->setVisible(false); // Hidden by default
+
+    refreshKeyBadges();
 
     cpLayout->addWidget(m_helpGroupsContainer);
     cpLayout->addWidget(m_bottomHintLabel);
@@ -863,7 +854,90 @@ void OverlayWindow::stopAll() {
     hide();
 }
 
+static QString vkToKeyName(int vk) {
+    if (vk >= 0x41 && vk <= 0x5A) return QString(QChar(vk));
+    if (vk >= 0x30 && vk <= 0x39) return QString(QChar(vk));
+    if (vk >= 0x70 && vk <= 0x7B) return QString("F%1").arg(vk - 0x6F);
+    switch (vk) {
+        case 0x20: return "Space";
+        case 0x0D: return "Enter";
+        case 0x1B: return "Esc";
+        case 0x08: return "Backspace";
+        case 0x09: return "Tab";
+        case 0x2E: return "Del";
+        case 0x25: return "Left";
+        case 0x26: return "Up";
+        case 0x27: return "Right";
+        case 0x28: return "Down";
+        default:   return QString("0x%1").arg(vk, 2, 16, QChar('0')).toUpper();
+    }
+}
+
+void OverlayWindow::refreshKeyBadges() {
+    if (!m_keysLayout1 || !m_keysLayout2) return;
+
+    auto clearLayout = [](QLayout* layout) {
+        if (!layout) return;
+        QLayoutItem* item;
+        while ((item = layout->takeAt(0)) != nullptr) {
+            if (item->widget()) {
+                item->widget()->deleteLater();
+            }
+            delete item;
+        }
+    };
+
+    clearLayout(m_keysLayout1);
+    clearLayout(m_keysLayout2);
+
+    auto makeKey = [](const QString& key, const QString& action, bool isPanic = false) -> QWidget* {
+        QWidget* w = new QWidget;
+        QVBoxLayout* l = new QVBoxLayout(w);
+        l->setContentsMargins(0, 0, 0, 0);
+        l->setSpacing(3);
+        l->setAlignment(Qt::AlignCenter);
+        
+        QLabel* kLbl = new QLabel(key);
+        kLbl->setProperty("class", "keyBadge");
+        kLbl->setAlignment(Qt::AlignCenter);
+        if (isPanic) {
+            kLbl->setStyleSheet("background: rgba(255, 60, 60, 0.25); border: 1px solid #ff4444; color: #ff6b6b; font-weight: bold; border-radius: 4px; padding: 2px 6px; font-size: 10px; font-family: 'Consolas', monospace;");
+        }
+        
+        QLabel* aLbl = new QLabel(action);
+        aLbl->setProperty("class", "keyText");
+        aLbl->setAlignment(Qt::AlignCenter);
+        if (isPanic) {
+            aLbl->setStyleSheet("color: #ff6b6b; font-size: 9px; font-weight: bold;");
+        }
+        
+        l->addWidget(kLbl);
+        l->addWidget(aLbl);
+        return w;
+    };
+
+    auto& cfg = AppConfig::instance();
+
+    m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyToggle()), "Show/Hide"));
+    m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyTransparency()), "Transparency"));
+    m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyToggleBadges()), "Toggle Help"));
+    m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyCopyScreenshot()), "Copy Shot"));
+    m_keysLayout1->addWidget(makeKey("Shift+Alt+Arrows", "Move Overlay"));
+
+    m_keysLayout2->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyScreenshot()), "Screenshot"));
+    m_keysLayout2->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyGetAnswer()), "Get Answer"));
+    m_keysLayout2->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyGhostWriter()), "Auto-type"));
+    m_keysLayout2->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyVoice()), "Voice Rec"));
+    m_keysLayout2->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyClear()), "Clear"));
+    m_keysLayout2->addWidget(makeKey("Ctrl+Shift+" + vkToKeyName(cfg.hotkeyPanic()), "Panic Kill", true));
+
+    if (m_bottomHintLabel) {
+        m_bottomHintLabel->setText(QString("[Shift+Alt+%1] Show Shortcuts Help").arg(vkToKeyName(cfg.hotkeyToggleBadges())));
+    }
+}
+
 void OverlayWindow::refreshSettings() {
+    refreshKeyBadges();
     auto& cfg = AppConfig::instance();
     int w = cfg.overlayWidth();
     int h = cfg.overlayHeight();

@@ -1,5 +1,6 @@
 #include "appconfig.h"
 #include <QStandardPaths>
+#include <QDate>
 
 // Default Virtual Key codes (Windows)
 // Shift+Alt+H = registered via RegisterHotKey with MOD_SHIFT|MOD_ALT and 'H'
@@ -19,6 +20,7 @@
 #define DEFAULT_VK_TOGGLEBADGES 0x42  // B
 #define DEFAULT_VK_COPYSCREENSHOT 0x43  // C
 #define DEFAULT_VK_GHOSTWRITER 0x56  // V
+#define DEFAULT_VK_PANIC       0x2E  // Delete (VK_DELETE)
 
 AppConfig& AppConfig::instance() {
     static AppConfig inst;
@@ -66,6 +68,7 @@ void AppConfig::load() {
     m_hotkeyToggleBadges = m_settings.value("hotkeys/toggleBadges", DEFAULT_VK_TOGGLEBADGES).toInt();
     m_hotkeyCopyScreenshot = m_settings.value("hotkeys/copyScreenshot", DEFAULT_VK_COPYSCREENSHOT).toInt();
     m_hotkeyGhostWriter = m_settings.value("hotkeys/ghostWriter", DEFAULT_VK_GHOSTWRITER).toInt();
+    m_hotkeyPanic       = m_settings.value("hotkeys/panic",       DEFAULT_VK_PANIC).toInt();
 
     m_ghostWriterMinDelay = m_settings.value("ghostwriter/minDelay", 15).toInt();
     m_ghostWriterMaxDelay = m_settings.value("ghostwriter/maxDelay", 30).toInt();
@@ -113,6 +116,7 @@ void AppConfig::save() {
     m_settings.setValue("hotkeys/toggleBadges", m_hotkeyToggleBadges);
     m_settings.setValue("hotkeys/copyScreenshot", m_hotkeyCopyScreenshot);
     m_settings.setValue("hotkeys/ghostWriter", m_hotkeyGhostWriter);
+    m_settings.setValue("hotkeys/panic",       m_hotkeyPanic);
     m_settings.setValue("ghostwriter/minDelay", m_ghostWriterMinDelay);
     m_settings.setValue("ghostwriter/maxDelay", m_ghostWriterMaxDelay);
     m_settings.setValue("ghostwriter/smartIndent", m_ghostWriterSmartIndent);
@@ -227,5 +231,40 @@ void AppConfig::setLicenseKey(const QString& key) { m_licenseKey = key; }
 
 bool AppConfig::useProCloudEngine() const { return m_useProCloudEngine; }
 void AppConfig::setUseProCloudEngine(bool enable) { m_useProCloudEngine = enable; }
+
+int AppConfig::hotkeyPanic() const { return m_hotkeyPanic; }
+void AppConfig::setHotkeyPanic(int vk) { m_hotkeyPanic = vk; }
+
+int AppConfig::freeQueriesCountToday() {
+    QString today = QDate::currentDate().toString("yyyy-MM-dd");
+    QString savedDate = m_settings.value("freeTier/date", "").toString();
+    if (savedDate != today) {
+        return 0;
+    }
+    return m_settings.value("freeTier/count", 0).toInt();
+}
+
+int AppConfig::freeQueriesRemaining() {
+    return qMax(0, 3 - freeQueriesCountToday());
+}
+
+bool AppConfig::canUseFreeQuery() {
+    if (isPro()) return true;
+    return freeQueriesCountToday() < 3;
+}
+
+int AppConfig::recordFreeQuery() {
+    QString today = QDate::currentDate().toString("yyyy-MM-dd");
+    QString savedDate = m_settings.value("freeTier/date", "").toString();
+    int count = 0;
+    if (savedDate == today) {
+        count = m_settings.value("freeTier/count", 0).toInt();
+    }
+    count++;
+    m_settings.setValue("freeTier/date", today);
+    m_settings.setValue("freeTier/count", count);
+    return count;
+}
+
 
 

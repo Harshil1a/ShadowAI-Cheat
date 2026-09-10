@@ -90,6 +90,7 @@ protected:
     KeyCaptureEdit* m_hkToggleBadges;
     KeyCaptureEdit* m_hkCopyScreenshot;
     KeyCaptureEdit* m_hkGhostWriter;
+    KeyCaptureEdit* m_hkPanic;
 
     QSpinBox*   m_ghostWriterMinDelaySpinner;
     QSpinBox*   m_ghostWriterMaxDelaySpinner;
@@ -100,6 +101,11 @@ protected:
     QPushButton* m_cancelBtn;
     QPushButton* m_testBtn;
     QLabel*      m_testStatus;
+
+    QPushButton* m_testCaptureBtn = nullptr;
+    QLabel*      m_testCaptureStatus = nullptr;
+    QPushButton* m_testMicBtn = nullptr;
+    QLabel*      m_testMicStatus = nullptr;
 
     // Account & License UI
     QLabel*      m_accountStatusLabel = nullptr;

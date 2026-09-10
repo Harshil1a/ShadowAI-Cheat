@@ -34,6 +34,7 @@ public:
     void clearAll();
     void stopAll();
     void refreshSettings();
+    void refreshKeyBadges();
     void moveLeft();
     void moveRight();
     void moveUp();
@@ -103,6 +104,8 @@ private:
     AIManager*    m_ai    = nullptr;
     ScreenCapture* m_sc   = nullptr;
     AudioRecorder* m_audioRecorder = nullptr;
+    QHBoxLayout* m_keysLayout1 = nullptr;
+    QHBoxLayout* m_keysLayout2 = nullptr;
     class GhostWriterWorker* m_ghostWriterWorker = nullptr;
 
     // Opacity presets cycling

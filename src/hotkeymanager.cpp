@@ -24,10 +24,20 @@ LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
         
         // Intercept keys on down and up actions
         if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN) {
-            // Check state of modifiers: Alt and Shift
-            bool altPressed = GetAsyncKeyState(VK_MENU) & 0x8000;
+            bool ctrlPressed  = GetAsyncKeyState(VK_CONTROL) & 0x8000;
             bool shiftPressed = GetAsyncKeyState(VK_SHIFT) & 0x8000;
-            
+            bool altPressed   = GetAsyncKeyState(VK_MENU) & 0x8000;
+
+            // ─── EMERGENCY PANIC KILL-SWITCH ───
+            // Default Ctrl+Shift+Del or Ctrl+Alt+Del alternative configured in settings
+            int panicVk = AppConfig::instance().hotkeyPanic();
+            if ((ctrlPressed && shiftPressed && pKey->vkCode == panicVk) ||
+                (ctrlPressed && altPressed && pKey->vkCode == panicVk)) {
+                emit s_instance->panicTriggered();
+                return 1;
+            }
+
+            // Standard Shortcuts (Shift + Alt + Key)
             if (altPressed && shiftPressed) {
                 int vk = pKey->vkCode;
                 // If it's one of our registered hotkeys, handle it and swallow the input

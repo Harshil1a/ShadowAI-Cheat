@@ -42,6 +42,8 @@ protected:
 
 private slots:
     void onInternetResult(QNetworkReply* reply);
+    void checkForUpdates();
+    void onVersionCheckReply(QNetworkReply* reply);
 
 private:
     void setupUI();
@@ -50,6 +52,7 @@ private:
     SettingsWindow* m_settingsWidget   = nullptr;
     QLabel*         m_titleLabel       = nullptr;
     QLabel*         m_statusLabel      = nullptr;
+    QPushButton*    m_updateBadge      = nullptr;
     QPushButton*    m_toggleBtn        = nullptr;
     QPushButton*    m_settingsBtn      = nullptr;
     QPushButton*    m_exitBtn          = nullptr;

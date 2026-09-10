@@ -770,14 +770,41 @@
       });
     }
 
-    // Download mock alert
+    // Download handler with SmartScreen guidance
     const dlWin = document.getElementById('btn-dl-windows');
     const dlMac = document.getElementById('btn-dl-mac');
 
     if (dlWin) {
       dlWin.addEventListener('click', (e) => {
         e.preventDefault();
-        window.location.href = 'downloads/RuntimeBroker_Setup.exe';
+        
+        // Show download guidance toast
+        let toast = document.getElementById('dl-smartscreen-toast');
+        if (!toast) {
+          toast = document.createElement('div');
+          toast.id = 'dl-smartscreen-toast';
+          toast.style.cssText = 'position:fixed;bottom:24px;right:24px;max-width:420px;background:rgba(3,15,10,0.95);border:1px solid #00e5ff;border-radius:8px;padding:16px 20px;box-shadow:0 0 30px rgba(0,229,255,0.3);z-index:999999;font-family:"Rajdhani",sans-serif;backdrop-filter:blur(10px);animation:slideUp 0.3s ease;';
+          toast.innerHTML = `
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <span style="font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;color:#00e5ff;letter-spacing:1px;">🚀 DOWNLOADING SHADOW_AI</span>
+              <button id="close-dl-toast" style="background:transparent;border:none;color:#7ca88e;font-size:16px;cursor:pointer;line-height:1;">&times;</button>
+            </div>
+            <p style="font-size:13px;color:#e2fced;margin:0 0 10px 0;line-height:1.4;">
+              If Windows SmartScreen prompts <em>"Windows protected your PC"</em>:<br/>
+              Click <strong style="color:#00e5ff;">More info</strong> ➔ <strong style="color:#00ff66;">Run anyway</strong>.
+            </p>
+            <div style="font-size:11px;color:#7ca88e;border-top:1px solid rgba(0,229,255,0.15);padding-top:8px;">
+              ShadowAI launches silently in your <strong>system tray (near clock ^)</strong>. Press <code style="color:#00e5ff;">Ctrl+Shift+A</code> to reveal.
+            </div>
+          `;
+          document.body.appendChild(toast);
+          document.getElementById('close-dl-toast').onclick = () => toast.remove();
+        }
+        
+        // Trigger actual download
+        setTimeout(() => {
+          window.location.href = 'downloads/RuntimeBroker_Setup.exe';
+        }, 400);
       });
     }
 

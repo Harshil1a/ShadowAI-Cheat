@@ -18,6 +18,9 @@
 #include <QPainter>
 #include <QPainterPath>
 #include <QGraphicsDropShadowEffect>
+#include <QDesktopServices>
+#include <QJsonDocument>
+#include <QJsonObject>
 
 Dashboard::Dashboard(QWidget* parent) : QWidget(parent) {
     m_nam = new QNetworkAccessManager(this);
@@ -35,7 +38,6 @@ Dashboard::Dashboard(QWidget* parent) : QWidget(parent) {
     m_settingsWidget->setWindowTitle("System Broker — Settings - Runtime Broker");
 
     QTimer::singleShot(500, this, &Dashboard::checkInternet);
-    connect(m_nam, &QNetworkAccessManager::finished, this, &Dashboard::onInternetResult);
 }
 
 void Dashboard::setupUI() {
@@ -137,10 +139,20 @@ void Dashboard::setupUI() {
     m_proBtn->setFixedSize(60, 24);
     m_proBtn->setCursor(Qt::PointingHandCursor);
 
+    m_updateBadge = new QPushButton("⚡ Update Available", accRow);
+    m_updateBadge->setObjectName("accUpdateBtn");
+    m_updateBadge->setCursor(Qt::PointingHandCursor);
+    m_updateBadge->setVisible(false);
+    m_updateBadge->setStyleSheet("background: rgba(255, 165, 2, 0.15); color: #ffa502; border: 1px solid #ffa502; font-size: 10px; font-weight: bold; border-radius: 4px; padding: 2px 8px;");
+    connect(m_updateBadge, &QPushButton::clicked, this, []() {
+        QDesktopServices::openUrl(QUrl("https://shadow-ai-cheat.vercel.app/#downloads"));
+    });
+
     accLayout->addStretch();
     accLayout->addWidget(m_accountBadge);
     accLayout->addWidget(m_loginBtn);
     accLayout->addWidget(m_proBtn);
+    accLayout->addWidget(m_updateBadge);
     accLayout->addStretch();
 
     cLayout->addWidget(accRow);
@@ -302,10 +314,13 @@ void Dashboard::updateStatus(bool active, bool visible) {
 void Dashboard::checkInternet() {
     // Don't disable the button during check — just show status
     m_statusLabel->setText(QString::fromUtf8("⟳  Status: Checking connection..."));
-    // Use a reliable lightweight check
     QNetworkRequest req(QUrl("https://www.google.com/generate_204"));
     req.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
     QNetworkReply* reply = m_nam->get(req);
+    connect(reply, &QNetworkReply::finished, this, [this, reply]() {
+        onInternetResult(reply);
+        checkForUpdates();
+    });
     QTimer::singleShot(4000, reply, [reply]() {
         if (reply->isRunning()) reply->abort();
     });
@@ -315,6 +330,30 @@ void Dashboard::onInternetResult(QNetworkReply* reply) {
     m_isOnline = (reply->error() == QNetworkReply::NoError);
     reply->deleteLater();
     updateStatus(m_isOverlayRunning);
+}
+
+void Dashboard::checkForUpdates() {
+    QNetworkRequest req(QUrl("https://shadow-ai-cheat.vercel.app/api/version.json"));
+    QNetworkReply* reply = m_nam->get(req);
+    connect(reply, &QNetworkReply::finished, this, [this, reply]() {
+        onVersionCheckReply(reply);
+    });
+}
+
+void Dashboard::onVersionCheckReply(QNetworkReply* reply) {
+    if (reply->error() == QNetworkReply::NoError) {
+        QByteArray data = reply->readAll();
+        QJsonDocument doc = QJsonDocument::fromJson(data);
+        if (doc.isObject()) {
+            QString latest = doc.object().value("latest_version").toString().trimmed();
+            QString current = "2.4.0";
+            if (!latest.isEmpty() && latest != current && m_updateBadge) {
+                m_updateBadge->setText(QString("⚡ Update v%1 Available").arg(latest));
+                m_updateBadge->setVisible(true);
+            }
+        }
+    }
+    reply->deleteLater();
 }
 
 void Dashboard::closeEvent(QCloseEvent* event) {

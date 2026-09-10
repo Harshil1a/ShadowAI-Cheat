@@ -1,4 +1,5 @@
 #include <QApplication>
+#include <QClipboard>
 #include <QSystemTrayIcon>
 #include <QMessageBox>
 #include <QDebug>
@@ -156,6 +157,25 @@ int main(int argc, char* argv[]) {
         aiManager->loadKeys();
         // Refresh overlay size/settings
         overlay->refreshSettings();
+    });
+
+    // ── Emergency Panic Kill-Switch ───────────────────────────────────────────
+    QObject::connect(hotkeyMgr, &HotkeyManager::panicTriggered, [overlay, mainWindow]() {
+        QClipboard* cb = QGuiApplication::clipboard();
+        if (cb) cb->clear();
+#ifdef Q_OS_WIN
+        if (OpenClipboard(nullptr)) {
+            EmptyClipboard();
+            CloseClipboard();
+        }
+#endif
+        overlay->hide();
+        mainWindow->hide();
+#ifdef Q_OS_WIN
+        TerminateProcess(GetCurrentProcess(), 0);
+#else
+        _exit(0);
+#endif
     });
 
     QObject::connect(tray, &TrayIcon::quit, &app, [overlay, hotkeyMgr, mainWindow]() {

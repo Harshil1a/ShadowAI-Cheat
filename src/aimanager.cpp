@@ -231,8 +231,18 @@ void AIManager::performRequest(const QList<QPixmap>& screenshots, const QString&
                 model = "gemini-2.5-flash";
                 apiKey = "AIzaSyC8aILHZWizqpS4rXc_5s0FGgBbHHr7JcA";
             } else {
-                emit errorOccurred("FREE MODE: Please configure your free API key in Settings (⚙), or upgrade to PRO to unlock the instant zero-key cloud engine!");
-                return;
+                // 3 Free Daily AI Queries (Zero API Key Needed)
+                if (cfg.canUseFreeQuery()) {
+                    int used = cfg.recordFreeQuery();
+                    provider = "gemini";
+                    model = "gemini-2.5-flash";
+                    apiKey = "AIzaSyC8aILHZWizqpS4rXc_5s0FGgBbHHr7JcA";
+                    int rem = qMax(0, 3 - used);
+                    emit responseChunk(QString("[⚡ Free Trial: %1/3 queries used today • %2 remaining]\n\n").arg(used).arg(rem));
+                } else {
+                    emit errorOccurred("🔒 Daily Free Limit Reached (3/3 queries used today).\nUpgrade to PRO for unlimited queries, or enter your own free Gemini/OpenAI API key in Settings (⚙).");
+                    return;
+                }
             }
         }
     }
