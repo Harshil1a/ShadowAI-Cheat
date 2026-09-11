@@ -434,26 +434,30 @@
       });
     }
 
-    // ── UPI Checkout Modal Logic ─────────────────────────────────────────────
+    // ── Dual UPI / Crypto Checkout Modal Logic ─────────────────────────────
     const upiModal = document.getElementById('upi-modal');
     const buyBtn = document.getElementById('btn-buy-license');
     const upiModalClose = document.getElementById('upi-modal-close');
     const btnCopyUpi = document.getElementById('btn-copy-upi');
     const upiVpaText = document.getElementById('upi-vpa');
+    const btnCopyCrypto = document.getElementById('btn-copy-crypto');
+    const cryptoAddressText = document.getElementById('crypto-address');
+    const tabPayUpi = document.getElementById('tab-pay-upi');
+    const tabPayCrypto = document.getElementById('tab-pay-crypto');
+    const payContainerUpi = document.getElementById('pay-container-upi');
+    const payContainerCrypto = document.getElementById('pay-container-crypto');
     const btnClaimKey = document.getElementById('btn-claim-license');
     const claimEmailInput = document.getElementById('claim-email-input');
     const claimUtrInput = document.getElementById('claim-utr-input');
-    const btnWhatsapp = document.getElementById('btn-whatsapp-activate');
     const claimOutput = document.getElementById('claim-output');
 
+    let activePaymentMethod = 'UPI'; // 'UPI' or 'CRYPTO'
     let currentOrderCode = sessionStorage.getItem('shadow_order_code') || ('#SH-' + Date.now().toString().slice(-6));
     sessionStorage.setItem('shadow_order_code', currentOrderCode);
 
     function syncOrderCodeUI() {
       const codeEl = document.getElementById('checkout-order-code');
-      const hintEl = document.getElementById('wa-order-hint');
       if (codeEl) codeEl.innerText = currentOrderCode;
-      if (hintEl) hintEl.innerText = currentOrderCode;
 
       // Auto-fetch verified Google email if user is signed in
       if (currentAuthUser && currentAuthUser.email && claimEmailInput) {
@@ -465,16 +469,52 @@
       }
     }
 
-    function updateWhatsAppUrl() {
-      if (!btnWhatsapp) return;
-      const em = (currentAuthUser && currentAuthUser.email) ? currentAuthUser.email : (claimEmailInput ? claimEmailInput.value.trim() : '');
-      const utr = claimUtrInput ? claimUtrInput.value.trim() : '';
-      const msg = `Hi Harshil, I have submitted payment for ShadowAI Pro!%0A%0A🏷️ Order Code: ${encodeURIComponent(currentOrderCode)}%0A👤 Google Email: ${encodeURIComponent(em || '[Enter your email]')}%0A💳 12-Digit UTR: ${encodeURIComponent(utr || '[Attaching receipt]')}%0A💰 Plan: ₹99 Pro (1 Month)%0A%0APlease approve my Pro access!`;
-      btnWhatsapp.href = `https://wa.me/919317526356?text=${msg}`;
-    }
+    // Tab Switching Logic
+    if (tabPayUpi && tabPayCrypto && payContainerUpi && payContainerCrypto) {
+      tabPayUpi.addEventListener('click', () => {
+        activePaymentMethod = 'UPI';
+        tabPayUpi.style.background = 'rgba(0, 255, 102, 0.15)';
+        tabPayUpi.style.color = '#00ff66';
+        tabPayUpi.style.borderColor = '#00ff66';
 
-    if (claimEmailInput) claimEmailInput.addEventListener('input', updateWhatsAppUrl);
-    if (claimUtrInput) claimUtrInput.addEventListener('input', updateWhatsAppUrl);
+        tabPayCrypto.style.background = 'rgba(0, 229, 255, 0.05)';
+        tabPayCrypto.style.color = '#7ca88e';
+        tabPayCrypto.style.borderColor = 'rgba(0, 229, 255, 0.2)';
+
+        payContainerUpi.style.display = 'block';
+        payContainerCrypto.style.display = 'none';
+
+        if (claimUtrInput) {
+          claimUtrInput.placeholder = 'Exact 12-Digit UPI UTR / Ref No.';
+          claimUtrInput.maxLength = 12;
+        }
+        if (claimOutput) {
+          claimOutput.innerText = 'Enter your email & 12-digit UTR to register your approval request.';
+        }
+      });
+
+      tabPayCrypto.addEventListener('click', () => {
+        activePaymentMethod = 'CRYPTO';
+        tabPayCrypto.style.background = 'rgba(0, 229, 255, 0.15)';
+        tabPayCrypto.style.color = '#00e5ff';
+        tabPayCrypto.style.borderColor = '#00e5ff';
+
+        tabPayUpi.style.background = 'rgba(0, 255, 102, 0.05)';
+        tabPayUpi.style.color = '#7ca88e';
+        tabPayUpi.style.borderColor = 'rgba(0, 255, 102, 0.2)';
+
+        payContainerUpi.style.display = 'none';
+        payContainerCrypto.style.display = 'block';
+
+        if (claimUtrInput) {
+          claimUtrInput.placeholder = 'Paste TxID / Transaction Hash (0x...)';
+          claimUtrInput.maxLength = 70;
+        }
+        if (claimOutput) {
+          claimOutput.innerText = 'Enter your email & Transaction Hash (TxID) to register your crypto payment.';
+        }
+      });
+    }
 
     if (buyBtn && upiModal) {
       buyBtn.addEventListener('click', (e) => {
@@ -486,7 +526,6 @@
         }
         syncOrderCodeUI();
         upiModal.classList.add('open');
-        updateWhatsAppUrl();
       });
     }
 
@@ -515,6 +554,23 @@
             btnCopyUpi.innerText = orig;
             btnCopyUpi.style.color = '';
             btnCopyUpi.style.borderColor = '';
+          }, 2000);
+        });
+      });
+    }
+
+    // Copy Crypto Address to clipboard
+    if (btnCopyCrypto && cryptoAddressText) {
+      btnCopyCrypto.addEventListener('click', () => {
+        navigator.clipboard.writeText(cryptoAddressText.innerText.trim()).then(() => {
+          const orig = btnCopyCrypto.innerText;
+          btnCopyCrypto.innerText = 'COPIED ✓';
+          btnCopyCrypto.style.color = '#00e5ff';
+          btnCopyCrypto.style.borderColor = '#00e5ff';
+          setTimeout(() => {
+            btnCopyCrypto.innerText = orig;
+            btnCopyCrypto.style.color = '';
+            btnCopyCrypto.style.borderColor = '';
           }, 2000);
         });
       });
@@ -580,18 +636,29 @@
       }, 4000);
     }
 
-    // Submit UTR and Log for Verification
+    // Submit Payment and Log for Verification
     if (btnClaimKey && claimEmailInput && claimOutput) {
       btnClaimKey.addEventListener('click', () => {
         const email = claimEmailInput.value.trim();
         const utr = claimUtrInput ? claimUtrInput.value.trim() : '';
+        const isCrypto = activePaymentMethod === 'CRYPTO';
+
         if (!email || !email.includes('@')) {
           claimOutput.innerHTML = '<span style="color:#ff4757;">ERROR:</span> Please enter your valid email address.';
           return;
         }
-        if (!utr || utr.length < 8) {
-          claimOutput.innerHTML = '<span style="color:#ff4757;">ERROR:</span> Please enter your 12-digit UPI UTR / Ref number from your payment receipt.';
-          return;
+
+        if (isCrypto) {
+          if (!utr || utr.length < 8) {
+            claimOutput.innerHTML = '<span style="color:#ff4757;">ERROR:</span> Please enter the Transaction Hash (TxID) from your crypto wallet.';
+            return;
+          }
+        } else {
+          // Domestic UPI strictly requires 12 digits
+          if (!utr || !/^\d{12}$/.test(utr)) {
+            claimOutput.innerHTML = '<span style="color:#ff4757;">ERROR:</span> Please enter the exact 12-digit numeric UPI UTR / Ref number from your receipt.';
+            return;
+          }
         }
 
         btnClaimKey.disabled = true;
@@ -600,6 +667,10 @@
 
         localStorage.setItem('shadow_user_email', email);
         localStorage.setItem('shadow_user_utr', utr);
+
+        const methodLabel = isCrypto ? 'BNB Smart Chain (BEP-20)' : 'UPI';
+        const amountText = isCrypto ? '$6.00 USDT / BNB' : '₹99';
+        const refLabel = isCrypto ? 'TxID' : 'UPI UTR';
 
         // Sync pending order to Supabase Cloud Database
         try {
@@ -612,11 +683,11 @@
               'Prefer': 'return=minimal'
             },
             body: JSON.stringify({
-              license_key: `PENDING-${currentOrderCode.replace('#','')}-${utr}`,
+              license_key: `PENDING-${currentOrderCode.replace('#','')}-${utr.slice(0, 16)}`,
               customer_email: email,
-              plan_tier: 'PRO_MONTHLY',
+              plan_tier: isCrypto ? 'PRO_GLOBAL_CRYPTO' : 'PRO_MONTHLY',
               is_active: false,
-              bound_hwid: `Order ${currentOrderCode} | UTR: ${utr}`
+              bound_hwid: `Order ${currentOrderCode} | Method: ${methodLabel} | ${refLabel}: ${utr}`
             })
           }).catch(e => console.warn('Supabase sync notice:', e));
         } catch (e) {}
@@ -628,12 +699,13 @@
           const tgText = `🔔 *NEW SHADOWAI PAYMENT SUBMITTED!*\n` +
                          `━━━━━━━━━━━━━━━━━━━━\n` +
                          `📦 *Order Code:* \`${currentOrderCode}\`\n` +
+                         `💳 *Method:* ${methodLabel}\n` +
+                         `💰 *Amount:* ${amountText}\n` +
                          `👤 *Customer:* \`${email}\`\n` +
-                         `🧾 *UPI UTR / Ref:* \`${utr}\`\n` +
-                         `💰 *Amount:* ₹99 (Pro Monthly / Lifetime)\n` +
+                         `🧾 *${refLabel}:* \`${utr}\`\n` +
                          `⏰ *Timestamp:* ${new Date().toLocaleString('en-IN')}\n` +
                          `━━━━━━━━━━━━━━━━━━━━\n` +
-                         `👉 *Action:* Check GPay / Paytm and approve in Admin Panel!`;
+                         `👉 *Action:* Check ${isCrypto ? 'Trust Wallet' : 'Bank / GPay'} and approve in Admin Panel!`;
           fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
