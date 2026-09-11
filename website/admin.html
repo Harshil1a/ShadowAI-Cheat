@@ -304,27 +304,21 @@
   <div class="pin-gate" id="pin-gate">
     <div class="pin-box">
       <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:6px;">
-        <img src="favicon.svg" alt="Shadow AI Logo" style="width:26px;height:26px;filter:drop-shadow(0 0 8px rgba(0,255,102,0.8));">
+        <img src="favicon.svg" alt="Shadow AI Logo" style="width:28px;height:28px;filter:drop-shadow(0 0 8px rgba(0,255,102,0.8));">
         <h2 style="color:#00ff66;font-family:'Orbitron';letter-spacing:2px;margin:0;">SHADOW // ADMIN</h2>
       </div>
-      <p style="color:#7ca88e;font-size:12px;margin-bottom:18px;">Zero-Trust Admin Gateway • Protected by Google OAuth</p>
+      <p style="color:#7ca88e;font-size:12px;margin-bottom:20px;">Zero-Trust Terminal • Server Google Identity Verification</p>
       
       <!-- PRIMARY GOOGLE SSO BUTTON -->
-      <button class="btn-gen" id="btn-google-signin" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:12px;font-size:12px;background:#030508;border:1px solid #00ff66;color:#00ff66;box-shadow:0 0 15px rgba(0,255,102,0.2);cursor:pointer;">
+      <button class="btn-gen" id="btn-google-signin" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:14px;font-size:12px;background:#030508;border:1px solid #00ff66;color:#00ff66;box-shadow:0 0 15px rgba(0,255,102,0.25);cursor:pointer;border-radius:6px;transition:all 0.2s;">
         <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/></svg>
         <span>LOG IN WITH GOOGLE (harshilthakur82@gmail.com)</span>
       </button>
 
-      <div style="margin: 14px 0 10px 0; color: #7ca88e; font-size: 11px;">— OR ENTER MASTER PIN —</div>
-      <div style="display: flex; gap: 8px;">
-        <input type="password" id="master-pin-input" placeholder="PIN (8282)" style="flex:1;background:#030508;border:1px solid rgba(0,255,102,0.3);color:#00ff66;padding:10px;text-align:center;font-size:14px;border-radius:4px;letter-spacing:4px;">
-        <button class="btn-gen" id="btn-submit-pin" style="padding:10px 16px;">UNLOCK ⯈</button>
+      <div style="margin-top:18px;font-size:11px;color:#7ca88e;line-height:1.5;">
+        <span>🔒 Access is strictly locked to <strong>harshilthakur82@gmail.com</strong>.<br>Any unauthorized Google account is instantly blocked.</span>
       </div>
-
-      <div style="margin-top:14px;font-size:11px;color:#7ca88e;">
-        <span>🔒 Secured by Google Identity & Master PIN for <strong>harshilthakur82@gmail.com</strong></span>
-      </div>
-      <div id="pin-err" style="color:#ff4757;font-size:11px;margin-top:10px;"></div>
+      <div id="pin-err" style="color:#ff4757;font-size:11px;margin-top:12px;"></div>
     </div>
   </div>
 
@@ -497,8 +491,6 @@
   <script>
     const SUPABASE_URL = 'https://kptqmelofgromeavgmip.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_6l5uraxvTrrsbV9PKVJOPg_iKJCqf_J';
-    const MASTER_PIN = '8282'; // Default master PIN
-
     // STRICT SOLE ADMIN: Only this single Google ID has admin authorization
     const MASTER_ADMIN_EMAIL = 'harshilthakur82@gmail.com';
 
@@ -513,45 +505,15 @@
       ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
       : null;
 
-    function handleVerifiedAdmin(email, provider = 'LOCAL') {
+    function handleVerifiedAdmin(email) {
       localStorage.setItem('shadow_admin_user', MASTER_ADMIN_EMAIL);
       if (pinGate) pinGate.style.display = 'none';
       if (adminContent) adminContent.style.display = 'block';
       if (adminBadgeEmail) {
-        adminBadgeEmail.innerHTML = `👤 ${MASTER_ADMIN_EMAIL} <span style="font-size:9px;color:${provider === 'GOOGLE' ? '#00ff66' : '#00e5ff'};background:rgba(0,0,0,0.4);padding:2px 6px;border-radius:2px;margin-left:4px;">${provider === 'GOOGLE' ? '✓ GOOGLE SECURED' : 'WHITELISTED'}</span>`;
+        adminBadgeEmail.innerHTML = `👤 ${MASTER_ADMIN_EMAIL} <span style="font-size:9px;color:#00ff66;background:rgba(0,0,0,0.4);padding:2px 6px;border-radius:2px;margin-left:4px;">✓ GOOGLE VERIFIED ADMIN</span>`;
       }
       loadLicenses();
       loadCloudGeminiKey();
-    }
-
-    // 0. INSTANT ZERO-DELAY SYNC CHECK: If already logged in as Harshil, open terminal immediately
-    const savedAdmin = localStorage.getItem('shadow_admin_user');
-    if (savedAdmin && savedAdmin.toLowerCase().trim() === MASTER_ADMIN_EMAIL) {
-      handleVerifiedAdmin(MASTER_ADMIN_EMAIL, 'SESSION');
-    }
-
-    const pinInput = document.getElementById('master-pin-input');
-    const btnSubmitPin = document.getElementById('btn-submit-pin');
-
-    if (btnSubmitPin && pinInput) {
-      btnSubmitPin.addEventListener('click', () => {
-        if (pinInput.value.trim() === MASTER_PIN) {
-          handleVerifiedAdmin(MASTER_ADMIN_EMAIL, 'PIN');
-        } else {
-          pinErr.innerText = 'Invalid Master PIN. Please try again.';
-        }
-      });
-      pinInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          btnSubmitPin.click();
-        }
-      });
-    }
-
-    // Check URL param ?key=8282
-    const urlKey = new URLSearchParams(window.location.search).get('key');
-    if (urlKey === MASTER_PIN) {
-      handleVerifiedAdmin(MASTER_ADMIN_EMAIL, 'PIN');
     }
 
     // 1. Google OAuth Session Verification: STRICT SINGLE USER CHECK

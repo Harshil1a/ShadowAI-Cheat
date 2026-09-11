@@ -823,7 +823,38 @@
         if (tierEl) { tierEl.innerText = 'MASTER OPERATOR // UNLIMITED TACTICAL SUITE'; tierEl.style.color = '#00ff66'; }
         if (keyInput) keyInput.value = 'SHADOW-PRO-HARSHIL-ADMIN';
         if (hwidEl) hwidEl.innerHTML = 'HARDWARE BINDING: <span style="color:#00ff66;">ALL ACCESS UNLOCKED</span>';
+
+        // 1. DYNAMIC TOP HUD ADMIN LINK (ONLY VISIBLE TO HARSHIL)
+        const navActions = document.querySelector('.nav-actions');
+        if (navActions && !document.getElementById('harshil-hud-admin-link')) {
+          const hudAdminLink = document.createElement('a');
+          hudAdminLink.id = 'harshil-hud-admin-link';
+          hudAdminLink.href = 'admin.html';
+          hudAdminLink.className = 'nav-link';
+          hudAdminLink.style.cssText = 'color:#00ff66;border:1px solid rgba(0,255,102,0.5);background:rgba(0,255,102,0.1);padding:4px 10px;border-radius:4px;box-shadow:0 0 12px rgba(0,255,102,0.3);font-weight:700;letter-spacing:1px;';
+          hudAdminLink.innerHTML = '⚡ ADMIN';
+          navActions.insertBefore(hudAdminLink, document.getElementById('btn-google-auth'));
+        }
+
+        // 2. DYNAMIC PROFILE MODAL ADMIN BUTTON (ONLY VISIBLE TO HARSHIL)
+        const signoutBtn = document.getElementById('btn-user-signout');
+        if (signoutBtn && !document.getElementById('harshil-modal-admin-btn')) {
+          const modalAdminBtn = document.createElement('a');
+          modalAdminBtn.id = 'harshil-modal-admin-btn';
+          modalAdminBtn.href = 'admin.html';
+          modalAdminBtn.style.cssText = 'display:block;margin-bottom:14px;background:#030508;border:1px solid #00ff66;color:#00ff66;padding:12px;border-radius:6px;text-decoration:none;font-family:"Orbitron",sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;box-shadow:0 0 16px rgba(0,255,102,0.35);text-align:center;transition:all 0.2s;';
+          modalAdminBtn.innerHTML = '⚡ ENTER ADMIN COMMAND CENTER ⯈';
+          modalAdminBtn.onmouseover = () => { modalAdminBtn.style.background = '#00ff66'; modalAdminBtn.style.color = '#030508'; };
+          modalAdminBtn.onmouseout = () => { modalAdminBtn.style.background = '#030508'; modalAdminBtn.style.color = '#00ff66'; };
+          signoutBtn.parentNode.insertBefore(modalAdminBtn, signoutBtn);
+        }
       } else {
+        // STRICT CLEANUP: If not Harshil, ensure any admin elements do NOT exist
+        const existingHudLink = document.getElementById('harshil-hud-admin-link');
+        if (existingHudLink) existingHudLink.remove();
+        const existingModalBtn = document.getElementById('harshil-modal-admin-btn');
+        if (existingModalBtn) existingModalBtn.remove();
+        localStorage.removeItem('shadow_admin_user');
         // Query Supabase for customer's license by email
         fetch(`${SUPABASE_URL}/rest/v1/licenses?customer_email=eq.${encodeURIComponent(email)}&order=created_at.desc&limit=1&select=*`, {
           headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
