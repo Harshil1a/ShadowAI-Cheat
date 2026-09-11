@@ -80,6 +80,9 @@ CREATE POLICY "Public key insert" ON public.licenses FOR INSERT WITH CHECK (true
 DROP POLICY IF EXISTS "Public key update" ON public.licenses;
 CREATE POLICY "Public key update" ON public.licenses FOR UPDATE USING (true);
 
+DROP POLICY IF EXISTS "Public key delete" ON public.licenses;
+CREATE POLICY "Public key delete" ON public.licenses FOR DELETE USING (true);
+
 -- 4. FUNCTION: VERIFY & ATTACH LICENSE KEY
 CREATE OR REPLACE FUNCTION public.activate_license(p_license_key TEXT)
 RETURNS JSON AS $$
