@@ -621,6 +621,30 @@
           }).catch(e => console.warn('Supabase sync notice:', e));
         } catch (e) {}
 
+        // Send instant Telegram Notification to Admin
+        try {
+          const tgToken = '8880063864:AAEK6ChjazpjBlbiQZmpuFLN2IZliJgyb2c';
+          const tgChatId = '6602106376';
+          const tgText = `🔔 *NEW SHADOWAI PAYMENT SUBMITTED!*\n` +
+                         `━━━━━━━━━━━━━━━━━━━━\n` +
+                         `📦 *Order Code:* \`${currentOrderCode}\`\n` +
+                         `👤 *Customer:* \`${email}\`\n` +
+                         `🧾 *UPI UTR / Ref:* \`${utr}\`\n` +
+                         `💰 *Amount:* ₹999 (Pro Lifetime)\n` +
+                         `⏰ *Timestamp:* ${new Date().toLocaleString('en-IN')}\n` +
+                         `━━━━━━━━━━━━━━━━━━━━\n` +
+                         `👉 *Action:* Check GPay / Paytm and approve in Admin Panel!`;
+          fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: tgChatId,
+              text: tgText,
+              parse_mode: 'Markdown'
+            })
+          }).catch(e => console.warn('Telegram ping notice:', e));
+        } catch (e) {}
+
         // Launch WhatsApp alert in new tab
         updateWhatsAppUrl();
         if (btnWhatsapp) {
