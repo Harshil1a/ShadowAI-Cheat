@@ -59,7 +59,7 @@ jobs:
           echo "Created DMG: $DMG_PATH"
 
       - name: Deploy DMG to website/downloads
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/master'
         run: |
           echo "Deploying DMG from $DMG_PATH..."
           cp "$DMG_PATH" website/downloads/AudioService.dmg
