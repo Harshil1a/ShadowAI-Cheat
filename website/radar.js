@@ -519,6 +519,21 @@
     if (buyBtn && upiModal) {
       buyBtn.addEventListener('click', (e) => {
         e.preventDefault();
+
+        // 🔒 MANDATORY GOOGLE LOGIN BEFORE PAYMENT CHECKOUT
+        if (!currentAuthUser || !currentAuthUser.email) {
+          sessionStorage.setItem('pending_pro_checkout', 'true');
+          const authModal = document.getElementById('auth-modal');
+          const authStatusLog = document.getElementById('auth-status-log');
+          if (authModal) {
+            authModal.classList.add('open');
+            if (authStatusLog) {
+              authStatusLog.innerHTML = '<span style="color:#00ff66;font-weight:bold;">⚡ STEP 1 OF 2: SIGN IN WITH GOOGLE</span><br><span style="color:#7ca88e;font-size:11px;">Please sign in with your Google account first. Your Pro license will be permanently linked to this email for instant 1-click access on your PC or Mac.</span>';
+            }
+          }
+          return;
+        }
+
         // Generate conflict-proof order code on each checkout attempt if not already set
         if (!sessionStorage.getItem('shadow_order_code')) {
           currentOrderCode = '#SH-' + Date.now().toString().slice(-6);
@@ -863,6 +878,14 @@
         .catch(err => {
           console.warn('License check error:', err);
         });
+      }
+
+      // Auto-resume checkout if user clicked Upgrade before signing in
+      if (sessionStorage.getItem('pending_pro_checkout') === 'true') {
+        sessionStorage.removeItem('pending_pro_checkout');
+        setTimeout(() => {
+          if (buyBtn) buyBtn.click();
+        }, 400);
       }
     }
 
