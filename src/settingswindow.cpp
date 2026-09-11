@@ -399,7 +399,7 @@ void SettingsWindow::setupUI() {
     licLayout->setContentsMargins(12, 16, 12, 12);
     licLayout->setSpacing(10);
 
-    QLabel* licDesc = new QLabel("Enter your instant automated license key from Gumroad / LemonSqueezy:", licGroup);
+    QLabel* licDesc = new QLabel("Pro activates automatically when you sign in with Google. Or enter a manual license key below:", licGroup);
     licDesc->setStyleSheet("color: #7ca88e; font-size: 11px;");
     licLayout->addWidget(licDesc);
 
