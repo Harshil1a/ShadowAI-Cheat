@@ -1,6 +1,6 @@
 {
-  "latest_version": "2.4.0",
+  "latest_version": "2.4.1",
   "min_version": "2.0.0",
-  "download_url": "https://shadow-ai-cheat.vercel.app/downloads/RuntimeBroker_Setup.exe",
-  "release_notes": "Added 3 Free Daily AI queries, Emergency Panic Kill-Switch, Diagnostics tools, and enhanced stealth."
+  "download_url": "https://shadow-ai-cheat.vercel.app/#downloads",
+  "release_notes": "Added zero-scroll 2x2 shortcuts HUD, Shift+Alt+L badge toggle, AudioService Mac stealth disguise, and emergency panic kill-switch."
 }
