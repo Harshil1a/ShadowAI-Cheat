@@ -230,6 +230,13 @@ void AccountManager::handleHttpAuthCallback(QTcpSocket* socket, const QString& r
             email.contains("harshil", Qt::CaseInsensitive)) {
             isPro = true;
             if (licenseKey.isEmpty()) licenseKey = "SHADOW-PRO-HARSHIL-ADMIN";
+            AppConfig::instance().setProDaysLeft(-1);
+            AppConfig::instance().setProPlanTier("PRO_OWNER_LIFETIME");
+        } else if (isPro) {
+            int daysLeft = query.hasQueryItem("days_left") ? query.queryItemValue("days_left").toInt() : 30;
+            QString planTier = query.hasQueryItem("plan_tier") ? query.queryItemValue("plan_tier") : "PRO_MONTHLY";
+            AppConfig::instance().setProDaysLeft(daysLeft);
+            AppConfig::instance().setProPlanTier(planTier);
         }
 
         // Save authenticated Google session
@@ -346,15 +353,22 @@ void AccountManager::syncAccountStatus() {
                 QString createdAtStr = row.value("created_at").toString();
                 QDateTime createdAt = QDateTime::fromString(createdAtStr, Qt::ISODate);
                 bool isExpired = false;
+                int daysLeft = 30;
+
                 if (planTier == "PRO_MONTHLY" && createdAt.isValid()) {
-                    if (createdAt.addDays(30) < QDateTime::currentDateTimeUtc()) {
+                    daysLeft = qMax(0, (int)QDateTime::currentDateTimeUtc().daysTo(createdAt.addDays(30)));
+                    if (daysLeft == 0 && createdAt.addDays(30) < QDateTime::currentDateTimeUtc()) {
                         isExpired = true;
                     }
+                } else if (planTier.contains("LIFETIME") || planTier.contains("GLOBAL_CRYPTO")) {
+                    daysLeft = -1; // Perpetual / Lifetime Pro
                 }
 
                 if (!isExpired) {
                     key = row.value("license_key").toString().trimmed().toUpper();
                     isPro = true;
+                    AppConfig::instance().setProDaysLeft(daysLeft);
+                    AppConfig::instance().setProPlanTier(planTier);
                 }
             }
         }

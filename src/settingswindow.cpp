@@ -1272,12 +1272,26 @@ void SettingsWindow::refreshAccountTab() {
     }
 
     if (loggedIn) {
-        m_accountStatusLabel->setText(QString("👤 Google Account: %1\n⚡ Status: %2")
-            .arg(email)
-            .arg(isPro ? "SHADOW PRO [UNLIMITED ACCESS]" : "COMMUNITY FREE TIER (BYOK)"));
+        int days = AppConfig::instance().proDaysLeft();
+        QString plan = AppConfig::instance().proPlanTier();
+        QString validity;
+        if (isPro) {
+            if (days < 0 || plan.contains("LIFETIME")) {
+                validity = "Lifetime Unlimited Access";
+            } else {
+                validity = QString("%1 Days Remaining").arg(days);
+            }
+            m_accountStatusLabel->setText(QString("👤 Google Account: %1 (Verified)\n💎 Plan: %2 [UNLIMITED ACCESS]\n⏳ Validity: %3\n🔒 Device Lock: Bound to this PC")
+                .arg(email)
+                .arg(plan.replace('_', ' '))
+                .arg(validity));
+        } else {
+            m_accountStatusLabel->setText(QString("👤 Google Account: %1 (Verified)\n🔒 Plan: COMMUNITY FREE TIER (PRO LOCKED)\n⚡ Status: BYOK Mode (Bring Your Own API Key)")
+                .arg(email));
+        }
         m_googleAuthBtn->setText("Sign Out");
     } else {
-        m_accountStatusLabel->setText("👤 Account: Guest (Not Signed In)\n⚡ Status: Community Free Tier (BYOK)");
+        m_accountStatusLabel->setText("🔒 Google Account: Not Signed In\n⚡ Status: Mandatory Sign-In Required to Activate Assistant");
         m_googleAuthBtn->setText("Sign In with Google");
     }
 
@@ -1288,10 +1302,10 @@ void SettingsWindow::refreshAccountTab() {
     if (m_licenseFeedback) {
         if (isPro) {
             m_licenseFeedback->setStyleSheet("color: #00ff66; font-weight: bold;");
-            m_licenseFeedback->setText("✓ Pro License Active (Linked to Google: " + email + "). Unlimited Vision Engine Active.");
+            m_licenseFeedback->setText("✓ Cloud Pro Active: Automatically synchronized with Google account (" + email + "). Unlimited Gemini 2.5 Flash Engine active.");
         } else {
-            m_licenseFeedback->setStyleSheet("color: #7ca88e;");
-            m_licenseFeedback->setText("No Pro key activated. Currently running in Free BYOK mode.");
+            m_licenseFeedback->setStyleSheet("color: #ffa502; font-weight: bold;");
+            m_licenseFeedback->setText("🔒 Pro Cloud Features Locked. Upgrade to Pro on website (₹99 / $6.00) to unlock instant zero-setup AI.");
         }
     }
 

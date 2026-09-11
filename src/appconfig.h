@@ -131,6 +131,12 @@ public:
     bool isPro() const;
     void setPro(bool pro);
 
+    int proDaysLeft() const;
+    void setProDaysLeft(int days);
+
+    QString proPlanTier() const;
+    void setProPlanTier(const QString& tier);
+
     QString userEmail() const;
     void setUserEmail(const QString& email);
 
@@ -148,6 +154,8 @@ private:
     QSettings m_settings;
 
     bool        m_isPro = false;
+    int         m_proDaysLeft = 30;
+    QString     m_proPlanTier = "PRO_MONTHLY";
     bool        m_useProCloudEngine = true;
     QString     m_userEmail;
     QString     m_licenseKey;

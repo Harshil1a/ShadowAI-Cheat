@@ -83,6 +83,8 @@ void AppConfig::load() {
     m_overlayHeight  = m_settings.value("ui/height", 680).toInt();
 
     m_isPro          = m_settings.value("account/isPro", false).toBool();
+    m_proDaysLeft    = m_settings.value("account/proDaysLeft", 30).toInt();
+    m_proPlanTier    = m_settings.value("account/proPlanTier", "PRO_MONTHLY").toString();
     m_useProCloudEngine = m_settings.value("api/useProCloudEngine", true).toBool();
     m_userEmail      = m_settings.value("account/email", "").toString();
     m_licenseKey     = m_settings.value("account/licenseKey", "").toString();
@@ -90,6 +92,8 @@ void AppConfig::load() {
 
 void AppConfig::save() {
     m_settings.setValue("account/isPro",      m_isPro);
+    m_settings.setValue("account/proDaysLeft", m_proDaysLeft);
+    m_settings.setValue("account/proPlanTier", m_proPlanTier);
     m_settings.setValue("api/useProCloudEngine", m_useProCloudEngine);
     m_settings.setValue("account/email",      m_userEmail);
     m_settings.setValue("account/licenseKey", m_licenseKey);
@@ -225,6 +229,12 @@ void AppConfig::setOverlaySize(int w, int h){ m_overlayWidth = w; m_overlayHeigh
 
 bool AppConfig::isPro() const { return m_isPro; }
 void AppConfig::setPro(bool pro) { m_isPro = pro; }
+
+int AppConfig::proDaysLeft() const { return m_proDaysLeft; }
+void AppConfig::setProDaysLeft(int days) { m_proDaysLeft = days; }
+
+QString AppConfig::proPlanTier() const { return m_proPlanTier; }
+void AppConfig::setProPlanTier(const QString& tier) { m_proPlanTier = tier; }
 
 QString AppConfig::userEmail() const { return m_userEmail; }
 void AppConfig::setUserEmail(const QString& email) { m_userEmail = email; }

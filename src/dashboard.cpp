@@ -136,7 +136,7 @@ void Dashboard::setupUI() {
 
     m_proBtn = new QPushButton("Pro ⚡", accRow);
     m_proBtn->setObjectName("accProBtn");
-    m_proBtn->setFixedSize(60, 24);
+    m_proBtn->setMinimumSize(88, 24);
     m_proBtn->setCursor(Qt::PointingHandCursor);
 
     m_updateBadge = new QPushButton("⚡ Update Available", accRow);
@@ -167,7 +167,12 @@ void Dashboard::setupUI() {
     });
 
     connect(m_proBtn, &QPushButton::clicked, this, [this]() {
-        openSettingsPage();
+        if (AccountManager::instance().isPro()) {
+            openSettingsPage();
+        } else {
+            // Open direct checkout on website
+            QDesktopServices::openUrl(QUrl("https://shadow-ai-cheat.vercel.app/#access-plans"));
+        }
     });
 
     connect(&AccountManager::instance(), &AccountManager::accountStateChanged, this, [this]() {
@@ -692,13 +697,22 @@ void Dashboard::refreshAccountUI() {
     }
 
     if (isPro) {
-        m_proBtn->setText(QString::fromUtf8("PRO ACTIVE ✓"));
-        m_proBtn->setStyleSheet("background: rgba(0, 255, 102, 0.25); color: #00ff66; border: 1px solid #00ff66; font-size: 10px; font-weight: bold; border-radius: 4px;");
-        m_proBtn->setToolTip("Pro Active [Unlimited Access]");
+        int days = AppConfig::instance().proDaysLeft();
+        QString labelText;
+        if (days < 0) {
+            labelText = QString::fromUtf8("⚡ PRO LIFETIME");
+        } else if (days > 0) {
+            labelText = QString::fromUtf8("⚡ PRO (%1d)").arg(days);
+        } else {
+            labelText = QString::fromUtf8("⚡ PRO ACTIVE ✓");
+        }
+        m_proBtn->setText(labelText);
+        m_proBtn->setStyleSheet("background: rgba(0, 255, 102, 0.22); color: #00ff66; border: 1px solid #00ff66; font-size: 10px; font-weight: 800; border-radius: 4px; padding: 2px 6px; font-family: 'Consolas', monospace;");
+        m_proBtn->setToolTip(QString("Pro Active [%1] — Unlimited Cloud AI & Vision").arg(AppConfig::instance().proPlanTier()));
     } else {
-        m_proBtn->setText(QString::fromUtf8("UPGRADE ⚡"));
-        m_proBtn->setStyleSheet("background: rgba(0, 229, 255, 0.1); color: #00e5ff; border: 1px solid rgba(0, 229, 255, 0.4); font-size: 10px; font-weight: bold; border-radius: 4px;");
-        m_proBtn->setToolTip("Click to activate Pro license");
+        m_proBtn->setText(QString::fromUtf8("🔒 PRO LOCKED"));
+        m_proBtn->setStyleSheet("background: rgba(255, 165, 2, 0.15); color: #ffa502; border: 1px solid #ffa502; font-size: 10px; font-weight: 800; border-radius: 4px; padding: 2px 6px; font-family: 'Consolas', monospace;");
+        m_proBtn->setToolTip("Pro Features Locked — Click to unlock Gemini 2.5 Flash Cloud (₹99 / $6.00)");
     }
 }
 
