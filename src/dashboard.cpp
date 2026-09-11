@@ -711,9 +711,9 @@ void Dashboard::refreshAccountUI() {
         m_proBtn->setStyleSheet("background: rgba(0, 255, 102, 0.22); color: #00ff66; border: 1px solid #00ff66; font-size: 10px; font-weight: 800; border-radius: 4px; padding: 2px 6px; font-family: 'Consolas', monospace;");
         m_proBtn->setToolTip(QString("Pro Active [%1] — Unlimited Cloud AI & Vision").arg(AppConfig::instance().proPlanTier()));
     } else {
-        m_proBtn->setText(QString::fromUtf8("🔒 PRO LOCKED"));
-        m_proBtn->setStyleSheet("background: rgba(255, 165, 2, 0.15); color: #ffa502; border: 1px solid #ffa502; font-size: 10px; font-weight: 800; border-radius: 4px; padding: 2px 6px; font-family: 'Consolas', monospace;");
-        m_proBtn->setToolTip("Pro Features Locked — Click to unlock Gemini 2.5 Flash Cloud (₹99 / $6.00)");
+        m_proBtn->setText(QString::fromUtf8("⚡ UPGRADE TO PRO"));
+        m_proBtn->setStyleSheet("background: rgba(0, 229, 255, 0.16); color: #00e5ff; border: 1px solid #00e5ff; font-size: 10px; font-weight: 800; border-radius: 4px; padding: 2px 6px; font-family: 'Consolas', monospace;");
+        m_proBtn->setToolTip("Click to upgrade to Shadow Pro (₹99 / $6.00) for unlimited Gemini 2.5 Flash Cloud AI");
     }
 }
 

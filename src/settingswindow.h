@@ -112,8 +112,7 @@ protected:
     // Account & License UI
     QLabel*      m_accountStatusLabel = nullptr;
     QPushButton* m_googleAuthBtn      = nullptr;
-    QLineEdit*   m_licenseEdit        = nullptr;
-    QPushButton* m_activateBtn        = nullptr;
+    QPushButton* m_upgradeBtn         = nullptr;
     QLabel*      m_licenseFeedback    = nullptr;
     void refreshAccountTab();
 };
