@@ -824,19 +824,11 @@
         if (keyInput) keyInput.value = 'SHADOW-PRO-HARSHIL-ADMIN';
         if (hwidEl) hwidEl.innerHTML = 'HARDWARE BINDING: <span style="color:#00ff66;">ALL ACCESS UNLOCKED</span>';
 
-        // 1. DYNAMIC TOP HUD ADMIN LINK (ONLY VISIBLE TO HARSHIL)
-        const navActions = document.querySelector('.nav-actions');
-        if (navActions && !document.getElementById('harshil-hud-admin-link')) {
-          const hudAdminLink = document.createElement('a');
-          hudAdminLink.id = 'harshil-hud-admin-link';
-          hudAdminLink.href = 'admin.html';
-          hudAdminLink.className = 'nav-link';
-          hudAdminLink.style.cssText = 'color:#00ff66;border:1px solid rgba(0,255,102,0.5);background:rgba(0,255,102,0.1);padding:4px 10px;border-radius:4px;box-shadow:0 0 12px rgba(0,255,102,0.3);font-weight:700;letter-spacing:1px;';
-          hudAdminLink.innerHTML = '⚡ ADMIN';
-          navActions.insertBefore(hudAdminLink, document.getElementById('btn-google-auth'));
-        }
+        // Clean up any navbar admin link so navbar stays clean
+        const existingHudLink = document.getElementById('harshil-hud-admin-link');
+        if (existingHudLink) existingHudLink.remove();
 
-        // 2. DYNAMIC PROFILE MODAL ADMIN BUTTON (ONLY VISIBLE TO HARSHIL)
+        // DYNAMIC PROFILE MODAL ADMIN BUTTON (ONLY VISIBLE INSIDE HARSHIL'S PROFILE MODAL)
         const signoutBtn = document.getElementById('btn-user-signout');
         if (signoutBtn && !document.getElementById('harshil-modal-admin-btn')) {
           const modalAdminBtn = document.createElement('a');
@@ -849,9 +841,7 @@
           signoutBtn.parentNode.insertBefore(modalAdminBtn, signoutBtn);
         }
       } else {
-        // STRICT CLEANUP: If not Harshil, ensure any admin elements do NOT exist
-        const existingHudLink = document.getElementById('harshil-hud-admin-link');
-        if (existingHudLink) existingHudLink.remove();
+        // STRICT CLEANUP: If not Harshil, ensure admin button does NOT exist
         const existingModalBtn = document.getElementById('harshil-modal-admin-btn');
         if (existingModalBtn) existingModalBtn.remove();
         localStorage.removeItem('shadow_admin_user');
