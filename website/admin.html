@@ -373,6 +373,18 @@
       </div>
     </div>
 
+    <!-- MASTER CLOUD GEMINI KEY CONFIGURATION -->
+    <div style="background: #070c0a; border: 1px solid rgba(255, 165, 2, 0.4); border-radius: 6px; padding: 16px 20px; margin-bottom: 24px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;">
+      <div style="display: flex; gap: 10px; align-items: center; flex: 1; min-width: 320px;">
+        <span style="font-family: 'Orbitron'; font-size: 11px; color: #ffa502; font-weight: 700; white-space: nowrap;">⚡ CLOUD GEMINI KEY:</span>
+        <input type="password" id="cloud-gemini-key-input" placeholder="Fetching active key from Supabase..." 
+               style="flex: 1; background: #030508; border: 1px solid rgba(255,165,2,0.4); color: #00e5ff; padding: 8px 12px; border-radius: 4px; font-family: monospace; font-size: 12px;">
+        <button id="btn-toggle-key-view" style="background:transparent;border:1px solid #7ca88e;color:#7ca88e;border-radius:4px;padding:6px 10px;cursor:pointer;">👁</button>
+        <button class="btn-gen" id="btn-save-cloud-key" style="background:linear-gradient(135deg,#ffa502 0%,#ff7b00 100%);box-shadow:0 0 15px rgba(255,165,2,0.4);padding:8px 16px;font-size:11px;white-space:nowrap;">💾 UPDATE KEY IN CLOUD</button>
+      </div>
+      <span id="cloud-key-status" style="font-size: 11px; color: #7ca88e; font-family: monospace;">Syncing...</span>
+    </div>
+
     <!-- QUICK PRO GRANT & SEARCH -->
     <div style="background: #070c0a; border: 1px solid rgba(0, 229, 255, 0.3); border-radius: 6px; padding: 16px 20px; margin-bottom: 24px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;">
       <div style="display: flex; gap: 10px; align-items: center; flex: 1; min-width: 280px;">
@@ -500,6 +512,7 @@
         adminBadgeEmail.innerHTML = `👤 ${MASTER_ADMIN_EMAIL} <span style="font-size:9px;color:${provider === 'GOOGLE' ? '#00ff66' : '#00e5ff'};background:rgba(0,0,0,0.4);padding:2px 6px;border-radius:2px;margin-left:4px;">${provider === 'GOOGLE' ? '✓ GOOGLE SECURED' : 'WHITELISTED'}</span>`;
       }
       loadLicenses();
+      loadCloudGeminiKey();
     }
 
     // 0. INSTANT ZERO-DELAY SYNC CHECK: If already logged in as Harshil, open terminal immediately
@@ -837,10 +850,122 @@
       });
     }
 
+    // ── MASTER CLOUD GEMINI KEY CONTROL ─────────────────────────────────────
+    const cloudKeyInput = document.getElementById('cloud-gemini-key-input');
+    const cloudKeyStatus = document.getElementById('cloud-key-status');
+    const btnSaveCloudKey = document.getElementById('btn-save-cloud-key');
+    const btnToggleKeyView = document.getElementById('btn-toggle-key-view');
+
+    if (btnToggleKeyView && cloudKeyInput) {
+      btnToggleKeyView.addEventListener('click', () => {
+        cloudKeyInput.type = cloudKeyInput.type === 'password' ? 'text' : 'password';
+      });
+    }
+
+    async function loadCloudGeminiKey() {
+      if (!cloudKeyInput || !cloudKeyStatus) return;
+      cloudKeyStatus.innerText = 'Syncing...';
+      try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/licenses?customer_email=eq.system@shadowai.local&select=*`, {
+          headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+        });
+        const rows = await res.json();
+        if (Array.isArray(rows) && rows.length > 0) {
+          cloudKeyInput.value = rows[0].bound_hwid || '';
+          cloudKeyStatus.innerText = '✓ Active in Supabase';
+          cloudKeyStatus.style.color = '#00ff66';
+        } else {
+          // Auto-seed initial key into Supabase
+          const seedKey = 'AIzaSyC8aILHZWizqpS4rXc_5s0FGgBbHHr7JcA';
+          await fetch(`${SUPABASE_URL}/rest/v1/licenses`, {
+            method: 'POST',
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify({
+              license_key: 'PRO_CLOUD_ENGINE',
+              customer_email: 'system@shadowai.local',
+              bound_hwid: seedKey,
+              plan_tier: 'SYSTEM_CONFIG',
+              is_active: true
+            })
+          });
+          cloudKeyInput.value = seedKey;
+          cloudKeyStatus.innerText = '✓ Initialized in Supabase';
+          cloudKeyStatus.style.color = '#00ff66';
+        }
+      } catch(e) {
+        cloudKeyStatus.innerText = '⚠️ Fetch error';
+        cloudKeyStatus.style.color = '#ff4757';
+      }
+    }
+
+    if (btnSaveCloudKey && cloudKeyInput) {
+      btnSaveCloudKey.addEventListener('click', async () => {
+        const newKey = cloudKeyInput.value.trim();
+        if (!newKey) {
+          alert('Please enter a valid Gemini API key.');
+          return;
+        }
+        btnSaveCloudKey.disabled = true;
+        btnSaveCloudKey.innerText = 'SAVING...';
+        cloudKeyStatus.innerText = 'Saving to Supabase...';
+        try {
+          const checkRes = await fetch(`${SUPABASE_URL}/rest/v1/licenses?customer_email=eq.system@shadowai.local&select=id`, {
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+          });
+          const checkRows = await checkRes.json();
+          if (Array.isArray(checkRows) && checkRows.length > 0) {
+            await fetch(`${SUPABASE_URL}/rest/v1/licenses?customer_email=eq.system@shadowai.local`, {
+              method: 'PATCH',
+              headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ bound_hwid: newKey, is_active: true })
+            });
+          } else {
+            await fetch(`${SUPABASE_URL}/rest/v1/licenses`, {
+              method: 'POST',
+              headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                license_key: 'PRO_CLOUD_ENGINE',
+                customer_email: 'system@shadowai.local',
+                bound_hwid: newKey,
+                plan_tier: 'SYSTEM_CONFIG',
+                is_active: true
+              })
+            });
+          }
+          cloudKeyStatus.innerText = '✓ Saved to Supabase!';
+          cloudKeyStatus.style.color = '#00ff66';
+          alert('✓ Cloud Gemini Key successfully updated in Supabase!\nAll desktop apps will now use this key.');
+        } catch(e) {
+          cloudKeyStatus.innerText = 'Error: ' + e.message;
+          cloudKeyStatus.style.color = '#ff4757';
+          alert('Save failed: ' + e.message);
+        } finally {
+          btnSaveCloudKey.disabled = false;
+          btnSaveCloudKey.innerText = '💾 UPDATE KEY IN CLOUD';
+        }
+      });
+    }
+
     // Load & Render Tables
     const btnRefresh = document.getElementById('btn-refresh-table');
     if (btnRefresh) {
-      btnRefresh.addEventListener('click', loadLicenses);
+      btnRefresh.addEventListener('click', () => {
+        loadLicenses();
+        loadCloudGeminiKey();
+      });
     }
 
     window.approveOrder = async function(id, email) {
@@ -873,9 +998,9 @@
           console.warn('Server fetch error:', err);
         }
 
-        let allKeys = data;
+        let allKeys = data.filter(item => item.customer_email !== 'system@shadowai.local');
         if (!fetchOk) {
-          allKeys = JSON.parse(localStorage.getItem('shadow_admin_keys') || '[]');
+          allKeys = JSON.parse(localStorage.getItem('shadow_admin_keys') || '[]').filter(item => item.customer_email !== 'system@shadowai.local');
         }
 
         // Filter by search query if present

@@ -1,5 +1,6 @@
 #include "aimanager.h"
 #include "appconfig.h"
+#include "accountmanager.h"
 #include "screencapture.h"
 #include <QNetworkRequest>
 #include <QJsonDocument>
@@ -221,7 +222,7 @@ void AIManager::performRequest(const QList<QPixmap>& screenshots, const QString&
         // PRO CLOUD ENGINE: Dedicated high-speed Gemini 2.5 Flash Vision Engine
         provider = "gemini";
         model = "gemini-2.5-flash";
-        apiKey = "AIzaSyC8aILHZWizqpS4rXc_5s0FGgBbHHr7JcA";
+        apiKey = cfg.proCloudKey();
     } else {
         // CUSTOM / BYOK MODE: Use user's selected custom slot key, provider, and model
         if (apiKey.trimmed().isEmpty()) {
@@ -229,14 +230,14 @@ void AIManager::performRequest(const QList<QPixmap>& screenshots, const QString&
                 // Pro fallback if active slot has no key
                 provider = "gemini";
                 model = "gemini-2.5-flash";
-                apiKey = "AIzaSyC8aILHZWizqpS4rXc_5s0FGgBbHHr7JcA";
+                apiKey = cfg.proCloudKey();
             } else {
                 // 3 Free Daily AI Queries (Zero API Key Needed)
                 if (cfg.canUseFreeQuery()) {
                     int used = cfg.recordFreeQuery();
                     provider = "gemini";
                     model = "gemini-2.5-flash";
-                    apiKey = "AIzaSyC8aILHZWizqpS4rXc_5s0FGgBbHHr7JcA";
+                    apiKey = cfg.proCloudKey();
                     int rem = qMax(0, 3 - used);
                     emit responseChunk(QString("[⚡ Free Trial: %1/3 queries used today • %2 remaining]\n\n").arg(used).arg(rem));
                 } else {
@@ -245,6 +246,12 @@ void AIManager::performRequest(const QList<QPixmap>& screenshots, const QString&
                 }
             }
         }
+    }
+
+    if (apiKey.trimmed().isEmpty()) {
+        AccountManager::instance().fetchCloudConfig();
+        emit errorOccurred("Connecting to Cloud Vision Engine... Please try again in 2 seconds.");
+        return;
     }
 
     QStringList base64Images;
@@ -722,9 +729,14 @@ void AIManager::transcribeAudio(const QString& filePath, const QList<QPixmap>& s
     QString provider = cfg.currentApiProvider();
     
     if (apiKey.trimmed().isEmpty()) {
-        if (cfg.isPro()) {
+        if (cfg.isPro() || cfg.canUseFreeQuery()) {
             provider = "gemini";
-            apiKey = "AIzaSyC8aILHZWizqpS4rXc_5s0FGgBbHHr7JcA";
+            apiKey = cfg.proCloudKey();
+            if (apiKey.isEmpty()) {
+                AccountManager::instance().fetchCloudConfig();
+                emit errorOccurred("Connecting to Cloud Engine... Please try again.");
+                return;
+            }
         } else {
             emit errorOccurred("API key not set. Please configure it in Settings.");
             return;
@@ -847,9 +859,14 @@ void AIManager::transcribeAudioOnly(const QString& filePath) {
     QString provider = cfg.currentApiProvider();
     
     if (apiKey.isEmpty()) {
-        if (cfg.isPro()) {
+        if (cfg.isPro() || cfg.canUseFreeQuery()) {
             provider = "gemini";
-            apiKey = "AIzaSyC8aILHZWizqpS4rXc_5s0FGgBbHHr7JcA";
+            apiKey = cfg.proCloudKey();
+            if (apiKey.isEmpty()) {
+                AccountManager::instance().fetchCloudConfig();
+                QFile::remove(filePath);
+                return;
+            }
         } else {
             QFile::remove(filePath);
             return;

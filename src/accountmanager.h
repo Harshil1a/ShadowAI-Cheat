@@ -20,6 +20,7 @@ public:
     void logout();
     void activateLicenseKey(const QString& key);
     void syncAccountStatus();
+    void fetchCloudConfig();
 
 signals:
     void accountStateChanged(bool isLoggedIn, const QString& email, bool isPro);

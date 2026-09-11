@@ -904,13 +904,24 @@ void SettingsWindow::onProviderChanged(int index) {
 
 void SettingsWindow::onTestProCloud() {
     if (!m_testProStatus) return;
+
+    QString key = AppConfig::instance().proCloudKey();
+    if (key.isEmpty()) {
+        m_testProStatus->setText("⟳ Fetching Pro Cloud License from Supabase...");
+        m_testProStatus->setStyleSheet("color: #ffa502; font-weight: bold;");
+        AccountManager::instance().fetchCloudConfig();
+        QTimer::singleShot(1500, this, [this]() {
+            onTestProCloud();
+        });
+        return;
+    }
+
     m_testProStatus->setText("⟳ Testing Google Gemini 2.5 Flash Cloud...");
     m_testProStatus->setStyleSheet("color: #00e5ff; font-weight: bold;");
     if (m_testProBtn) m_testProBtn->setEnabled(false);
 
     auto* nam = new QNetworkAccessManager(this);
     QNetworkRequest req;
-    QString key = "AIzaSyC8aILHZWizqpS4rXc_5s0FGgBbHHr7JcA";
     req.setUrl(QUrl(QString("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=%1").arg(key)));
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 

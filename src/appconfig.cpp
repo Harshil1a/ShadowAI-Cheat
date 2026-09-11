@@ -88,12 +88,14 @@ void AppConfig::load() {
     m_useProCloudEngine = m_settings.value("api/useProCloudEngine", true).toBool();
     m_userEmail      = m_settings.value("account/email", "").toString();
     m_licenseKey     = m_settings.value("account/licenseKey", "").toString();
+    m_proCloudKey    = m_settings.value("account/proCloudKey", "").toString();
 }
 
 void AppConfig::save() {
     m_settings.setValue("account/isPro",      m_isPro);
     m_settings.setValue("account/proDaysLeft", m_proDaysLeft);
     m_settings.setValue("account/proPlanTier", m_proPlanTier);
+    m_settings.setValue("account/proCloudKey", m_proCloudKey);
     m_settings.setValue("api/useProCloudEngine", m_useProCloudEngine);
     m_settings.setValue("account/email",      m_userEmail);
     m_settings.setValue("account/licenseKey", m_licenseKey);
@@ -244,6 +246,9 @@ void AppConfig::setLicenseKey(const QString& key) { m_licenseKey = key; }
 
 bool AppConfig::useProCloudEngine() const { return m_useProCloudEngine; }
 void AppConfig::setUseProCloudEngine(bool enable) { m_useProCloudEngine = enable; }
+
+QString AppConfig::proCloudKey() const { return m_proCloudKey; }
+void AppConfig::setProCloudKey(const QString& key) { m_proCloudKey = key; }
 
 int AppConfig::hotkeyPanic() const { return m_hotkeyPanic; }
 void AppConfig::setHotkeyPanic(int vk) { m_hotkeyPanic = vk; }

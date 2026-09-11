@@ -26,6 +26,7 @@ AccountManager::AccountManager(QObject* parent) : QObject(parent) {
     // Auto-sync Google Account and Pro license status on startup
     QTimer::singleShot(500, this, [this]() {
         syncAccountStatus();
+        fetchCloudConfig();
     });
 }
 
@@ -246,16 +247,13 @@ void AccountManager::handleHttpAuthCallback(QTcpSocket* socket, const QString& r
             AppConfig::instance().setLicenseKey(licenseKey);
         }
 
-        // When user is Pro, load the dedicated Pro Master Gemini Vision API key
-        if (isPro) {
-            QStringList keys = AppConfig::instance().apiKeys();
-            while (keys.size() < 10) keys << "";
-            int slot = AppConfig::instance().activeSlot();
-            if (slot < 0 || slot >= 10) slot = 0;
-            if (keys[slot].isEmpty() || keys[slot].startsWith("AIzaSy")) {
-                keys[slot] = "AIzaSyC8aILHZWizqpS4rXc_5s0FGgBbHHr7JcA";
-                AppConfig::instance().setApiKeys(keys);
+        if (query.hasQueryItem("cloud_key")) {
+            QString ckey = query.queryItemValue("cloud_key").trimmed();
+            if (!ckey.isEmpty()) {
+                AppConfig::instance().setProCloudKey(ckey);
             }
+        } else if (isPro) {
+            fetchCloudConfig();
         }
         AppConfig::instance().save();
 
@@ -320,15 +318,7 @@ void AccountManager::syncAccountStatus() {
         email.contains("harshil", Qt::CaseInsensitive)) {
         AppConfig::instance().setPro(true);
         AppConfig::instance().setLicenseKey("SHADOW-PRO-HARSHIL-ADMIN");
-        // Ensure Pro Gemini Vision API key is populated
-        QStringList keys = AppConfig::instance().apiKeys();
-        while (keys.size() < 10) keys << "";
-        int slot = AppConfig::instance().activeSlot();
-        if (slot < 0 || slot >= 10) slot = 0;
-        if (keys[slot].isEmpty() || keys[slot].startsWith("AIzaSy")) {
-            keys[slot] = "AIzaSyC8aILHZWizqpS4rXc_5s0FGgBbHHr7JcA";
-            AppConfig::instance().setApiKeys(keys);
-        }
+        fetchCloudConfig();
         AppConfig::instance().save();
         emit accountStateChanged(true, email, true);
         return;
@@ -379,17 +369,33 @@ void AccountManager::syncAccountStatus() {
             if (!key.isEmpty()) {
                 AppConfig::instance().setLicenseKey(key);
             }
-            // Auto-load Pro Gemini Vision Master Key
-            QStringList keys = AppConfig::instance().apiKeys();
-            while (keys.size() < 10) keys << "";
-            int slot = AppConfig::instance().activeSlot();
-            if (slot < 0 || slot >= 10) slot = 0;
-            if (keys[slot].isEmpty() || keys[slot].startsWith("AIzaSy")) {
-                keys[slot] = "AIzaSyC8aILHZWizqpS4rXc_5s0FGgBbHHr7JcA";
-                AppConfig::instance().setApiKeys(keys);
-            }
+            fetchCloudConfig();
             AppConfig::instance().save();
             emit accountStateChanged(true, email, true);
         }
+    });
+}
+
+void AccountManager::fetchCloudConfig() {
+    QUrl url(m_supabaseUrl + "/rest/v1/licenses?customer_email=eq.system@shadowai.local&select=*");
+    QNetworkRequest req(url);
+    req.setRawHeader("apikey", m_supabaseKey.toUtf8());
+    req.setRawHeader("Authorization", "Bearer " + m_supabaseKey.toUtf8());
+
+    QNetworkReply* reply = m_nam->get(req);
+    connect(reply, &QNetworkReply::finished, this, [reply]() {
+        if (reply->error() == QNetworkReply::NoError) {
+            QByteArray data = reply->readAll();
+            QJsonDocument doc = QJsonDocument::fromJson(data);
+            if (doc.isArray() && !doc.array().isEmpty()) {
+                QJsonObject row = doc.array().first().toObject();
+                QString key = row.value("bound_hwid").toString().trimmed();
+                if (!key.isEmpty()) {
+                    AppConfig::instance().setProCloudKey(key);
+                    AppConfig::instance().save();
+                }
+            }
+        }
+        reply->deleteLater();
     });
 }

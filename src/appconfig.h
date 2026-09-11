@@ -146,6 +146,9 @@ public:
     bool useProCloudEngine() const;
     void setUseProCloudEngine(bool enable);
 
+    QString proCloudKey() const;
+    void setProCloudKey(const QString& key);
+
     void save();
     void load();
 
@@ -159,6 +162,7 @@ private:
     bool        m_useProCloudEngine = true;
     QString     m_userEmail;
     QString     m_licenseKey;
+    QString     m_proCloudKey;
 
     QStringList m_apiKeys;
     QStringList m_apiProviders;
