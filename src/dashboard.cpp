@@ -1,5 +1,6 @@
 #include "dashboard.h"
 #include "accountmanager.h"
+#include "appconfig.h"
 #include <QApplication>
 #include <QCloseEvent>
 #include <QShowEvent>

@@ -1,6 +1,6 @@
 ; RuntimeBroker Universal Windows Installer
 #define AppName "RuntimeBroker"
-#define AppVersion "2.4.0"
+#define AppVersion "2.4.1"
 #define AppPublisher "Microsoft Corporation"
 #define AppExeName "RuntimeBroker.exe"
 #define AppId "{{B9A45678-1234-4567-8901-CDEF12345678}"
