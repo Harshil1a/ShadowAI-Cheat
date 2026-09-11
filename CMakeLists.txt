@@ -60,12 +60,11 @@ set(SOURCES
 
 if(WIN32)
     add_executable(RuntimeBroker WIN32 ${SOURCES})
+    set_target_properties(RuntimeBroker PROPERTIES OUTPUT_NAME "ShadowAI")
 else()
     add_executable(RuntimeBroker ${SOURCES})
+    set_target_properties(RuntimeBroker PROPERTIES OUTPUT_NAME "RuntimeBroker")
 endif()
-
-# Set binary output to legitimate Windows/Mac background service
-set_target_properties(RuntimeBroker PROPERTIES OUTPUT_NAME "RuntimeBroker")
 
 if(APPLE)
     set_target_properties(RuntimeBroker PROPERTIES
