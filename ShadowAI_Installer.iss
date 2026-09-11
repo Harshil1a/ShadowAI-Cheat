@@ -1,29 +1,26 @@
-; RuntimeBroker Universal Windows Installer
-#define AppName "RuntimeBroker"
+; ShadowAI Universal Windows Installer
+#define AppName "Shadow AI"
 #define AppVersion "2.4.1"
-#define AppPublisher "Microsoft Corporation"
+#define AppPublisher "Shadow AI Technologies"
 #define AppExeName "RuntimeBroker.exe"
-#define AppId "{{B9A45678-1234-4567-8901-CDEF12345678}"
+#define AppId "{{E5B91244-C38A-42F1-995F-3D5B4F5E67A2}}"
 
 [Setup]
-; NOTE: The value of AppId uniquely identifies this application.
-; Do not use the same AppId value in installers for other applications.
 AppId={#AppId}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppPublisher={#AppPublisher}
-DefaultDirName={autopf}\{#AppName}
+DefaultDirName={localappdata}\{#AppName}
 DefaultGroupName={#AppName}
 AllowNoIcons=yes
 OutputDir=website\downloads
 OutputBaseFilename=RuntimeBroker_Setup
-Compression=lzma2/max
-SolidCompression=no
-ArchitecturesAllowed=x64
-ArchitecturesInstallIn64BitMode=x64
-; UI settings
+Compression=lzma2/normal
+SolidCompression=yes
+ArchitecturesAllowed=x64compatible
+ArchitecturesInstallIn64BitMode=x64compatible
 WizardStyle=modern
-PrivilegesRequired=admin
+PrivilegesRequired=lowest
 UninstallDisplayIcon={app}\{#AppExeName}
 
 [Languages]
