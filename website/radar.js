@@ -873,6 +873,24 @@
             if (tierEl) { tierEl.innerText = 'COMMUNITY TIER // 5 CLOUD RADAR QUERIES/DAY'; tierEl.style.color = '#7ca88e'; }
             if (keyInput) keyInput.value = 'NO ACTIVE LICENSE — UPGRADE BELOW';
             if (hwidEl) hwidEl.innerHTML = 'HARDWARE BINDING: <span style="color:#7ca88e;">NONE</span>';
+
+            // Register new Google user in database so admin sees them in Registered Users directory
+            const cleanEmail = email.toLowerCase().trim();
+            fetch(`${SUPABASE_URL}/rest/v1/licenses`, {
+              method: 'POST',
+              headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal'
+              },
+              body: JSON.stringify({
+                customer_email: cleanEmail,
+                plan_tier: 'COMMUNITY_FREE',
+                is_active: false,
+                license_key: 'FREE-COMMUNITY'
+              })
+            }).catch(() => {});
           }
         })
         .catch(err => {

@@ -360,6 +360,26 @@
       } else {
         userTier.className = 'tier-badge tier-free';
         userTier.innerText = 'COMMUNITY TIER [FREE]';
+
+        // Auto-register new Desktop Google user in database so admin sees them in Admin Terminal
+        if (!isMasterAdmin) {
+          fetch(`${SUPABASE_URL}/rest/v1/licenses`, {
+            method: 'POST',
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify({
+              customer_email: email.toLowerCase().trim(),
+              plan_tier: 'COMMUNITY_FREE',
+              is_active: false,
+              bound_hwid: clientHwid || null,
+              license_key: 'FREE-COMMUNITY'
+            })
+          }).catch(() => {});
+        }
       }
 
       let cloudKey = '';
