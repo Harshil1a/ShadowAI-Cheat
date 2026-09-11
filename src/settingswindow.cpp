@@ -100,7 +100,8 @@ QString KeyCaptureEdit::vkToName(int vk) {
 SettingsWindow::SettingsWindow(QWidget* parent)
     : QWidget(parent)
 {
-    setFixedSize(640, 760);
+    resize(700, 760);
+    setMinimumSize(600, 520);
     setupUI();
     loadValues();
     applyStyle();
@@ -116,12 +117,19 @@ void SettingsWindow::setupUI() {
     tabWidget->setObjectName("settingsTabs");
 
     // ─────────────────────────────────────────────────────────────────────────
-    // TAB 1: API PROMPT
     // ─────────────────────────────────────────────────────────────────────────
-    QWidget* tabApiPrompt = new QWidget(tabWidget);
+    // TAB 1: API PROMPT (Wrapped in smooth QScrollArea so it never squishes)
+    // ─────────────────────────────────────────────────────────────────────────
+    QScrollArea* apiScroll = new QScrollArea(tabWidget);
+    apiScroll->setWidgetResizable(true);
+    apiScroll->setFrameShape(QFrame::NoFrame);
+    apiScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    apiScroll->setStyleSheet("QScrollArea { background: transparent; border: none; }");
+
+    QWidget* tabApiPrompt = new QWidget;
     QVBoxLayout* apiLayout = new QVBoxLayout(tabApiPrompt);
-    apiLayout->setContentsMargins(12, 12, 12, 12);
-    apiLayout->setSpacing(12);
+    apiLayout->setContentsMargins(12, 12, 16, 12);
+    apiLayout->setSpacing(14);
 
     // Group 1: ⚡ Shadow Pro Master Cloud Engine (Google Gemini 2.5 Flash)
     m_proCloudGroup = new QGroupBox("⚡ Shadow Pro Cloud Engine (Master Zero-Key Vision)", tabApiPrompt);
@@ -152,10 +160,12 @@ void SettingsWindow::setupUI() {
 
     m_testProBtn = new QPushButton("⚡ Test Pro Cloud Connection", m_proCloudGroup);
     m_testProBtn->setCursor(Qt::PointingHandCursor);
+    m_testProBtn->setFixedHeight(32);
     m_testProBtn->setStyleSheet("background: rgba(0, 229, 255, 0.15); border: 1px solid #00e5ff; color: #00e5ff; font-weight: bold; border-radius: 4px; padding: 6px 14px;");
 
     m_upgradeBtn = new QPushButton("⚡ UPGRADE TO PRO (₹99 / $6.00) ➔", m_proCloudGroup);
     m_upgradeBtn->setCursor(Qt::PointingHandCursor);
+    m_upgradeBtn->setFixedHeight(32);
     m_upgradeBtn->setStyleSheet(
         "background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #00e5ff, stop:1 #00ff66);"
         "color: #030508; font-weight: bold; font-size: 11px; border: none; border-radius: 4px; padding: 6px 16px;"
@@ -174,8 +184,8 @@ void SettingsWindow::setupUI() {
     // Group 2: 🔑 Custom BYOK (Bring Your Own Key & Models — Free Tier)
     QGroupBox* providerGroup = new QGroupBox("🔑 Custom AI Engine & API Keys (Bring Your Own Key — Free)", tabApiPrompt);
     QVBoxLayout* byokMainLayout = new QVBoxLayout(providerGroup);
-    byokMainLayout->setContentsMargins(12, 14, 12, 12);
-    byokMainLayout->setSpacing(8);
+    byokMainLayout->setContentsMargins(12, 14, 12, 14);
+    byokMainLayout->setSpacing(10);
 
     m_engineCustomRadio = new QRadioButton("🔑 Use Custom API Key & Model (Slots 1-10)", providerGroup);
     m_engineCustomRadio->setStyleSheet("font-weight: bold; color: #ffa502; font-size: 12px;");
@@ -187,37 +197,51 @@ void SettingsWindow::setupUI() {
     engineRadioGroup->addButton(m_engineCustomRadio);
 
     QGridLayout* pg = new QGridLayout;
-    pg->setContentsMargins(18, 4, 0, 0);
-    pg->setVerticalSpacing(8);
-    pg->setHorizontalSpacing(10);
+    pg->setContentsMargins(18, 8, 8, 8);
+    pg->setVerticalSpacing(12);
+    pg->setHorizontalSpacing(14);
+    pg->setColumnMinimumWidth(0, 160);
+    pg->setColumnStretch(1, 1);
+    for (int r = 0; r <= 6; ++r) {
+        pg->setRowMinimumHeight(r, 34);
+    }
 
     m_slotCombo = new QComboBox(providerGroup);
+    m_slotCombo->setFixedHeight(32);
     for (int i = 1; i <= 10; ++i) m_slotCombo->addItem(QString("Slot %1").arg(i), i - 1);
 
     m_providerCombo = new QComboBox(providerGroup);
+    m_providerCombo->setFixedHeight(32);
     m_providerCombo->addItem("Google Gemini", "gemini");
     m_providerCombo->addItem("NVIDIA NIM (Llama-3)", "nvidia");
     m_providerCombo->addItem("OpenAI (GPT-4o/mini)", "openai");
     m_providerCombo->addItem("Groq (Llama-3/Mixtral)", "groq");
 
     m_modelCombo = new QComboBox(providerGroup);
+    m_modelCombo->setFixedHeight(32);
     m_modelCombo->setEditable(true);
 
-    pg->addWidget(new QLabel("Active Key Slot:", providerGroup), 0, 0);
-    pg->addWidget(m_slotCombo,             0, 1);
+    QLabel* lSlot = new QLabel("Active Key Slot:", providerGroup);
+    lSlot->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    pg->addWidget(lSlot, 0, 0);
+    pg->addWidget(m_slotCombo, 0, 1);
 
-    pg->addWidget(new QLabel("API Key:", providerGroup), 1, 0);
+    QLabel* lKey = new QLabel("API Key:", providerGroup);
+    lKey->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    pg->addWidget(lKey, 1, 0);
     QHBoxLayout* keyRow = new QHBoxLayout;
+    keyRow->setSpacing(6);
     m_apiKeyEdit = new QLineEdit(providerGroup);
+    m_apiKeyEdit->setFixedHeight(32);
     m_apiKeyEdit->setEchoMode(QLineEdit::Password);
     m_apiKeyEdit->setPlaceholderText("Paste custom API key here...");
 
     QPushButton* showBtn = new QPushButton("👁", providerGroup);
-    showBtn->setFixedWidth(30);
+    showBtn->setFixedSize(32, 32);
     showBtn->setToolTip("Show/Hide Key");
 
     QPushButton* clearBtn = new QPushButton("✕", providerGroup);
-    clearBtn->setFixedWidth(30);
+    clearBtn->setFixedSize(32, 32);
     clearBtn->setToolTip("Clear Key");
 
     keyRow->addWidget(m_apiKeyEdit, 1);
@@ -225,25 +249,36 @@ void SettingsWindow::setupUI() {
     keyRow->addWidget(clearBtn);
     pg->addLayout(keyRow, 1, 1);
 
-    pg->addWidget(new QLabel("AI Provider:", providerGroup), 2, 0);
-    pg->addWidget(m_providerCombo,         2, 1);
+    QLabel* lProv = new QLabel("AI Provider:", providerGroup);
+    lProv->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    pg->addWidget(lProv, 2, 0);
+    pg->addWidget(m_providerCombo, 2, 1);
 
-    pg->addWidget(new QLabel("Model Selection:", providerGroup), 3, 0);
-    pg->addWidget(m_modelCombo,             3, 1);
+    QLabel* lMod = new QLabel("Model Selection:", providerGroup);
+    lMod->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    pg->addWidget(lMod, 3, 0);
+    pg->addWidget(m_modelCombo, 3, 1);
 
-    pg->addWidget(new QLabel("Custom Base URL:", providerGroup), 4, 0);
+    QLabel* lUrl = new QLabel("Custom Base URL:", providerGroup);
+    lUrl->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    pg->addWidget(lUrl, 4, 0);
     m_baseUrlEdit = new QLineEdit(providerGroup);
+    m_baseUrlEdit->setFixedHeight(32);
     m_baseUrlEdit->setPlaceholderText("Default (e.g. https://api.openai.com/v1)");
     pg->addWidget(m_baseUrlEdit, 4, 1);
 
     m_maxTokensCombo = new QComboBox(providerGroup);
+    m_maxTokensCombo->setFixedHeight(32);
     m_maxTokensCombo->addItems({"512", "1024", "2048", "4096", "8192", "16384"});
-    pg->addWidget(new QLabel("Max Response Length:", providerGroup), 5, 0);
-    pg->addWidget(m_maxTokensCombo,             5, 1);
+    QLabel* lTok = new QLabel("Max Response Length:", providerGroup);
+    lTok->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    pg->addWidget(lTok, 5, 0);
+    pg->addWidget(m_maxTokensCombo, 5, 1);
 
     // Test API Connection for Custom Key
     QHBoxLayout* testRow = new QHBoxLayout;
     m_testBtn    = new QPushButton("Test Custom Key Connection", providerGroup);
+    m_testBtn->setFixedHeight(32);
     m_testStatus = new QLabel("", providerGroup);
     testRow->addWidget(m_testBtn);
     testRow->addWidget(m_testStatus, 1);
@@ -252,14 +287,15 @@ void SettingsWindow::setupUI() {
     byokMainLayout->addLayout(pg);
     apiLayout->addWidget(providerGroup);
 
-    // Group 2: System Prompt (Context)
+    // Group 3: System Prompt (Context)
     QGroupBox* promptGroup = new QGroupBox("System Prompt (Context)", tabApiPrompt);
     QVBoxLayout* promptLayout = new QVBoxLayout(promptGroup);
     promptLayout->setContentsMargins(12, 16, 12, 12);
     promptLayout->setSpacing(8);
 
     m_systemPromptEdit = new QTextEdit(promptGroup);
-    m_systemPromptEdit->setMinimumHeight(220);
+    m_systemPromptEdit->setMinimumHeight(110);
+    m_systemPromptEdit->setMaximumHeight(160);
     m_systemPromptEdit->setPlaceholderText("Describe how AI should behave...\n\nExample: Concise runnable code only. No explanations.\nOr: Answer exam questions accurately and concisely.");
     promptLayout->addWidget(m_systemPromptEdit);
 
@@ -277,12 +313,21 @@ void SettingsWindow::setupUI() {
     promptLayout->addLayout(presetRow);
 
     apiLayout->addWidget(promptGroup);
-    tabWidget->addTab(tabApiPrompt, "⚙  API Prompt");
+
+    apiScroll->setWidget(tabApiPrompt);
+    tabWidget->addTab(apiScroll, "⚙  API Prompt");
 
     // ─────────────────────────────────────────────────────────────────────────
-    // TAB 2: HOTKEYS
+    // TAB 2: HOTKEYS (Wrapped in QScrollArea)
     // ─────────────────────────────────────────────────────────────────────────
-    QWidget* tabHotkeys = new QWidget(tabWidget);
+    QScrollArea* hkScroll = new QScrollArea(tabWidget);
+    hkScroll->setWidgetResizable(true);
+    hkScroll->setFrameShape(QFrame::NoFrame);
+    hkScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    hkScroll->setStyleSheet("QScrollArea { background: transparent; border: none; }");
+
+    QWidget* tabHotkeys = new QWidget;
+
     QVBoxLayout* hkLayout = new QVBoxLayout(tabHotkeys);
     hkLayout->setContentsMargins(12, 12, 12, 12);
     hkLayout->setSpacing(8);
@@ -383,7 +428,8 @@ void SettingsWindow::setupUI() {
     connect(m_ghostWriterPresetCombo, &QComboBox::currentIndexChanged,
             this, &SettingsWindow::onGhostWriterPresetChanged);
 
-    tabWidget->addTab(tabHotkeys, "📁  Hotkeys");
+    hkScroll->setWidget(tabHotkeys);
+    tabWidget->addTab(hkScroll, "📁  Hotkeys");
 
     // ─────────────────────────────────────────────────────────────────────────
     // TAB 3: WINDOW SIZE
@@ -1156,7 +1202,7 @@ void SettingsWindow::applyStyle() {
             border-radius: 5px;
             color: #ffffff;
             font-size: 13px;
-            padding: 6px 12px;
+            padding: 4px 10px;
             min-height: 24px;
             selection-background-color: rgba(0, 229, 255, 0.25);
         }
