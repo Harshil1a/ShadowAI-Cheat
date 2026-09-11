@@ -1924,4 +1924,113 @@ body {
   }
 }
 
+/* ==========================================================================
+   CYBERPUNK HUD FOOTER
+   ========================================================================== */
+.hud-footer {
+  position: relative;
+  z-index: 10;
+  background: rgba(3, 7, 5, 0.92);
+  backdrop-filter: blur(14px);
+  border-top: 1px solid var(--border-subtle);
+  box-shadow: 0 -4px 20px rgba(0, 255, 102, 0.06);
+  padding: 30px 24px 34px;
+}
+
+.footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.footer-brand-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.footer-brand-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.footer-brand-emblem {
+  width: 22px;
+  height: 22px;
+  filter: drop-shadow(0 0 8px rgba(0, 255, 102, 0.8));
+  vertical-align: middle;
+}
+
+.footer-legal {
+  font-size: 11px;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 0.5px;
+}
+
+.footer-status-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+}
+
+.footer-status-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 1px;
+}
+
+.footer-policy-item {
+  letter-spacing: 0.5px;
+}
+
+.footer-links-col {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.footer-nav-link {
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 12px;
+  letter-spacing: 1px;
+  transition: all 0.2s ease;
+}
+
+.footer-nav-link:hover {
+  color: var(--accent-green);
+  text-shadow: 0 0 8px rgba(0, 255, 102, 0.6);
+  transform: translateY(-1px);
+}
+
+.protocol-tag {
+  font-size: 10px;
+  color: var(--accent-cyan);
+  background: rgba(0, 229, 255, 0.08);
+  border: 1px solid rgba(0, 229, 255, 0.3);
+  padding: 4px 10px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+}
+
+@media (max-width: 900px) {
+  .footer-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 18px;
+  }
+}
+
+
 

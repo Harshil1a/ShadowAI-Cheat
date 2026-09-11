@@ -13,7 +13,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Orbitron:wght@500;700;900&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=2.4.2">
+  <link rel="stylesheet" href="style.css?v=2.4.3">
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="https://unpkg.com/topojson-client@3"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -423,15 +423,40 @@
 
   <!-- FOOTER -->
   <footer class="hud-footer">
-    <div class="footer-left">
-      <span>SHADOW_AI TERMINAL // ALL RIGHTS RESERVED 2026</span>
-      <span class="dot-sep">•</span>
-      <span>STATUS: OPERATIONAL</span>
-      <span class="dot-sep">•</span>
-      <span>ZERO LOGS POLICY</span>
-    </div>
-    <div class="footer-right">
-      <span class="protocol-tag">AES-256-GCM // PROTOCOL-7</span>
+    <div class="footer-inner">
+      <div class="footer-brand-col">
+        <div class="footer-brand-row">
+          <img src="favicon.svg" alt="ShadowAI Tactical Emblem" class="footer-brand-emblem">
+          <span class="brand-glitch" data-text="SHADOW_AI">SHADOW_AI</span>
+          <span class="hud-badge">// v2.4.0</span>
+        </div>
+        <div class="footer-legal">
+          <span>ALL RIGHTS RESERVED © 2026</span>
+          <span class="dot-sep">•</span>
+          <span>COVERT DESKTOP INTELLIGENCE</span>
+        </div>
+      </div>
+
+      <div class="footer-status-col">
+        <div class="footer-status-item">
+          <span class="status-blip active"></span>
+          <span class="accent-green">STATUS: OPERATIONAL</span>
+        </div>
+        <div class="footer-policy-item">
+          <span class="dim">DEFENSE:</span> <span class="accent-cyan">ZERO LOGS VOLATILE MEMORY</span>
+        </div>
+      </div>
+
+      <div class="footer-links-col">
+        <a href="#radar-section" class="footer-nav-link">// RADAR_HUD</a>
+        <a href="#downloads" class="footer-nav-link">// DOWNLOADS</a>
+        <a href="#access-plans" class="footer-nav-link">// ACCESS_KEYS</a>
+        <a href="admin.html" class="footer-nav-link accent-cyan">// ADMIN_NODE</a>
+      </div>
+
+      <div class="footer-protocol-col">
+        <span class="protocol-tag">AES-256-GCM // PROTOCOL-7</span>
+      </div>
     </div>
   </footer>
 
