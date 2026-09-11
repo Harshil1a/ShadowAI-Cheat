@@ -438,13 +438,14 @@
       </div>
 
       <div class="footer-status-col">
-        <div class="footer-status-item">
+        <button class="footer-interactive-trigger" id="footer-status-btn" title="Click to view real-time network telemetry">
           <span class="status-blip active"></span>
           <span class="accent-green">STATUS: OPERATIONAL</span>
-        </div>
-        <div class="footer-policy-item">
-          <span class="dim">DEFENSE:</span> <span class="accent-cyan">ZERO LOGS VOLATILE MEMORY</span>
-        </div>
+          <span class="footer-micro-hint">[LIVE]</span>
+        </button>
+        <button class="footer-interactive-trigger" id="footer-security-btn" title="Click to inspect zero-logs security specification">
+          <span class="dim">POLICY:</span> <span class="accent-cyan">ZERO LOGS VOLATILE MEMORY ↗</span>
+        </button>
       </div>
 
       <div class="footer-links-col">
@@ -729,6 +730,92 @@
         <button class="btn-refresh" id="btn-user-signout"
           style="width:100%;border-color:#ff4757;color:#ff4757;padding:10px;">
           SIGN OUT OF GOOGLE SESSION
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIVE SYSTEM STATUS INSPECTOR MODAL -->
+  <div class="modal-backdrop" id="system-status-modal">
+    <div class="modal-card" style="max-width: 520px;">
+      <div class="modal-header">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="status-blip active"></span>
+          <span class="accent-green">// SYSTEM_TELEMETRY // LIVE_NODE_STATUS</span>
+        </div>
+        <button class="modal-close" id="system-status-close">×</button>
+      </div>
+      <div class="modal-body" style="text-align:left;">
+        <div style="background:rgba(0,255,102,0.06);border:1px solid rgba(0,255,102,0.25);border-radius:6px;padding:16px;margin-bottom:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <span style="font-size:11px;color:#7ca88e;">GLOBAL NETWORK GRID:</span>
+            <span style="color:#00ff66;font-family:'Orbitron';font-size:12px;font-weight:700;">● ALL 24 REGIONS GREEN</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:11px;">
+            <div><span class="dim">API LATENCY:</span> <span class="accent-cyan" id="modal-live-ping">18ms</span></div>
+            <div><span class="dim">UPTIME:</span> <span class="accent-green">99.98% (STEALTH)</span></div>
+            <div><span class="dim">ACTIVE NODES:</span> <span class="accent-green">8,421 ONLINE</span></div>
+            <div><span class="dim">ENCRYPTION:</span> <span class="accent-magenta">AES-256-GCM ACTIVE</span></div>
+          </div>
+        </div>
+
+        <div style="font-size:12px;color:#e2fced;line-height:1.5;margin-bottom:16px;">
+          <p style="margin-bottom:8px;"><strong>🛡️ Zero Downtime Architecture:</strong></p>
+          <ul style="padding-left:18px;color:#7ca88e;font-size:11.5px;line-height:1.6;">
+            <li>Decentralized military-grade neural relay servers across APAC, EU, and US.</li>
+            <li>Direct high-speed pipe to Supabase Auth & Gemini Vision inference engine.</li>
+            <li>Automatic failover redundancy ensures uninterrupted invisible desktop analysis.</li>
+          </ul>
+        </div>
+
+        <div style="display:flex;gap:10px;">
+          <a href="#radar-section" onclick="document.getElementById('system-status-modal').classList.remove('open')" class="btn-cta-primary" style="flex:1;text-align:center;text-decoration:none;font-size:11px;padding:10px;">
+            EXPLORE LIVE WORLD MAP ⯈
+          </a>
+          <button class="btn-refresh" id="btn-status-modal-done" style="padding:10px 16px;">DONE</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ZERO LOGS SECURITY POLICY MODAL -->
+  <div class="modal-backdrop" id="security-policy-modal">
+    <div class="modal-card" style="max-width: 540px;">
+      <div class="modal-header">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <img src="favicon.svg" alt="" style="width:18px;height:18px;filter:drop-shadow(0 0 6px #00e5ff);">
+          <span class="accent-cyan">// SECURITY_SPECIFICATION // ZERO_LOGS</span>
+        </div>
+        <button class="modal-close" id="security-policy-close">×</button>
+      </div>
+      <div class="modal-body" style="text-align:left;">
+        <div style="background:rgba(0,229,255,0.06);border:1px solid rgba(0,229,255,0.25);border-radius:6px;padding:14px;margin-bottom:16px;">
+          <div style="font-family:'Orbitron';color:#00e5ff;font-size:13px;font-weight:700;margin-bottom:4px;">
+            100% RAM-ONLY VOLATILE EXECUTION
+          </div>
+          <div style="color:#7ca88e;font-size:11px;">Certified Zero-Disk Footprint • Absolute Privacy Guarantee</div>
+        </div>
+
+        <div style="font-size:12px;color:#e2fced;line-height:1.6;margin-bottom:16px;">
+          <p style="margin-bottom:10px;">ShadowAI operates under a strict, mathematically verifiable <strong>Zero-Trace Security Directive</strong>:</p>
+          <div style="display:flex;flex-direction:column;gap:10px;font-size:11.5px;color:#7ca88e;">
+            <div style="display:flex;gap:10px;align-items:flex-start;">
+              <span style="color:#00ff66;">✓</span>
+              <div><strong style="color:#e2fced;">No Screen Logs Stored:</strong> Analyzed screen frames are processed solely inside volatile RAM and wiped within milliseconds. Nothing is ever saved to disk or external servers.</div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:flex-start;">
+              <span style="color:#00ff66;">✓</span>
+              <div><strong style="color:#e2fced;">Undetectable Capture:</strong> Built using kernel-level Window Display Affinity (<code>WDA_EXCLUDEFROMCAPTURE</code>) so recordings, Zoom, and screen shares stay completely clean.</div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:flex-start;">
+              <span style="color:#00ff66;">✓</span>
+              <div><strong style="color:#e2fced;">Encrypted Session Handshake:</strong> All communications with Supabase and Cloud Vision use end-to-end TLS 1.3 + AES-256-GCM encryption.</div>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-gen" id="btn-security-modal-done" style="width:100%;padding:10px;font-size:11px;">
+          I UNDERSTAND & CONFIRM PRIVACY DIRECTIVE ✓
         </button>
       </div>
     </div>

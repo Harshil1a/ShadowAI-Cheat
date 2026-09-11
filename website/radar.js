@@ -961,10 +961,44 @@
       });
     }
 
-    if (modalClose && authModal) {
-      modalClose.addEventListener('click', () => {
-        authModal.classList.remove('open');
+    // Footer Interactive Telemetry & Zero-Logs Modals
+    const footerStatusBtn = document.getElementById('footer-status-btn');
+    const systemStatusModal = document.getElementById('system-status-modal');
+    const systemStatusClose = document.getElementById('system-status-close');
+    const btnStatusModalDone = document.getElementById('btn-status-modal-done');
+
+    if (footerStatusBtn && systemStatusModal) {
+      footerStatusBtn.addEventListener('click', () => {
+        const livePingEl = document.getElementById('hud-live-ping');
+        const modalPingEl = document.getElementById('modal-live-ping');
+        if (livePingEl && modalPingEl) {
+          modalPingEl.innerText = livePingEl.innerText;
+        }
+        systemStatusModal.classList.add('open');
       });
+    }
+    if (systemStatusClose && systemStatusModal) {
+      systemStatusClose.addEventListener('click', () => { systemStatusModal.classList.remove('open'); });
+    }
+    if (btnStatusModalDone && systemStatusModal) {
+      btnStatusModalDone.addEventListener('click', () => { systemStatusModal.classList.remove('open'); });
+    }
+
+    const footerSecurityBtn = document.getElementById('footer-security-btn');
+    const securityPolicyModal = document.getElementById('security-policy-modal');
+    const securityPolicyClose = document.getElementById('security-policy-close');
+    const btnSecurityModalDone = document.getElementById('btn-security-modal-done');
+
+    if (footerSecurityBtn && securityPolicyModal) {
+      footerSecurityBtn.addEventListener('click', () => {
+        securityPolicyModal.classList.add('open');
+      });
+    }
+    if (securityPolicyClose && securityPolicyModal) {
+      securityPolicyClose.addEventListener('click', () => { securityPolicyModal.classList.remove('open'); });
+    }
+    if (btnSecurityModalDone && securityPolicyModal) {
+      btnSecurityModalDone.addEventListener('click', () => { securityPolicyModal.classList.remove('open'); });
     }
 
     if (googleAction) {

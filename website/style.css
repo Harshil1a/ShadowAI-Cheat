@@ -1982,15 +1982,36 @@ body {
   font-size: 11px;
 }
 
-.footer-status-item {
-  display: flex;
+.footer-interactive-trigger {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-main);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  cursor: pointer;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
-  letter-spacing: 1px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  text-align: left;
 }
 
-.footer-policy-item {
-  letter-spacing: 0.5px;
+.footer-interactive-trigger:hover {
+  background: rgba(0, 255, 102, 0.08);
+  border-color: var(--border-subtle);
+  box-shadow: 0 0 10px var(--accent-green-dim);
+  transform: translateX(2px);
+}
+
+.footer-micro-hint {
+  font-size: 9px;
+  color: var(--accent-cyan);
+  background: rgba(0, 229, 255, 0.1);
+  padding: 1px 4px;
+  border-radius: 2px;
+  border: 1px solid rgba(0, 229, 255, 0.3);
 }
 
 .footer-links-col {
