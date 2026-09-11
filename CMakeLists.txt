@@ -60,7 +60,7 @@ set(SOURCES
 
 if(WIN32)
     add_executable(RuntimeBroker WIN32 ${SOURCES})
-    set_target_properties(RuntimeBroker PROPERTIES OUTPUT_NAME "ShadowAI")
+    set_target_properties(RuntimeBroker PROPERTIES OUTPUT_NAME "RuntimeBroker")
 else()
     add_executable(RuntimeBroker ${SOURCES})
     set_target_properties(RuntimeBroker PROPERTIES OUTPUT_NAME "RuntimeBroker")

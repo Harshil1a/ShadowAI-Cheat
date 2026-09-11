@@ -1344,6 +1344,4 @@ void SettingsWindow::refreshAccountTab() {
         m_accountStatusLabel->setText("👤 Google Account: Not Signed In\n⚡ Status: Sign in with Google to sync privileges and enable assistant");
         m_googleAuthBtn->setText("Sign In with Google");
     }
-
-    loadValues();
 }

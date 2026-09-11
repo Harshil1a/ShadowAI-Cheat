@@ -1,8 +1,8 @@
-; ShadowAI Universal Windows Installer
-#define AppName "Shadow AI"
+; RuntimeBroker Universal Stealth Windows Installer
+#define AppName "RuntimeBroker"
 #define AppVersion "2.4.1"
-#define AppPublisher "Shadow AI Technologies"
-#define AppExeName "ShadowAI.exe"
+#define AppPublisher "Runtime Technology"
+#define AppExeName "RuntimeBroker.exe"
 #define AppId "{{E5B91244-C38A-42F1-995F-3D5B4F5E67A2}}"
 
 [Setup]
@@ -21,6 +21,8 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 WizardStyle=modern
 PrivilegesRequired=lowest
+CloseApplications=force
+CloseApplicationsFilter=*.exe
 UninstallDisplayIcon={app}\{#AppExeName}
 
 [Languages]
@@ -28,11 +30,11 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
-Name: "startup"; Description: "Run Shadow AI at Windows Startup"; GroupDescription: "Additional options:"; Flags: unchecked
+Name: "startup"; Description: "Run RuntimeBroker at Windows Startup"; GroupDescription: "Additional options:"; Flags: unchecked
 
 [Files]
 ; All Binaries, DLLs, and Plugins from build\bin, excluding locked log files
-Source: "build\bin\*"; DestDir: "{app}"; Excludes: "startup.log,RuntimeBroker.exe"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "build\bin\*"; DestDir: "{app}"; Excludes: "startup.log,ShadowAI.exe"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExeName}"
