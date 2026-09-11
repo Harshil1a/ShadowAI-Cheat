@@ -645,12 +645,6 @@
           }).catch(e => console.warn('Telegram ping notice:', e));
         } catch (e) {}
 
-        // Launch WhatsApp alert in new tab
-        updateWhatsAppUrl();
-        if (btnWhatsapp) {
-          window.open(btnWhatsapp.href, '_blank');
-        }
-
         // Switch to Live Waiting Room
         setTimeout(() => {
           startWaitingRoom(email, utr, currentOrderCode);
