@@ -649,8 +649,10 @@
         }
 
         if (isCrypto) {
-          if (!utr || utr.length < 8) {
-            claimOutput.innerHTML = '<span style="color:#ff4757;">ERROR:</span> Please enter the Transaction Hash (TxID) from your crypto wallet.';
+          const cleanTx = utr.trim().toLowerCase();
+          const isHex = /^0x[a-f0-9]{64}$/.test(cleanTx) || /^[a-f0-9]{64}$/.test(cleanTx);
+          if (!cleanTx || (!isHex && cleanTx.length < 20)) {
+            claimOutput.innerHTML = '<span style="color:#ff4757;">ERROR:</span> Invalid Transaction Hash. Please paste the full TxID / Hash (e.g. 0x...) from your crypto wallet receipt.';
             return;
           }
         } else {
