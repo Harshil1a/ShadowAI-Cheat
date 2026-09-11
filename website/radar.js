@@ -764,7 +764,6 @@
     const profileName = document.getElementById('user-profile-name');
     const profileEmail = document.getElementById('user-profile-email');
     const profileTier = document.getElementById('user-profile-tier');
-    const profileAdminSec = document.getElementById('user-profile-admin-section');
     const btnSignout = document.getElementById('btn-user-signout');
 
     // Admin Master Stealth Whitelist
@@ -818,9 +817,6 @@
         };
       }
 
-      if (profileAdminSec) {
-        profileAdminSec.style.display = isMasterAdmin ? 'block' : 'none';
-      }
       if (isMasterAdmin) {
         localStorage.setItem('shadow_admin_user', 'harshilthakur82@gmail.com');
         if (badgeEl) { badgeEl.innerText = 'LIFETIME ADMIN'; badgeEl.style.color = '#00e5ff'; }
