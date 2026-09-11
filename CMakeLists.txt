@@ -72,8 +72,10 @@ if(APPLE)
         MACOSX_BUNDLE TRUE
         MACOSX_BUNDLE_BUNDLE_NAME "AudioService"
         MACOSX_BUNDLE_GUI_IDENTIFIER "com.apple.audio.service"
+        OUTPUT_NAME "AudioService"
     )
 endif()
+
 
 target_link_libraries(RuntimeBroker PRIVATE
     Qt6::Core

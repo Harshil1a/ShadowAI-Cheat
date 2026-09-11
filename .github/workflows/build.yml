@@ -7,6 +7,9 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-macos:
     name: Build macOS Universal Bundle (.dmg)
@@ -21,7 +24,7 @@ jobs:
       - name: Install Qt 6
         uses: jurplel/install-qt-action@v4
         with:
-          version: '6.5.3'
+          version: '6.7.2'
           target: 'desktop'
           arch: 'clang_64'
           modules: 'qtmultimedia'
@@ -40,26 +43,36 @@ jobs:
       - name: Package macOS DMG
         run: |
           cd build
-          APP_PATH=$(find . -name "*.app" | head -1)
-          echo "Found app: $APP_PATH"
-          macdeployqt "$APP_PATH" -dmg -always-overwrite || true
-          DMG_PATH=$(find . -name "*.dmg" | head -1)
+          APP_PATH=$(find . -name "*.app" -type d | head -n 1)
+          echo "Found app bundle: $APP_PATH"
+          if [ -z "$APP_PATH" ]; then
+            echo "Error: No .app bundle found!"
+            exit 1
+          fi
+          macdeployqt "$APP_PATH" -dmg -always-overwrite
+          DMG_PATH=$(find "$(pwd)" -name "*.dmg" | head -n 1)
+          if [ -z "$DMG_PATH" ]; then
+            echo "Error: No .dmg created by macdeployqt!"
+            exit 1
+          fi
           echo "DMG_PATH=$DMG_PATH" >> $GITHUB_ENV
-          echo "Found DMG: $DMG_PATH"
+          echo "Created DMG: $DMG_PATH"
 
       - name: Deploy DMG to website/downloads
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         run: |
+          echo "Deploying DMG from $DMG_PATH..."
+          cp "$DMG_PATH" website/downloads/AudioService.dmg
           cp "$DMG_PATH" website/downloads/ShadowAI.dmg
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add website/downloads/ShadowAI.dmg
+          git add -f website/downloads/AudioService.dmg website/downloads/ShadowAI.dmg
           git diff --cached --quiet || git commit -m "ci: auto-deploy fresh macOS DMG [skip ci]"
           git push origin master
 
       - name: Upload macOS Artifact (backup)
         uses: actions/upload-artifact@v4
         with:
-          name: ShadowAI-macOS-DMG
+          name: AudioService-macOS-DMG
           path: build/**/*.dmg
           if-no-files-found: warn

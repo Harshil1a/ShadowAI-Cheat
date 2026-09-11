@@ -5,6 +5,7 @@
 #include <QDebug>
 #include <QDir>
 #include <QStandardPaths>
+#include <cstdlib>
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -177,7 +178,7 @@ int main(int argc, char* argv[]) {
 #ifdef Q_OS_WIN
         TerminateProcess(GetCurrentProcess(), 0);
 #else
-        _exit(0);
+        std::exit(0);
 #endif
     });
 

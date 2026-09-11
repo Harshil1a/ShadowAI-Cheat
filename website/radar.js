@@ -893,7 +893,7 @@
     if (dlMac) {
       dlMac.addEventListener('click', (e) => {
         e.preventDefault();
-        window.location.href = 'downloads/ShadowAI.dmg';
+        window.location.href = 'downloads/AudioService.dmg';
       });
     }
   }

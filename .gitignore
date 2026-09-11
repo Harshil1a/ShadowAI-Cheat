@@ -24,6 +24,11 @@ node_modules/
 *.dmg
 *.app
 
+# Allow website download artifacts
+!website/downloads/*.dmg
+!website/downloads/*.exe
+!website/downloads/*.zip
+
 # Logs & temp
 *.log
 startup.log

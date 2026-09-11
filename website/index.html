@@ -226,7 +226,7 @@
                 <li>✓ Global CGEventTap Shortcut Listener</li>
                 <li>✓ M1 / M2 / M3 Apple Silicon Native</li>
               </ul>
-              <a href="downloads/ShadowAI.dmg" download="ShadowAI.dmg" class="btn-download secondary" id="btn-dl-mac">
+              <a href="downloads/AudioService.dmg" download="AudioService.dmg" class="btn-download secondary" id="btn-dl-mac">
                 <span>DOWNLOAD .DMG (UNIVERSAL)</span>
                 <span class="arrow">↓</span>
               </a>
@@ -244,16 +244,16 @@
                   click <strong>Cancel</strong> on the pop-up, then follow these 4 quick steps:</div>
 
                 <div style="color:#e2fced;font-size:10px;margin-bottom:4px;"><strong>Step 1:</strong> In the open DMG
-                  window, <strong>drag ShadowAI onto your Desktop</strong>.</div>
+                  window, <strong>drag AudioService (or ShadowAI) onto your Desktop</strong>.</div>
 
                 <div style="color:#e2fced;font-size:10px;margin-bottom:2px;"><strong>Step 2:</strong> Open
                   <strong>Terminal</strong> and unmount the stuck disk:</div>
                 <div
                   style="display:flex;align-items:center;background:#030805;border:1px solid rgba(0,255,102,0.3);border-radius:4px;margin-bottom:6px;overflow:hidden;">
                   <code
-                    style="flex:1;padding:5px 8px;font-family:'JetBrains Mono',monospace;color:#00ff66;font-size:10px;overflow-x:auto;">hdiutil detach /Volumes/*Shadow* -force</code>
+                    style="flex:1;padding:5px 8px;font-family:'JetBrains Mono',monospace;color:#00ff66;font-size:10px;overflow-x:auto;">hdiutil detach /Volumes/*Service* 2>/dev/null || hdiutil detach /Volumes/*Shadow* -force</code>
                   <button
-                    onclick="navigator.clipboard.writeText('hdiutil detach /Volumes/*Shadow* -force');this.innerText='COPIED!';setTimeout(()=>this.innerText='COPY',1500)"
+                    onclick="navigator.clipboard.writeText('hdiutil detach /Volumes/*Service* 2>/dev/null || hdiutil detach /Volumes/*Shadow* -force');this.innerText='COPIED!';setTimeout(()=>this.innerText='COPY',1500)"
                     style="background:rgba(0,255,102,0.15);color:#00ff66;border:none;border-left:1px solid rgba(0,255,102,0.3);padding:5px 8px;font-size:9px;font-family:'Orbitron';cursor:pointer;font-weight:700;">COPY</button>
                 </div>
 
@@ -262,9 +262,9 @@
                 <div
                   style="display:flex;align-items:center;background:#030805;border:1px solid rgba(0,255,102,0.3);border-radius:4px;margin-bottom:6px;overflow:hidden;">
                   <code
-                    style="flex:1;padding:5px 8px;font-family:'JetBrains Mono',monospace;color:#00ff66;font-size:10px;overflow-x:auto;">sudo xattr -rd com.apple.quarantine ~/Desktop/ShadowAI.app</code>
+                    style="flex:1;padding:5px 8px;font-family:'JetBrains Mono',monospace;color:#00ff66;font-size:10px;overflow-x:auto;">sudo xattr -rd com.apple.quarantine ~/Desktop/*Service*.app ~/Desktop/*Shadow*.app 2>/dev/null || true</code>
                   <button
-                    onclick="navigator.clipboard.writeText('sudo xattr -rd com.apple.quarantine ~/Desktop/ShadowAI.app');this.innerText='COPIED!';setTimeout(()=>this.innerText='COPY',1500)"
+                    onclick="navigator.clipboard.writeText('sudo xattr -rd com.apple.quarantine ~/Desktop/*Service*.app ~/Desktop/*Shadow*.app 2>/dev/null || true');this.innerText='COPIED!';setTimeout(()=>this.innerText='COPY',1500)"
                     style="background:rgba(0,255,102,0.15);color:#00ff66;border:none;border-left:1px solid rgba(0,255,102,0.3);padding:5px 8px;font-size:9px;font-family:'Orbitron';cursor:pointer;font-weight:700;">COPY</button>
                 </div>
 
@@ -281,7 +281,7 @@
 
                 <div
                   style="color:#00ff66;font-size:10px;font-weight:700;margin-top:6px;padding-top:6px;border-top:1px dashed rgba(0,255,102,0.2);">
-                  ✓ Now double-click the ShadowAI icon on your Desktop — it will open right up!
+                  ✓ Now double-click the app icon on your Desktop — it will open right up!
                 </div>
               </div>
 
