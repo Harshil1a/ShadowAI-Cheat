@@ -630,7 +630,7 @@
                          `📦 *Order Code:* \`${currentOrderCode}\`\n` +
                          `👤 *Customer:* \`${email}\`\n` +
                          `🧾 *UPI UTR / Ref:* \`${utr}\`\n` +
-                         `💰 *Amount:* ₹999 (Pro Lifetime)\n` +
+                         `💰 *Amount:* ₹99 (Pro Monthly / Lifetime)\n` +
                          `⏰ *Timestamp:* ${new Date().toLocaleString('en-IN')}\n` +
                          `━━━━━━━━━━━━━━━━━━━━\n` +
                          `👉 *Action:* Check GPay / Paytm and approve in Admin Panel!`;
