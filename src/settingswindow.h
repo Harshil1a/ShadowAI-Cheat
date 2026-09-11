@@ -10,6 +10,8 @@
 #include <QSpinBox>
 #include <QKeyEvent>
 #include <QCheckBox>
+#include <QGroupBox>
+#include <QRadioButton>
 
 // Custom widget for capturing a single key (for hotkey remapping)
 class KeyCaptureEdit : public QLineEdit {
@@ -51,12 +53,20 @@ private:
     void applyStyle();
     QString maskKey(const QString& key);
 
+    void onTestProCloud();
+
 protected:
     void showEvent(QShowEvent* event) override;
 
     // API settings
-    QComboBox*  m_engineModeCombo = nullptr;
-    QComboBox*  m_slotCombo;
+    QGroupBox*    m_proCloudGroup = nullptr;
+    QLabel*       m_proStatusBadge = nullptr;
+    QPushButton*  m_testProBtn = nullptr;
+    QLabel*       m_testProStatus = nullptr;
+    QRadioButton* m_engineCloudRadio = nullptr;
+    QRadioButton* m_engineCustomRadio = nullptr;
+    QComboBox*    m_engineModeCombo = nullptr;
+    QComboBox*    m_slotCombo;
     QLineEdit*  m_apiKeyEdit;
     QLineEdit*  m_baseUrlEdit;
     QStringList  m_currentKeys;

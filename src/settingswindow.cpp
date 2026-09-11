@@ -21,6 +21,8 @@
 #include <QKeyEvent>
 #include <QShowEvent>
 #include <QCheckBox>
+#include <QRadioButton>
+#include <QButtonGroup>
 #include <QTimer>
 #include <QDesktopServices>
 
@@ -121,10 +123,71 @@ void SettingsWindow::setupUI() {
     apiLayout->setContentsMargins(12, 12, 12, 12);
     apiLayout->setSpacing(12);
 
-    // Group 1: AI Configuration (Independent Slots)
-    QGroupBox* providerGroup = new QGroupBox("AI Configuration (Independent Slots)", tabApiPrompt);
-    QGridLayout* pg = new QGridLayout(providerGroup);
-    pg->setContentsMargins(12, 16, 12, 12);
+    // Group 1: ⚡ Shadow Pro Master Cloud Engine (Google Gemini 2.5 Flash)
+    m_proCloudGroup = new QGroupBox("⚡ Shadow Pro Cloud Engine (Master Zero-Key Vision)", tabApiPrompt);
+    QVBoxLayout* proLayout = new QVBoxLayout(m_proCloudGroup);
+    proLayout->setContentsMargins(12, 16, 12, 12);
+    proLayout->setSpacing(8);
+
+    QHBoxLayout* proHeaderRow = new QHBoxLayout;
+    m_engineCloudRadio = new QRadioButton("⚡ Enable Shadow Pro Master Engine (Gemini 2.5 Flash Cloud • ~1.1s Latency)", m_proCloudGroup);
+    m_engineCloudRadio->setStyleSheet("font-weight: bold; color: #00e5ff; font-size: 12px;");
+    m_proStatusBadge = new QLabel(m_proCloudGroup);
+    m_proStatusBadge->setStyleSheet("font-family: monospace; font-size: 11px; font-weight: bold;");
+    proHeaderRow->addWidget(m_engineCloudRadio, 1);
+    proHeaderRow->addWidget(m_proStatusBadge);
+    proLayout->addLayout(proHeaderRow);
+
+    QLabel* proDesc = new QLabel(
+        "• Pre-configured high-speed Google Gemini 2.5 Flash Cloud Engine.\n"
+        "• Zero setup required: No API key needed, no Google Cloud billing.\n"
+        "• 24/7 unlimited queries with full desktop OCR vision and code reasoning.",
+        m_proCloudGroup
+    );
+    proDesc->setStyleSheet("color: #8b9bb4; font-size: 11px; margin-left: 20px;");
+    proLayout->addWidget(proDesc);
+
+    QHBoxLayout* proActionRow = new QHBoxLayout;
+    proActionRow->setContentsMargins(20, 4, 0, 0);
+
+    m_testProBtn = new QPushButton("⚡ Test Pro Cloud Connection", m_proCloudGroup);
+    m_testProBtn->setCursor(Qt::PointingHandCursor);
+    m_testProBtn->setStyleSheet("background: rgba(0, 229, 255, 0.15); border: 1px solid #00e5ff; color: #00e5ff; font-weight: bold; border-radius: 4px; padding: 6px 14px;");
+
+    m_upgradeBtn = new QPushButton("⚡ UPGRADE TO PRO (₹99 / $6.00) ➔", m_proCloudGroup);
+    m_upgradeBtn->setCursor(Qt::PointingHandCursor);
+    m_upgradeBtn->setStyleSheet(
+        "background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #00e5ff, stop:1 #00ff66);"
+        "color: #030508; font-weight: bold; font-size: 11px; border: none; border-radius: 4px; padding: 6px 16px;"
+    );
+
+    m_testProStatus = new QLabel("", m_proCloudGroup);
+    m_testProStatus->setStyleSheet("font-size: 11px; font-family: monospace;");
+
+    proActionRow->addWidget(m_testProBtn);
+    proActionRow->addWidget(m_upgradeBtn);
+    proActionRow->addWidget(m_testProStatus, 1);
+    proLayout->addLayout(proActionRow);
+
+    apiLayout->addWidget(m_proCloudGroup);
+
+    // Group 2: 🔑 Custom BYOK (Bring Your Own Key & Models — Free Tier)
+    QGroupBox* providerGroup = new QGroupBox("🔑 Custom AI Engine & API Keys (Bring Your Own Key — Free)", tabApiPrompt);
+    QVBoxLayout* byokMainLayout = new QVBoxLayout(providerGroup);
+    byokMainLayout->setContentsMargins(12, 14, 12, 12);
+    byokMainLayout->setSpacing(8);
+
+    m_engineCustomRadio = new QRadioButton("🔑 Use Custom API Key & Model (Slots 1-10)", providerGroup);
+    m_engineCustomRadio->setStyleSheet("font-weight: bold; color: #ffa502; font-size: 12px;");
+    byokMainLayout->addWidget(m_engineCustomRadio);
+
+    // Link radio buttons mutually
+    QButtonGroup* engineRadioGroup = new QButtonGroup(tabApiPrompt);
+    engineRadioGroup->addButton(m_engineCloudRadio);
+    engineRadioGroup->addButton(m_engineCustomRadio);
+
+    QGridLayout* pg = new QGridLayout;
+    pg->setContentsMargins(18, 4, 0, 0);
     pg->setVerticalSpacing(8);
     pg->setHorizontalSpacing(10);
 
@@ -140,21 +203,14 @@ void SettingsWindow::setupUI() {
     m_modelCombo = new QComboBox(providerGroup);
     m_modelCombo->setEditable(true);
 
-    m_engineModeCombo = new QComboBox(providerGroup);
-    m_engineModeCombo->addItem("⚡ Shadow Pro Cloud Vision (Built-in Master Gemini Engine)", "cloud");
-    m_engineModeCombo->addItem("🔑 Custom BYOK (Use Your Own API Key & Model in Slots 1-10)", "custom");
+    pg->addWidget(new QLabel("Active Key Slot:", providerGroup), 0, 0);
+    pg->addWidget(m_slotCombo,             0, 1);
 
-    pg->addWidget(new QLabel("AI Engine Mode:", providerGroup), 0, 0);
-    pg->addWidget(m_engineModeCombo, 0, 1);
-
-    pg->addWidget(new QLabel("Active Key Slot:", providerGroup), 1, 0);
-    pg->addWidget(m_slotCombo,             1, 1);
-
-    pg->addWidget(new QLabel("API Key:", providerGroup), 2, 0);
+    pg->addWidget(new QLabel("API Key:", providerGroup), 1, 0);
     QHBoxLayout* keyRow = new QHBoxLayout;
     m_apiKeyEdit = new QLineEdit(providerGroup);
     m_apiKeyEdit->setEchoMode(QLineEdit::Password);
-    m_apiKeyEdit->setPlaceholderText("Paste API key here...");
+    m_apiKeyEdit->setPlaceholderText("Paste custom API key here...");
 
     QPushButton* showBtn = new QPushButton("👁", providerGroup);
     showBtn->setFixedWidth(30);
@@ -167,32 +223,33 @@ void SettingsWindow::setupUI() {
     keyRow->addWidget(m_apiKeyEdit, 1);
     keyRow->addWidget(showBtn);
     keyRow->addWidget(clearBtn);
-    pg->addLayout(keyRow, 2, 1);
+    pg->addLayout(keyRow, 1, 1);
 
-    pg->addWidget(new QLabel("AI Provider:", providerGroup), 3, 0);
-    pg->addWidget(m_providerCombo,         3, 1);
+    pg->addWidget(new QLabel("AI Provider:", providerGroup), 2, 0);
+    pg->addWidget(m_providerCombo,         2, 1);
 
-    pg->addWidget(new QLabel("Model Selection:", providerGroup), 4, 0);
-    pg->addWidget(m_modelCombo,             4, 1);
+    pg->addWidget(new QLabel("Model Selection:", providerGroup), 3, 0);
+    pg->addWidget(m_modelCombo,             3, 1);
 
-    pg->addWidget(new QLabel("Custom Base URL:", providerGroup), 5, 0);
+    pg->addWidget(new QLabel("Custom Base URL:", providerGroup), 4, 0);
     m_baseUrlEdit = new QLineEdit(providerGroup);
     m_baseUrlEdit->setPlaceholderText("Default (e.g. https://api.openai.com/v1)");
-    pg->addWidget(m_baseUrlEdit, 5, 1);
+    pg->addWidget(m_baseUrlEdit, 4, 1);
 
     m_maxTokensCombo = new QComboBox(providerGroup);
     m_maxTokensCombo->addItems({"512", "1024", "2048", "4096", "8192", "16384"});
-    pg->addWidget(new QLabel("Max Response Length:", providerGroup), 6, 0);
-    pg->addWidget(m_maxTokensCombo,             6, 1);
+    pg->addWidget(new QLabel("Max Response Length:", providerGroup), 5, 0);
+    pg->addWidget(m_maxTokensCombo,             5, 1);
 
-    // Test API Connection
+    // Test API Connection for Custom Key
     QHBoxLayout* testRow = new QHBoxLayout;
-    m_testBtn    = new QPushButton("Test Connection", providerGroup);
+    m_testBtn    = new QPushButton("Test Custom Key Connection", providerGroup);
     m_testStatus = new QLabel("", providerGroup);
     testRow->addWidget(m_testBtn);
     testRow->addWidget(m_testStatus, 1);
-    pg->addLayout(testRow, 7, 1);
+    pg->addLayout(testRow, 6, 1);
 
+    byokMainLayout->addLayout(pg);
     apiLayout->addWidget(providerGroup);
 
     // Group 2: System Prompt (Context)
@@ -393,49 +450,6 @@ void SettingsWindow::setupUI() {
     authLayout->addWidget(m_googleAuthBtn);
 
     accLayout->addWidget(authGroup);
-
-    // Group 2: Shadow Pro Features & Plan Status
-    QGroupBox* licGroup = new QGroupBox("Shadow Pro Features & Privileges", tabAccount);
-    QVBoxLayout* licLayout = new QVBoxLayout(licGroup);
-    licLayout->setContentsMargins(12, 16, 12, 12);
-    licLayout->setSpacing(8);
-
-    QLabel* feat1 = new QLabel("⚡ Built-in Zero-Setup AI: Google Gemini 2.5 Flash Master Engine", licGroup);
-    feat1->setStyleSheet("color: #00e5ff; font-size: 11px; font-weight: bold;");
-    QLabel* feat2 = new QLabel("👁 Ultra-Fast Vision: Desktop OCR & screenshot answering (~1.1s latency)", licGroup);
-    feat2->setStyleSheet("color: #8b9bb4; font-size: 11px;");
-    QLabel* feat3 = new QLabel("♾ Unlimited Queries: 24/7 unlimited access with no daily quotas", licGroup);
-    feat3->setStyleSheet("color: #8b9bb4; font-size: 11px;");
-    QLabel* feat4 = new QLabel("🛡 Anti-Proctor Stealth: 100% hidden from screen-sharing & proctoring tools", licGroup);
-    feat4->setStyleSheet("color: #8b9bb4; font-size: 11px;");
-    QLabel* feat5 = new QLabel("💻 Machine Bound: Securely tied to your verified Google account & PC", licGroup);
-    feat5->setStyleSheet("color: #8b9bb4; font-size: 11px;");
-
-    licLayout->addWidget(feat1);
-    licLayout->addWidget(feat2);
-    licLayout->addWidget(feat3);
-    licLayout->addWidget(feat4);
-    licLayout->addWidget(feat5);
-
-    m_upgradeBtn = new QPushButton("⚡ UPGRADE TO PRO (₹99 / $6.00) ➔", licGroup);
-    m_upgradeBtn->setFixedHeight(36);
-    m_upgradeBtn->setCursor(Qt::PointingHandCursor);
-    m_upgradeBtn->setStyleSheet(
-        "QPushButton {"
-        "  background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #00e5ff, stop:1 #00ff66);"
-        "  color: #030508; font-weight: bold; font-size: 12px; border: none; border-radius: 4px; padding: 6px 16px;"
-        "}"
-        "QPushButton:hover { filter: brightness(1.15); }"
-    );
-    licLayout->addSpacing(4);
-    licLayout->addWidget(m_upgradeBtn);
-
-    m_licenseFeedback = new QLabel(licGroup);
-    m_licenseFeedback->setWordWrap(true);
-    m_licenseFeedback->setStyleSheet("font-size: 11px; font-family: monospace;");
-    licLayout->addWidget(m_licenseFeedback);
-
-    accLayout->addWidget(licGroup);
     accLayout->addStretch();
 
     tabWidget->addTab(tabAccount, "👤  Account & License");
@@ -531,6 +545,8 @@ void SettingsWindow::setupUI() {
         QDesktopServices::openUrl(QUrl("https://shadow-ai-cheat.vercel.app/#access-plans"));
     });
 
+    connect(m_testProBtn, &QPushButton::clicked, this, &SettingsWindow::onTestProCloud);
+
     connect(&AccountManager::instance(), &AccountManager::accountStateChanged, this, [this]() {
         refreshAccountTab();
     });
@@ -609,19 +625,32 @@ void SettingsWindow::loadValues() {
     m_lastSlotIndex    = cfg.activeSlot();
 
     bool isPro = AccountManager::instance().isPro();
-    if (m_engineModeCombo) {
-        m_engineModeCombo->blockSignals(true);
-        m_engineModeCombo->clear();
+    if (m_engineCloudRadio && m_engineCustomRadio) {
+        m_engineCloudRadio->blockSignals(true);
+        m_engineCustomRadio->blockSignals(true);
         if (isPro) {
-            m_engineModeCombo->addItem("⚡ Shadow Pro Cloud Vision (Built-in Master Gemini 2.5 Flash Engine)", "cloud");
-            m_engineModeCombo->addItem("🔑 Custom BYOK (Use Your Own API Key & Model in Slots 1-10)", "custom");
-            m_engineModeCombo->setCurrentIndex(cfg.useProCloudEngine() ? 0 : 1);
+            m_engineCloudRadio->setEnabled(true);
+            m_engineCloudRadio->setChecked(cfg.useProCloudEngine());
+            m_engineCustomRadio->setChecked(!cfg.useProCloudEngine());
+            if (m_proStatusBadge) {
+                m_proStatusBadge->setText("[ 💎 SHADOW PRO ACTIVE — UNLIMITED ]");
+                m_proStatusBadge->setStyleSheet("color: #00ff66; font-family: monospace; font-size: 11px; font-weight: bold; background: rgba(0,255,102,0.12); padding: 3px 8px; border-radius: 4px; border: 1px solid #00ff66;");
+            }
+            if (m_testProBtn) m_testProBtn->setVisible(true);
+            if (m_upgradeBtn) m_upgradeBtn->setVisible(false);
         } else {
-            m_engineModeCombo->addItem("⚡ Free Cloud Vision Trial (Gemini 2.5 Flash — 3 Queries/Day)", "cloud");
-            m_engineModeCombo->addItem("🔑 Custom BYOK (Use Your Own API Key & Model in Slots 1-10)", "custom");
-            m_engineModeCombo->setCurrentIndex(cfg.useProCloudEngine() ? 0 : 1);
+            m_engineCloudRadio->setEnabled(false);
+            m_engineCloudRadio->setChecked(false);
+            m_engineCustomRadio->setChecked(true);
+            if (m_proStatusBadge) {
+                m_proStatusBadge->setText("[ 🔒 PRO LOCKED — UPGRADE TO UNLOCK ]");
+                m_proStatusBadge->setStyleSheet("color: #ffa502; font-family: monospace; font-size: 11px; font-weight: bold; background: rgba(255,165,2,0.12); padding: 3px 8px; border-radius: 4px; border: 1px solid #ffa502;");
+            }
+            if (m_testProBtn) m_testProBtn->setVisible(false);
+            if (m_upgradeBtn) m_upgradeBtn->setVisible(true);
         }
-        m_engineModeCombo->blockSignals(false);
+        m_engineCloudRadio->blockSignals(false);
+        m_engineCustomRadio->blockSignals(false);
     }
     
     m_slotCombo->blockSignals(true);
@@ -734,8 +763,8 @@ void SettingsWindow::onSave() {
     cfg.setActiveSlot(m_slotCombo->currentIndex());
 
     bool isPro = AccountManager::instance().isPro();
-    if (isPro && m_engineModeCombo) {
-        cfg.setUseProCloudEngine(m_engineModeCombo->currentIndex() == 0);
+    if (isPro && m_engineCloudRadio) {
+        cfg.setUseProCloudEngine(m_engineCloudRadio->isChecked());
     } else {
         cfg.setUseProCloudEngine(false);
     }
@@ -827,27 +856,56 @@ void SettingsWindow::onProviderChanged(int index) {
     }
 }
 
+void SettingsWindow::onTestProCloud() {
+    if (!m_testProStatus) return;
+    m_testProStatus->setText("⟳ Testing Google Gemini 2.5 Flash Cloud...");
+    m_testProStatus->setStyleSheet("color: #00e5ff; font-weight: bold;");
+    if (m_testProBtn) m_testProBtn->setEnabled(false);
+
+    auto* nam = new QNetworkAccessManager(this);
+    QNetworkRequest req;
+    QString key = "AIzaSyC8aILHZWizqpS4rXc_5s0FGgBbHHr7JcA";
+    req.setUrl(QUrl(QString("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=%1").arg(key)));
+    req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    QJsonObject part; part["text"] = "Respond with 'OK'";
+    QJsonArray parts; parts.append(part);
+    QJsonObject content; content["parts"] = parts;
+    QJsonArray contents; contents.append(content);
+    QJsonObject b; b["contents"] = contents;
+    QByteArray body = QJsonDocument(b).toJson();
+
+    qint64 startTime = QDateTime::currentMSecsSinceEpoch();
+
+    auto* reply = nam->post(req, body);
+    connect(reply, &QNetworkReply::finished, this, [this, reply, nam, startTime]() {
+        if (m_testProBtn) m_testProBtn->setEnabled(true);
+        qint64 elapsed = QDateTime::currentMSecsSinceEpoch() - startTime;
+        int code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        if (code == 200) {
+            m_testProStatus->setText(QString("✓ Pro Cloud Online: Gemini 2.5 Flash Verified (~%1ms)").arg(elapsed));
+            m_testProStatus->setStyleSheet("color: #00ff66; font-weight: bold;");
+        } else {
+            m_testProStatus->setText(QString("❌ Cloud Test Error (HTTP %1)").arg(code));
+            m_testProStatus->setStyleSheet("color: #ff4757; font-weight: bold;");
+        }
+        reply->deleteLater();
+        nam->deleteLater();
+    });
+}
+
 void SettingsWindow::onTestAPI() {
     QString key = m_apiKeyEdit->text().trimmed();
     QString prov = m_providerCombo->currentData().toString();
     QString model = m_modelCombo->currentText().trimmed();
 
-    bool isPro = AccountManager::instance().isPro();
-    bool testingCloud = (m_engineModeCombo && m_engineModeCombo->currentIndex() == 0);
-
-    if (testingCloud || key.isEmpty()) {
-        key = "AIzaSyC8aILHZWizqpS4rXc_5s0FGgBbHHr7JcA";
-        prov = "gemini";
-        model = "gemini-2.5-flash";
-    }
-
     if (key.isEmpty()) {
-        m_testStatus->setText("❌ No API key entered");
+        m_testStatus->setText("❌ No API key entered in this slot");
         m_testStatus->setStyleSheet("color: #ef4444; font-weight: bold;");
         return;
     }
 
-    m_testStatus->setText("⟳ Testing connection...");
+    m_testStatus->setText("⟳ Testing custom API connection...");
     m_testStatus->setStyleSheet("color: #78716c;");
     m_testBtn->setEnabled(false);
 
@@ -858,9 +916,7 @@ void SettingsWindow::onTestAPI() {
     if (prov == "openai" || prov == "groq" || prov == "nvidia") {
         if (prov == "openai") {
             QString baseUrl = m_baseUrlEdit->text().trimmed();
-            if (baseUrl.isEmpty()) {
-                baseUrl = "https://api.openai.com/v1";
-            }
+            if (baseUrl.isEmpty()) baseUrl = "https://api.openai.com/v1";
             if (baseUrl.endsWith("/")) baseUrl.chop(1);
             req.setUrl(QUrl(baseUrl + "/chat/completions"));
         } else if (prov == "groq") {
@@ -877,9 +933,9 @@ void SettingsWindow::onTestAPI() {
         if (prov == "nvidia")
             b["model"] = model.isEmpty() ? "meta/llama-3.2-90b-vision-instruct" : model;
         else if (prov == "openai")
-            b["model"] = model.isEmpty() ? "gpt-5.5-mini" : model;
+            b["model"] = model.isEmpty() ? "gpt-4o-mini" : model;
         else // groq
-            b["model"] = model.isEmpty() ? "meta-llama/llama-4-scout-17b-16e-instruct" : model;
+            b["model"] = model.isEmpty() ? "llama-3.3-70b-versatile" : model;
         
         b["messages"] = msgs; b["max_tokens"] = 5;
         body = QJsonDocument(b).toJson();
@@ -896,37 +952,23 @@ void SettingsWindow::onTestAPI() {
         body = QJsonDocument(b).toJson();
     }
 
+    qint64 startTime = QDateTime::currentMSecsSinceEpoch();
     auto* reply = nam->post(req, body);
-    connect(reply, &QNetworkReply::finished, this, [this, reply, nam, isPro, testingCloud]() {
+    connect(reply, &QNetworkReply::finished, this, [this, reply, nam, model, startTime]() {
         m_testBtn->setEnabled(true);
+        qint64 elapsed = QDateTime::currentMSecsSinceEpoch() - startTime;
         int code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
         if (code == 200) {
-            if (testingCloud || m_apiKeyEdit->text().trimmed().isEmpty()) {
-                if (isPro) {
-                    m_testStatus->setText("✓ Cloud Pro Active (Gemini 2.5 Flash Online)!");
-                } else {
-                    m_testStatus->setText("✓ Cloud Trial Online (Gemini 2.5 Flash Connected)!");
-                }
-            } else {
-                m_testStatus->setText("✓ Custom API key works!");
-            }
+            m_testStatus->setText(QString("✓ Custom API Key Works: %1 Online (~%2ms)").arg(model.isEmpty() ? "Model" : model).arg(elapsed));
             m_testStatus->setStyleSheet("color: #10b981; font-weight: bold;");
         } else {
-            QString rawErr = QString::fromUtf8(reply->readAll());
             QString displayMsg = QString("HTTP %1").arg(code);
-            
-            // Try to extract a more helpful message for 429 or other errors
-            if (code == 429) {
-                displayMsg = "HTTP 429 (Rate Limit)";
-            } else if (code == 403) {
-                displayMsg = "HTTP 403 (Invalid Key/Perms)";
-            } else if (code == 400) {
-                displayMsg = "HTTP 400 (Bad Request)";
-            }
+            if (code == 429) displayMsg = "HTTP 429 (Rate Limit)";
+            else if (code == 403) displayMsg = "HTTP 403 (Invalid Key/Perms)";
+            else if (code == 400) displayMsg = "HTTP 400 (Bad Request)";
 
             m_testStatus->setText("❌ " + displayMsg);
             m_testStatus->setStyleSheet("color: #ef4444; font-weight: bold;");
-            // Debug output removed for stealth
         }
         reply->deleteLater();
         nam->deleteLater();
@@ -1303,30 +1345,5 @@ void SettingsWindow::refreshAccountTab() {
         m_googleAuthBtn->setText("Sign In with Google");
     }
 
-    if (m_upgradeBtn) {
-        if (isPro) {
-            m_upgradeBtn->setVisible(false);
-        } else {
-            m_upgradeBtn->setVisible(true);
-            m_upgradeBtn->setText("⚡ UPGRADE TO PRO (₹99 / $6.00) ➔");
-        }
-    }
-
-    if (m_licenseFeedback) {
-        if (isPro) {
-            m_licenseFeedback->setStyleSheet("color: #00ff66; font-weight: bold;");
-            m_licenseFeedback->setText("✓ Cloud Pro Active: Automatically synchronized with Google account (" + email + "). Unlimited Gemini 2.5 Flash Engine active.");
-        } else {
-            m_licenseFeedback->setStyleSheet("color: #00e5ff; font-weight: bold;");
-            m_licenseFeedback->setText("ℹ️ Free Community Tier Active: 3 free queries/day included. Upgrade to Pro (or ask admin) for unlimited cloud AI.");
-        }
-    }
-
-    if (m_apiKeyEdit) {
-        if (isPro) {
-            m_apiKeyEdit->setPlaceholderText("⚡ SHADOW PRO CLOUD ACTIVE (Google Gemini 2.5 Flash Master Engine Provisioned)");
-        } else {
-            m_apiKeyEdit->setPlaceholderText("Paste API key here...");
-        }
-    }
+    loadValues();
 }
