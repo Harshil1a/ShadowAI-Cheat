@@ -5,12 +5,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SHADOW AI // Invisible Tactical AI Assistant & Global Radar</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="alternate icon" type="image/png" href="favicon.png">
+  <link rel="apple-touch-icon" href="favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
     href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Orbitron:wght@500;700;900&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=2.4.1">
+  <link rel="stylesheet" href="style.css?v=2.4.2">
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="https://unpkg.com/topojson-client@3"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -23,6 +26,7 @@
   <!-- TOP HUD STATUS BAR -->
   <header class="hud-top-bar">
     <div class="brand-cluster">
+      <img src="favicon.svg" alt="Shadow AI Tactical Emblem" class="brand-logo-emblem">
       <div class="status-blip active"></div>
       <span class="brand-glitch" data-text="SHADOW_AI">SHADOW_AI</span>
       <span class="hud-badge">// v2.4.0-STEALTH</span>
@@ -65,7 +69,7 @@
 
     <!-- HERO SECTION -->
     <section class="hero-section">
-      <div class="hero-tag">// UNDETECTABLE DESKTOP ASSISTANT</div>
+      <div class="hero-tag"><img src="favicon.svg" alt="" style="width:14px;height:14px;filter:drop-shadow(0 0 6px #00ff66);"> // UNDETECTABLE DESKTOP ASSISTANT</div>
       <h1 class="hero-title">
         INVISIBLE SCREEN AI.<br>
         <span class="gradient-text">GLOBAL TACTICAL RECON.</span>
@@ -608,7 +612,10 @@
   <div class="modal-backdrop" id="auth-modal">
     <div class="modal-card">
       <div class="modal-header">
-        <span>// AUTHENTICATION_NODE: GOOGLE_SSO</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <img src="favicon.svg" alt="" style="width:16px;height:16px;filter:drop-shadow(0 0 6px #00ff66);">
+          <span>// AUTHENTICATION_NODE: GOOGLE_SSO</span>
+        </div>
         <button class="modal-close" id="modal-close">×</button>
       </div>
       <div class="modal-body">
@@ -639,7 +646,10 @@
   <div class="modal-backdrop" id="user-profile-modal">
     <div class="modal-card">
       <div class="modal-header">
-        <span>// OPERATOR_IDENTITY // SECURE_NODE</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <img src="favicon.svg" alt="" style="width:16px;height:16px;filter:drop-shadow(0 0 6px #00ff66);">
+          <span>// OPERATOR_IDENTITY // SECURE_NODE</span>
+        </div>
         <button class="modal-close" id="profile-modal-close">×</button>
       </div>
       <div class="modal-body" style="text-align:center;">

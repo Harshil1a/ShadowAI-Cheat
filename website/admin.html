@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SHADOW AI // ADMIN COMMAND CENTER</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="alternate icon" type="image/png" href="favicon.png">
+  <link rel="apple-touch-icon" href="favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
@@ -300,7 +303,10 @@
   <!-- ADMIN AUTH GATE -->
   <div class="pin-gate" id="pin-gate">
     <div class="pin-box">
-      <h2 style="color:#00ff66;font-family:'Orbitron';letter-spacing:2px;margin-bottom:6px;">SHADOW // ADMIN</h2>
+      <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:6px;">
+        <img src="favicon.svg" alt="Shadow AI Logo" style="width:26px;height:26px;filter:drop-shadow(0 0 8px rgba(0,255,102,0.8));">
+        <h2 style="color:#00ff66;font-family:'Orbitron';letter-spacing:2px;margin:0;">SHADOW // ADMIN</h2>
+      </div>
       <p style="color:#7ca88e;font-size:12px;margin-bottom:18px;">Zero-Trust Admin Gateway • Protected by Google OAuth</p>
       
       <!-- PRIMARY GOOGLE SSO BUTTON -->
@@ -342,9 +348,12 @@
   <!-- MAIN ADMIN DASHBOARD -->
   <div class="admin-container" id="admin-content" style="display:none;">
     <header class="admin-header">
-      <div>
-        <h1 class="admin-title">SHADOW AI // ADMIN TERMINAL</h1>
-        <div class="admin-subtitle">Master License Key Generator & Device-Locking Manager</div>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <img src="favicon.svg" alt="Shadow AI Logo" style="width:34px;height:34px;filter:drop-shadow(0 0 10px rgba(0,255,102,0.8));">
+        <div>
+          <h1 class="admin-title">SHADOW AI // ADMIN TERMINAL</h1>
+          <div class="admin-subtitle">Master License Key Generator & Device-Locking Manager</div>
+        </div>
       </div>
       <div style="display:flex;align-items:center;gap:12px;">
         <span id="admin-badge-email" style="font-size:11px;color:#00ff66;background:rgba(0,255,102,0.1);padding:4px 10px;border-radius:3px;border:1px solid rgba(0,255,102,0.3);">👤 harshilthakur82@gmail.com</span>

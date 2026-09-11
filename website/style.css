@@ -110,6 +110,20 @@ body {
   gap: 12px;
 }
 
+.brand-logo-emblem {
+  width: 26px;
+  height: 26px;
+  filter: drop-shadow(0 0 8px rgba(0, 255, 102, 0.75));
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.3s ease;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.brand-logo-emblem:hover {
+  transform: scale(1.15) rotate(4deg);
+  filter: drop-shadow(0 0 14px #00e5ff) drop-shadow(0 0 22px rgba(0, 255, 102, 0.9));
+}
+
 .status-blip {
   width: 8px;
   height: 8px;
@@ -216,7 +230,9 @@ body {
 }
 
 .hero-tag {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-size: 12px;
   letter-spacing: 2px;
   color: var(--accent-green);
