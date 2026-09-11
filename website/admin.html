@@ -388,10 +388,10 @@
       </div>
     </div>
 
-    <!-- PENDING APPROVALS QUEUE (UPI / UTR) -->
+    <!-- PENDING APPROVALS QUEUE (UPI / CRYPTO QUEUE) -->
     <div class="admin-card" style="margin-bottom: 24px; border-color: rgba(0, 229, 255, 0.4); box-shadow: 0 0 25px rgba(0,229,255,0.08);">
       <div class="admin-card-title">
-        <span style="color: #00e5ff;">⏳ PENDING PAYMENT APPROVALS (UPI / UTR QUEUE)</span>
+        <span style="color: #00e5ff;">⏳ PENDING PAYMENT APPROVALS (UPI / CRYPTO QUEUE)</span>
         <span id="pending-count-badge" style="font-size: 11px; background: rgba(0,229,255,0.15); color: #00e5ff; border: 1px solid #00e5ff; padding: 2px 8px; border-radius: 3px; font-weight: 800;">0 PENDING</span>
       </div>
 
@@ -400,14 +400,15 @@
           <tr>
             <th>ORDER #</th>
             <th>BUYER EMAIL</th>
-            <th>PAYMENT REF / UTR</th>
+            <th>METHOD & AMOUNT</th>
+            <th>PAYMENT REF / UTR / TxID</th>
             <th>SUBMITTED</th>
             <th>ACTION</th>
           </tr>
         </thead>
         <tbody id="pending-table-body">
           <tr>
-            <td colspan="5" style="text-align:center;color:#7ca88e;padding:20px;">No pending approvals right now. All orders clear!</td>
+            <td colspan="6" style="text-align:center;color:#7ca88e;padding:20px;">No pending approvals right now. All orders clear!</td>
           </tr>
         </tbody>
       </table>
@@ -898,30 +899,48 @@
 
         // 1. Render Pending Approvals Queue
         if (pendingItems.length === 0) {
-          pbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#7ca88e;padding:16px;">✓ No pending approvals right now. All orders clear!</td></tr>';
+          pbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#7ca88e;padding:16px;">✓ No pending approvals right now. All orders clear!</td></tr>';
         } else {
           pbody.innerHTML = pendingItems.map(item => {
             let orderCode = '#N/A';
             let utr = 'N/A';
-            if (item.bound_hwid && item.bound_hwid.includes('Order')) {
+            let isCrypto = (item.plan_tier === 'PRO_GLOBAL_CRYPTO');
+            let method = isCrypto ? '🌍 CRYPTO ($6.00)' : '🇮🇳 UPI (₹99)';
+
+            if (item.bound_hwid) {
               const parts = item.bound_hwid.split('|');
-              orderCode = parts[0].trim();
-              if (parts[1]) utr = parts[1].replace('UTR:', '').trim();
-            } else if (item.license_key && item.license_key.startsWith('PENDING-')) {
+              parts.forEach(p => {
+                const s = p.trim();
+                if (s.startsWith('Order')) orderCode = s.replace('Order', '').trim();
+                else if (s.startsWith('Method:')) method = s.replace('Method:', '').trim();
+                else if (s.startsWith('UTR:')) utr = s.replace('UTR:', '').trim();
+                else if (s.startsWith('UPI UTR:')) utr = s.replace('UPI UTR:', '').trim();
+                else if (s.startsWith('TxID:')) {
+                  utr = s.replace('TxID:', '').trim();
+                  isCrypto = true;
+                }
+              });
+            }
+            if (orderCode === '#N/A' && item.license_key && item.license_key.startsWith('PENDING-')) {
               const kparts = item.license_key.split('-');
               if (kparts[1]) orderCode = '#' + kparts[1];
-              if (kparts[2]) utr = kparts[2];
+              if (kparts[2] && utr === 'N/A') utr = kparts[2];
             }
 
             const created = new Date(item.created_at).toLocaleDateString('en-IN', {
               month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
             });
 
+            const methodBadge = isCrypto
+              ? `<span style="font-size:10px;color:#00e5ff;background:rgba(0,229,255,0.12);border:1px solid rgba(0,229,255,0.4);padding:3px 6px;border-radius:3px;font-weight:700;">🌍 BNB ($6.00)</span>`
+              : `<span style="font-size:10px;color:#00ff66;background:rgba(0,255,102,0.12);border:1px solid rgba(0,255,102,0.4);padding:3px 6px;border-radius:3px;font-weight:700;">🇮🇳 UPI (₹99)</span>`;
+
             return `
               <tr style="background: rgba(0, 229, 255, 0.04);">
                 <td><strong style="color:#00e5ff;font-family:'Orbitron',monospace;font-size:13px;">${orderCode}</strong></td>
                 <td><strong style="color:#ffffff;">${item.customer_email}</strong></td>
-                <td><code style="color:#00ff66;background:#030805;padding:3px 6px;border-radius:3px;border:1px dashed rgba(0,255,102,0.4);">${utr}</code></td>
+                <td>${methodBadge}</td>
+                <td><code style="color:#00ff66;background:#030805;padding:3px 6px;border-radius:3px;border:1px dashed rgba(0,255,102,0.4);word-break:break-all;font-size:11px;">${utr}</code></td>
                 <td style="color:#7ca88e;font-size:11px;">${created}</td>
                 <td style="white-space:nowrap;">
                   <button class="btn-gen" style="padding:6px 14px;font-size:11px;" onclick="approveOrder('${item.id}', '${item.customer_email}')">APPROVE & GRANT PRO ✓</button>
