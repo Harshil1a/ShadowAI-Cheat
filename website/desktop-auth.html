@@ -278,10 +278,14 @@
         userAvatar.style.display = 'block';
       }
 
-      // Check Pro status in database
+      // Check Pro status & hardware binding in database
       const isMasterAdmin = ADMIN_WHITELIST.some(a => email.toLowerCase().includes(a.toLowerCase())) || email.toLowerCase().includes('harshil');
       let isPro = isMasterAdmin;
       let licenseKey = isMasterAdmin ? 'SHADOW-PRO-HARSHIL-ADMIN' : '';
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const clientHwid = (urlParams.get('hwid') || '').toUpperCase().trim();
+      let hwidBlocked = false;
 
       if (!isMasterAdmin) {
         try {
@@ -297,8 +301,36 @@
             const isExpired = isMonthly && diffDays >= 30;
 
             if (!isExpired) {
-              isPro = true;
-              licenseKey = row.license_key;
+              const boundHwid = (row.bound_hwid || '').toUpperCase().trim();
+
+              if (clientHwid) {
+                // Check if already bound to another PC
+                if (boundHwid && !boundHwid.startsWith('ORDER') && boundHwid !== clientHwid) {
+                  // Mismatch! Account is locked to another computer
+                  isPro = false;
+                  hwidBlocked = true;
+                } else if (!boundHwid || boundHwid.startsWith('ORDER')) {
+                  // First login or reset! Lock to this PC's HWID
+                  await fetch(`${SUPABASE_URL}/rest/v1/licenses?customer_email=eq.${encodeURIComponent(email)}`, {
+                    method: 'PATCH',
+                    headers: {
+                      'apikey': SUPABASE_KEY,
+                      'Authorization': `Bearer ${SUPABASE_KEY}`,
+                      'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ bound_hwid: clientHwid, last_used_at: new Date().toISOString() })
+                  });
+                  isPro = true;
+                  licenseKey = row.license_key;
+                } else {
+                  // Matches bound hardware
+                  isPro = true;
+                  licenseKey = row.license_key;
+                }
+              } else {
+                isPro = true;
+                licenseKey = row.license_key;
+              }
             } else {
               console.log('Customer license reached 30-day expiration period.');
             }
@@ -306,6 +338,16 @@
         } catch(e) {
           console.warn('License lookup error:', e);
         }
+      }
+
+      if (hwidBlocked) {
+        userTier.className = 'tier-badge tier-free';
+        userTier.style.background = 'rgba(255,71,87,0.2)';
+        userTier.style.color = '#ff4757';
+        userTier.style.border = '1px solid #ff4757';
+        userTier.innerText = '🔒 DEVICE LIMIT (1 PC ONLY)';
+        statusMsg.innerHTML = '<span style="color:#ff4757;font-weight:bold;">❌ DEVICE MISMATCH:</span> This account is locked to another computer. Licenses are valid for 1 PC only.<br>To switch devices, contact admin to unbind HWID.';
+        return;
       }
 
       if (isPro) {

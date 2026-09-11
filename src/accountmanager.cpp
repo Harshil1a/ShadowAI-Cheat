@@ -52,6 +52,15 @@ QString AccountManager::licenseKey() const {
     return AppConfig::instance().licenseKey();
 }
 
+QString AccountManager::getMachineHwid() const {
+    QByteArray rawHwid = QSysInfo::machineUniqueId();
+    QString hwid = QString::fromUtf8(rawHwid.toHex()).toUpper();
+    if (hwid.isEmpty()) {
+        hwid = QString("%1_%2").arg(QSysInfo::machineHostName(), QSysInfo::currentCpuArchitecture()).toUpper();
+    }
+    return hwid;
+}
+
 void AccountManager::startGoogleLogin() {
     if (!m_tcpServer->isListening()) {
         if (!m_tcpServer->listen(QHostAddress::LocalHost, m_authPort)) {
@@ -60,8 +69,9 @@ void AccountManager::startGoogleLogin() {
         }
     }
 
-    // Launch default browser to real Google OAuth landing bridge on live domain
-    QUrl authUrl(QString("https://shadow-ai-cheat.vercel.app/desktop-auth.html?port=%1").arg(m_authPort));
+    QString hwid = getMachineHwid();
+    // Launch default browser to real Google OAuth landing bridge on live domain with HWID lock parameter
+    QUrl authUrl(QString("https://shadow-ai-cheat.vercel.app/desktop-auth.html?port=%1&hwid=%2").arg(m_authPort).arg(hwid));
     QDesktopServices::openUrl(authUrl);
 }
 
@@ -355,6 +365,31 @@ void AccountManager::syncAccountStatus() {
                 }
 
                 if (!isExpired) {
+                    QString boundHwid = row.value("bound_hwid").toString().trimmed().toUpper();
+                    QString currentHwid = getMachineHwid();
+
+                    if (!boundHwid.isEmpty() && !boundHwid.startsWith("ORDER") && boundHwid != currentHwid) {
+                        // Device lock mismatch! Another PC is already using this account
+                        isPro = false;
+                        AppConfig::instance().setPro(false);
+                        AppConfig::instance().save();
+                        emit accountStateChanged(true, email, false);
+                        emit licenseActivationResult(false, "❌ DEVICE LIMIT: Locked to another computer.");
+                        return;
+                    }
+
+                    // Bind to this PC on first login
+                    if (boundHwid.isEmpty() || boundHwid.startsWith("ORDER")) {
+                        QJsonObject patchBody;
+                        patchBody["bound_hwid"] = currentHwid;
+                        patchBody["last_used_at"] = QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
+                        QNetworkRequest patchReq(QUrl(m_supabaseUrl + "/rest/v1/licenses?customer_email=eq." + QUrl::toPercentEncoding(email)));
+                        patchReq.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+                        patchReq.setRawHeader("apikey", m_supabaseKey.toUtf8());
+                        patchReq.setRawHeader("Authorization", "Bearer " + m_supabaseKey.toUtf8());
+                        m_nam->sendCustomRequest(patchReq, "PATCH", QJsonDocument(patchBody).toJson());
+                    }
+
                     key = row.value("license_key").toString().trimmed().toUpper();
                     isPro = true;
                     AppConfig::instance().setProDaysLeft(daysLeft);

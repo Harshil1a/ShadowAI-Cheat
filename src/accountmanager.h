@@ -21,6 +21,7 @@ public:
     void activateLicenseKey(const QString& key);
     void syncAccountStatus();
     void fetchCloudConfig();
+    QString getMachineHwid() const;
 
 signals:
     void accountStateChanged(bool isLoggedIn, const QString& email, bool isPro);
