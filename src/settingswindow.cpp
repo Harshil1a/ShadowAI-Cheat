@@ -1628,12 +1628,15 @@ void SettingsWindow::refreshAccountTab() {
         if (isPro) {
             m_creditsStatusLabel->setText("💎 Unlimited Solves Active (PRO License)");
             m_creditsStatusLabel->setStyleSheet("font-size: 12px; font-family: monospace; color: #00ff66; font-weight: bold;");
-            if (m_watchAdSettingsBtn) m_watchAdSettingsBtn->setEnabled(false);
+            if (m_watchAdSettingsBtn) m_watchAdSettingsBtn->setVisible(false);
         } else {
             int credits = AppConfig::instance().freeCredits();
             m_creditsStatusLabel->setText(QString("🪙 Available Solve Credits: %1 Banked").arg(credits));
             m_creditsStatusLabel->setStyleSheet(credits > 0 ? "font-size: 12px; font-family: monospace; color: #00e5ff; font-weight: bold;" : "font-size: 12px; font-family: monospace; color: #ff4757; font-weight: bold;");
-            if (m_watchAdSettingsBtn) m_watchAdSettingsBtn->setEnabled(true);
+            if (m_watchAdSettingsBtn) {
+                m_watchAdSettingsBtn->setVisible(true);
+                m_watchAdSettingsBtn->setEnabled(true);
+            }
         }
     }
 
