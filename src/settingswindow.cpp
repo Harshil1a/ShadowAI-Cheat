@@ -429,7 +429,11 @@ void SettingsWindow::setupUI() {
     hkLayout->setContentsMargins(12, 12, 12, 12);
     hkLayout->setSpacing(8);
 
+#if defined(Q_OS_MAC) || defined(Q_OS_MACOS)
+    QLabel* hkTip = new QLabel("All hotkeys use Shift + Option + [Key] combination.\nClick on a key field, then press the key you want.", tabHotkeys);
+#else
     QLabel* hkTip = new QLabel("All hotkeys use Shift + Alt + [Key] combination.\nClick on a key field, then press the key you want.", tabHotkeys);
+#endif
     hkTip->setObjectName("hkTipLabel");
     hkTip->setStyleSheet("color: #00e5ff; font-style: italic; font-size: 11px;");
     hkLayout->addWidget(hkTip);
@@ -458,24 +462,32 @@ void SettingsWindow::setupUI() {
     m_hkGhostWriter = new KeyCaptureEdit(hkGroup);
     m_hkPanic       = new KeyCaptureEdit(hkGroup);
 
-    struct { const char* label; KeyCaptureEdit* edit; } rows[] = {
-        {"Shift+Alt+[?]  Show / Hide overlay",   m_hkToggle},
-        {"Shift+Alt+[?]  Take screenshot",       m_hkScreenshot},
-        {"Shift+Alt+[?]  Get AI answer",         m_hkGetAnswer},
-        {"Shift+Alt+[?]  Toggle audio recording", m_hkVoice},
-        {"Shift+Alt+[?]  All Keys Directory HUD", m_hkToggleBadges},
-        {"Shift+Alt+[?]  Hide Key Strip (clean view)", m_hkHideStrip},
-        {"Shift+Alt+[?]  Copy screenshot",       m_hkCopyScreenshot},
-        {"Shift+Alt+[?]  Ghost Writer auto-type", m_hkGhostWriter},
-        {"Ctrl+Shift+[?] Emergency Panic Kill-Switch", m_hkPanic},
-        {"Shift+Alt+[?]  Move overlay left",     m_hkMoveLeft},
-        {"Shift+Alt+[?]  Move overlay right",    m_hkMoveRight},
-        {"Shift+Alt+[?]  Move overlay up",       m_hkMoveUp},
-        {"Shift+Alt+[?]  Move overlay down",     m_hkMoveDown},
-        {"Shift+Alt+[?]  Scroll up",             m_hkScrollUp},
-        {"Shift+Alt+[?]  Scroll down",           m_hkScrollDown},
-        {"Shift+Alt+[?]  Cycle transparency",    m_hkTransparency},
-        {"Shift+Alt+[?]  Clear answer",          m_hkClear},
+#if defined(Q_OS_MAC) || defined(Q_OS_MACOS)
+    const QString pfx = "Shift+Option+";
+    const QString panicPfx = "Cmd+Shift+";
+#else
+    const QString pfx = "Shift+Alt+";
+    const QString panicPfx = "Ctrl+Shift+";
+#endif
+
+    struct { QString label; KeyCaptureEdit* edit; } rows[] = {
+        {pfx + "[?]  Show / Hide overlay",   m_hkToggle},
+        {pfx + "[?]  Take screenshot",       m_hkScreenshot},
+        {pfx + "[?]  Get AI answer",         m_hkGetAnswer},
+        {pfx + "[?]  Toggle audio recording", m_hkVoice},
+        {pfx + "[?]  All Keys Directory HUD", m_hkToggleBadges},
+        {pfx + "[?]  Hide Key Strip (clean view)", m_hkHideStrip},
+        {pfx + "[?]  Copy screenshot",       m_hkCopyScreenshot},
+        {pfx + "[?]  Ghost Writer auto-type", m_hkGhostWriter},
+        {panicPfx + "[?] Emergency Panic Kill-Switch", m_hkPanic},
+        {pfx + "[?]  Move overlay left",     m_hkMoveLeft},
+        {pfx + "[?]  Move overlay right",    m_hkMoveRight},
+        {pfx + "[?]  Move overlay up",       m_hkMoveUp},
+        {pfx + "[?]  Move overlay down",     m_hkMoveDown},
+        {pfx + "[?]  Scroll up",             m_hkScrollUp},
+        {pfx + "[?]  Scroll down",           m_hkScrollDown},
+        {pfx + "[?]  Cycle transparency",    m_hkTransparency},
+        {pfx + "[?]  Clear answer",          m_hkClear},
     };
 
     for (int i = 0; i < sizeof(rows) / sizeof(rows[0]); ++i) {

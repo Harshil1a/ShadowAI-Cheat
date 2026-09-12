@@ -68,7 +68,11 @@ TrayIcon::TrayIcon(QObject* parent)
     )");
 
     m_dashboardAction = m_menu->addAction("▣  Show Dashboard");
+#if defined(Q_OS_MAC) || defined(Q_OS_MACOS)
+    m_toggleAction    = m_menu->addAction("⊡  Toggle Overlay  (Shift+Option+H)");
+#else
     m_toggleAction    = m_menu->addAction("⊡  Toggle Overlay  (Shift+Alt+H)");
+#endif
     m_menu->addSeparator();
     m_settingsAction  = m_menu->addAction("⚙  Settings");
     m_menu->addSeparator();
