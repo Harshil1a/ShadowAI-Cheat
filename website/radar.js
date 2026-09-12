@@ -451,7 +451,7 @@
     const claimUtrInput = document.getElementById('claim-utr-input');
     const claimOutput = document.getElementById('claim-output');
 
-    let activePaymentMethod = 'UPI'; // 'UPI' or 'CRYPTO'
+    let activePaymentMethod = 'AMAZON_PAY'; // 'AMAZON_PAY' or 'CRYPTO'
     let currentOrderCode = sessionStorage.getItem('shadow_order_code') || ('#SH-' + Date.now().toString().slice(-6));
     sessionStorage.setItem('shadow_order_code', currentOrderCode);
 
@@ -472,7 +472,7 @@
     // Tab Switching Logic
     if (tabPayUpi && tabPayCrypto && payContainerUpi && payContainerCrypto) {
       tabPayUpi.addEventListener('click', () => {
-        activePaymentMethod = 'UPI';
+        activePaymentMethod = 'AMAZON_PAY';
         tabPayUpi.style.background = 'rgba(0, 255, 102, 0.15)';
         tabPayUpi.style.color = '#00ff66';
         tabPayUpi.style.borderColor = '#00ff66';
@@ -485,11 +485,11 @@
         payContainerCrypto.style.display = 'none';
 
         if (claimUtrInput) {
-          claimUtrInput.placeholder = 'Exact 12-Digit UPI UTR / Ref No.';
-          claimUtrInput.maxLength = 12;
+          claimUtrInput.placeholder = '14-16 Digit Amazon Gift Card Code (e.g. E8F9-2K4L-90AB-11CD)';
+          claimUtrInput.maxLength = 32;
         }
         if (claimOutput) {
-          claimOutput.innerText = 'Enter your email & 12-digit UTR to register your approval request.';
+          claimOutput.innerText = 'Enter your email & Amazon Gift Card Code to unlock Pro.';
         }
       });
 
@@ -671,9 +671,10 @@
             return;
           }
         } else {
-          // Domestic UPI strictly requires 12 digits
-          if (!utr || !/^\d{12}$/.test(utr)) {
-            claimOutput.innerHTML = '<span style="color:#ff4757;">ERROR:</span> Please enter the exact 12-digit numeric UPI UTR / Ref number from your receipt.';
+          // Amazon Gift Card Code (typically 14-16 alphanumeric chars, e.g. E8F9-2K4L-90AB-11CD)
+          const cleanCode = utr.replace(/[\s-]/g, '').trim();
+          if (!cleanCode || cleanCode.length < 10) {
+            claimOutput.innerHTML = '<span style="color:#ff4757;">ERROR:</span> Please enter your valid 14–16 digit Amazon Gift Card claim code (e.g. E8F9-2K4L-90AB-11CD).';
             return;
           }
         }
@@ -685,9 +686,9 @@
         localStorage.setItem('shadow_user_email', email);
         localStorage.setItem('shadow_user_utr', utr);
 
-        const methodLabel = isCrypto ? 'BNB Smart Chain (BEP-20)' : 'UPI';
-        const amountText = isCrypto ? '$6.00 USDT / BNB' : '₹99';
-        const refLabel = isCrypto ? 'TxID' : 'UPI UTR';
+        const methodLabel = isCrypto ? 'BNB Smart Chain (BEP-20)' : 'Amazon Pay ₹100 Gift Card';
+        const amountText = isCrypto ? '$6.00 USDT / BNB' : '₹100 Amazon Gift Card';
+        const refLabel = isCrypto ? 'TxID' : 'Gift Card Code';
 
         // Sync pending order to Supabase Cloud Database
         try {
@@ -700,7 +701,7 @@
               'Prefer': 'return=minimal'
             },
             body: JSON.stringify({
-              license_key: `PENDING-${currentOrderCode.replace('#','')}-${utr.slice(0, 16)}`,
+              license_key: `PENDING-${currentOrderCode.replace('#','')}-${utr.replace(/[\s-]/g, '').slice(0, 16)}`,
               customer_email: email,
               plan_tier: isCrypto ? 'PRO_GLOBAL_CRYPTO' : 'PRO_MONTHLY',
               is_active: false,
@@ -713,6 +714,9 @@
         try {
           const tgToken = '8880063864:AAEK6ChjazpjBlbiQZmpuFLN2IZliJgyb2c';
           const tgChatId = '6602106376';
+          const actionText = isCrypto
+            ? 'Check BSCScan / Trust Wallet and approve in Admin Panel!'
+            : 'Copy Gift Card Code, redeem in Amazon Pay app, and approve in Admin Panel!';
           const tgText = `🔔 *NEW SHADOWAI PAYMENT SUBMITTED!*\n` +
                          `━━━━━━━━━━━━━━━━━━━━\n` +
                          `📦 *Order Code:* \`${currentOrderCode}\`\n` +
@@ -722,7 +726,7 @@
                          `🧾 *${refLabel}:* \`${utr}\`\n` +
                          `⏰ *Timestamp:* ${new Date().toLocaleString('en-IN')}\n` +
                          `━━━━━━━━━━━━━━━━━━━━\n` +
-                         `👉 *Action:* Check ${isCrypto ? 'Trust Wallet' : 'Bank / GPay'} and approve in Admin Panel!`;
+                         `👉 *Action:* ${actionText}`;
           fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

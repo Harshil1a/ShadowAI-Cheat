@@ -630,7 +630,7 @@
             <li><span class="check">🪙</span> <strong>Rewarded Solves Vault</strong> — Bank solves ahead of timed exams</li>
             <li><span class="check">✓</span> <strong>Zero API Keys Needed</strong> — Auto-unlocks to your PC Hardware ID</li>
             <li><span class="check">✓</span> <strong>BYOK Supported</strong> — Connect your own Google Gemini 2.5 Flash key</li>
-            <li><span class="check">✓</span> 10 Switchable Custom Key Slots in Settings</li>
+            <li><span class="check">✓</span> <strong>10 Switchable Key Slots with Auto-Rotation</strong> — Never hits 429 limits</li>
             <li><span class="check">✓</span> Full Undetectable DWM Vision &amp; Stealth GhostWriter</li>
           </ul>
 
@@ -1021,7 +1021,7 @@
         <div style="display: flex; gap: 8px; margin-bottom: 16px;">
           <button id="tab-pay-upi" type="button"
             style="flex: 1; padding: 10px; font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 700; background: rgba(0, 255, 102, 0.15); color: #00ff66; border: 1px solid #00ff66; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
-            🇮🇳 INDIA: UPI (₹99)
+            🇮🇳 INDIA: AMAZON PAY (₹100)
           </button>
           <button id="tab-pay-crypto" type="button"
             style="flex: 1; padding: 10px; font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 700; background: rgba(0, 229, 255, 0.05); color: #7ca88e; border: 1px solid rgba(0, 229, 255, 0.2); border-radius: 6px; cursor: pointer; transition: all 0.2s;">
@@ -1049,38 +1049,39 @@
             1-CLICK PRO</span>
         </div>
 
-        <!-- 🇮🇳 TAB 1 CONTAINER: UPI (INDIA) -->
+        <!-- 🇮🇳 TAB 1 CONTAINER: AMAZON PAY (INDIA) -->
         <div id="pay-container-upi">
           <div class="upi-pricing-badge">
             <span class="plan-tag">SHADOW CLOUD PRO (INDIA)</span>
-            <span class="price-val">₹99 <small>/ MONTH (OR ONE-TIME)</small></span>
+            <span class="price-val">₹100 <small>/ AMAZON PAY e-GIFT CARD</small></span>
           </div>
 
-          <p class="upi-desc">Scan the QR code below with any UPI app (<strong>PhonePe, Google Pay, Paytm, BHIM,
-              CRED</strong>) to pay ₹99 directly:</p>
+          <p class="upi-desc">Scan the QR code below or tap the button to purchase an official <strong>₹100 Amazon Pay e-Gift Card</strong> (Pay with any <strong>UPI, Debit Card, Credit Card, or NetBanking</strong> on Amazon):</p>
 
-          <!-- Dynamic QR Frame -->
+          <!-- Dynamic QR Frame to Amazon India -->
           <div class="upi-qr-wrapper">
             <div class="qr-glow-frame">
-              <img
-                src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=upi://pay?pa=harshilthakur82@oksbi%26pn=ShadowAI%20Pro%26am=99%26cu=INR%26tn=ShadowAI%20Pro%20License&color=00ff66&bgcolor=030508"
-                alt="UPI QR Code - Scan to Pay ₹99" class="upi-qr-img">
+              <a href="https://www.amazon.in/gp/product/B00KGE2EYC?amt=100" target="_blank" rel="noopener">
+                <img
+                  src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=https://www.amazon.in/gp/product/B00KGE2EYC?amt=100&color=00ff66&bgcolor=030508"
+                  alt="Scan to Buy ₹100 Amazon Pay Gift Card" class="upi-qr-img">
+              </a>
             </div>
           </div>
 
-          <!-- Mobile Direct Tap -->
+          <!-- Mobile Direct Tap to Amazon -->
           <div class="upi-mobile-tap">
-            <a href="upi://pay?pa=harshilthakur82@oksbi&pn=ShadowAI%20Pro&am=99&cu=INR&tn=ShadowAI%20Pro%20License"
+            <a href="https://www.amazon.in/gp/product/B00KGE2EYC?amt=100" target="_blank" rel="noopener"
               class="btn-upi-intent">
-              <span>⚡ TAP TO PAY ON MOBILE (GPAY / PHONEPE / PAYTM)</span>
+              <span>⚡ BUY ₹100 GIFT CARD ON AMAZON ⯈</span>
             </a>
           </div>
 
-          <!-- Copy UPI ID -->
-          <div class="upi-id-box">
-            <span class="upi-label">UPI ID:</span>
-            <span class="upi-address" id="upi-vpa">harshilthakur82@oksbi</span>
-            <button class="btn-copy-upi" id="btn-copy-upi" type="button">COPY</button>
+          <div style="background: rgba(0, 229, 255, 0.08); border: 1px solid rgba(0, 229, 255, 0.3); border-radius: 6px; padding: 12px 14px; margin-top: 14px; font-size: 11px; line-height: 1.6; color: #e2fced; text-align: left;">
+            <strong style="color: #00e5ff; font-family: 'Orbitron', monospace; font-size: 11px;">⚡ QUICK 3-STEP INSTRUCTIONS:</strong><br>
+            1. Scan QR or tap the button to open Amazon India (₹100 is pre-selected).<br>
+            2. Complete payment on Amazon using UPI (GPay/PhonePe) or Card.<br>
+            3. Copy the <strong>14–16 digit Gift Card Code</strong> Amazon gives you (e.g. <code>E8F9-2K4L-90AB-11CD</code>) and paste it below!
           </div>
         </div>
 
@@ -1129,24 +1130,23 @@
 
         <div class="upi-divider"></div>
 
-        <!-- Step 2: Instant Email & UTR/TxID Verification -->
+        <!-- Step 2: Instant Email & Gift Card / TxID Verification -->
         <div class="upi-claim-box" id="upi-claim-section">
-          <span class="claim-title" id="claim-step-title">// STEP 2: SUBMIT PAYMENT DETAILS (AUTO-VERIFIED)</span>
+          <span class="claim-title" id="claim-step-title">// STEP 2: ENTER YOUR AMAZON GIFT CARD CODE OR CRYPTO TXID</span>
 
           <div
             style="background: rgba(0, 229, 255, 0.05); border: 1px solid rgba(0, 229, 255, 0.2); border-radius: 6px; padding: 10px 14px; margin-bottom: 14px; text-align: center; font-size: 11px; color: #7ca88e;">
-            <span>Need help or have a payment issue? Email us: </span>
-            <a href="mailto:harshilthakur82@gmail.com"
-              style="color: #00e5ff; font-weight: bold; text-decoration: underline;">harshilthakur82@gmail.com</a>
+            <span>Need help or have a question? Contact support: </span>
+            <a href="mailto:support@shadow-ai-cheat.com"
+              style="color: #00e5ff; font-weight: bold; text-decoration: underline;">support@shadow-ai-cheat.com</a>
           </div>
 
           <div class="claim-input-group" id="claim-inputs-container">
-            <input type="text" id="claim-utr-input" placeholder="Exact 12-Digit UPI UTR / Ref No." maxlength="12"
-              autocomplete="off">
+            <input type="text" id="claim-utr-input" placeholder="14-16 Digit Amazon Gift Card Code (or Crypto TxID)" required autocomplete="off">
             <input type="email" id="claim-email-input" placeholder="your-email@gmail.com" required autocomplete="off">
-            <button class="btn-terminal-sm" id="btn-claim-license" type="button">SUBMIT_PAYMENT ⯈</button>
+            <button class="btn-terminal-sm" id="btn-claim-license" type="button">CLAIM &amp; UNLOCK PRO ⯈</button>
           </div>
-          <div class="claim-output" id="claim-output">Enter your email & 12-digit UTR to register your approval request.
+          <div class="claim-output" id="claim-output">Enter your email &amp; Amazon Gift Card Code to register your Pro unlock.
           </div>
         </div>
 
@@ -1259,8 +1259,8 @@
             👤</div>
         </div>
         <h3 id="user-profile-name" style="font-family:'Orbitron';color:#e2fced;margin-bottom:4px;font-size:18px;">
-          HARSHIL THAKUR</h3>
-        <p id="user-profile-email" style="color:#7ca88e;font-size:12px;margin-bottom:16px;">harshilthakur82@gmail.com
+          VERIFIED OPERATOR</h3>
+        <p id="user-profile-email" style="color:#7ca88e;font-size:12px;margin-bottom:16px;">operator@shadow-ai.com
         </p>
 
         <div
