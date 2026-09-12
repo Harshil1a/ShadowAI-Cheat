@@ -982,7 +982,7 @@
             let orderCode = '#N/A';
             let utr = 'N/A';
             let isCrypto = (item.plan_tier === 'PRO_GLOBAL_CRYPTO');
-            let method = isCrypto ? '🌍 CRYPTO ($6.00)' : '🇮🇳 UPI (₹99)';
+            let method = isCrypto ? '🌍 CRYPTO ($6.00)' : '🇮🇳 Amazon Pay (₹100)';
 
             if (item.bound_hwid) {
               const parts = item.bound_hwid.split('|');
@@ -992,6 +992,7 @@
                 else if (s.startsWith('Method:')) method = s.replace('Method:', '').trim();
                 else if (s.startsWith('UTR:')) utr = s.replace('UTR:', '').trim();
                 else if (s.startsWith('UPI UTR:')) utr = s.replace('UPI UTR:', '').trim();
+                else if (s.startsWith('Gift Card Code:')) utr = s.replace('Gift Card Code:', '').trim();
                 else if (s.startsWith('TxID:')) {
                   utr = s.replace('TxID:', '').trim();
                   isCrypto = true;
@@ -1010,7 +1011,7 @@
 
             const methodBadge = isCrypto
               ? `<span style="font-size:10px;color:#00e5ff;background:rgba(0,229,255,0.12);border:1px solid rgba(0,229,255,0.4);padding:3px 6px;border-radius:3px;font-weight:700;">🌍 BNB ($6.00)</span>`
-              : `<span style="font-size:10px;color:#00ff66;background:rgba(0,255,102,0.12);border:1px solid rgba(0,255,102,0.4);padding:3px 6px;border-radius:3px;font-weight:700;">🇮🇳 UPI (₹99)</span>`;
+              : `<span style="font-size:10px;color:#00ff66;background:rgba(0,255,102,0.12);border:1px solid rgba(0,255,102,0.4);padding:3px 6px;border-radius:3px;font-weight:700;">🇮🇳 Amazon Pay (₹100)</span>`;
 
             return `
               <tr style="background: rgba(0, 229, 255, 0.04);">
