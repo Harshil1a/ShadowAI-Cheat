@@ -79,15 +79,11 @@ private:
     static QString markdownToHtml(const QString& text);
     static QString stripThinkTags(const QString& text);
     static QString extractCodeBlock(const QString& fullText, bool smartIndent);
-    void buildAllKeysHUD();
 
     // UI elements
     QWidget*        m_container;
-    QWidget*        m_thumbGallery; // New: Container for multiple thumbs
-    QStackedWidget* m_contentStack = nullptr;
+    QWidget*        m_thumbGallery; // Container for multiple thumbs
     QTextBrowser*   m_answerDisplay;
-    QWidget*        m_allKeysHUD = nullptr;
-    QVBoxLayout*    m_allKeysLayout = nullptr;
     QLabel*         m_statusLabel;
     QLabel*         m_creditsBadge = nullptr;
     void            updateCreditsBadge();
@@ -96,7 +92,6 @@ private:
     QWidget*      m_helpGroupsContainer;
     QFrame*       m_group1 = nullptr;
     QFrame*       m_group2 = nullptr;
-    int           m_shuffleMode = 0;
     QLabel*       m_bottomHintLabel;
     QFrame*       m_divider;
 

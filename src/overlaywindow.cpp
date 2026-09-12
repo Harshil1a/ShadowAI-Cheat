@@ -389,25 +389,12 @@ void OverlayWindow::setupUI() {
     m_divider->setFrameShape(QFrame::HLine);
     m_divider->setObjectName("divider");
 
-    // ── ANSWER DISPLAY & ALL KEYS HUD STACK ───────────────────────────────
-    m_contentStack = new QStackedWidget;
-    m_contentStack->setObjectName("contentStack");
-
+    // ── ANSWER DISPLAY ───────────────────────────────────────────────────
     m_answerDisplay = new QTextBrowser;
     m_answerDisplay->setObjectName("answerDisplay");
     m_answerDisplay->setOpenExternalLinks(false);
     m_answerDisplay->setReadOnly(true);
     m_answerDisplay->installEventFilter(this);
-
-    m_allKeysHUD = new QWidget;
-    m_allKeysHUD->setObjectName("allKeysHUD");
-    m_allKeysLayout = new QVBoxLayout(m_allKeysHUD);
-    m_allKeysLayout->setContentsMargins(6, 6, 6, 6);
-    m_allKeysLayout->setSpacing(4);
-
-    m_contentStack->addWidget(m_answerDisplay); // Index 0
-    m_contentStack->addWidget(m_allKeysHUD);     // Index 1
-    m_contentStack->setCurrentIndex(0);
 
     // ── HOTKEY CONTROLS ──────────────────────────────────────────────────
     m_controlsPanel = new QWidget;
@@ -455,24 +442,23 @@ void OverlayWindow::setupUI() {
         return w;
     };
 
-    m_group1 = makeGroup("Core Controls");
+    m_group1 = makeGroup("Overlay & View Controls");
     m_keysLayout1 = m_group1->findChild<QHBoxLayout*>("keysLayout");
 
-    m_group2 = makeGroup("Extra Tools");
+    m_group2 = makeGroup("Interaction & Emergency Controls");
     m_keysLayout2 = m_group2->findChild<QHBoxLayout*>("keysLayout");
-    m_group2->setVisible(false); // Mode 0 (Core) active by default
 
     // Container for helper groups so they can be hidden together
     m_helpGroupsContainer = new QWidget;
     m_helpGroupsContainer->setObjectName("helpGroupsContainer");
     QVBoxLayout* hgLayout = new QVBoxLayout(m_helpGroupsContainer);
     hgLayout->setContentsMargins(0, 0, 0, 0);
-    hgLayout->setSpacing(0);
+    hgLayout->setSpacing(5);
     hgLayout->addWidget(m_group1);
     hgLayout->addWidget(m_group2);
 
     // Label that remains visible when badges are hidden
-    m_bottomHintLabel = new QLabel("[Shift+Alt+B] All Keys Directory");
+    m_bottomHintLabel = new QLabel;
     m_bottomHintLabel->setObjectName("bottomHintLabel");
     m_bottomHintLabel->setAlignment(Qt::AlignCenter);
     m_bottomHintLabel->setVisible(false); // Hidden by default
@@ -485,7 +471,7 @@ void OverlayWindow::setupUI() {
     mainLayout->addWidget(topBar);
     mainLayout->addWidget(m_screenshotFrame);
     mainLayout->addWidget(m_divider);
-    mainLayout->addWidget(m_contentStack, 1);
+    mainLayout->addWidget(m_answerDisplay, 1);
     mainLayout->addWidget(m_controlsPanel);
 }
 
@@ -630,88 +616,6 @@ void OverlayWindow::applyGlassStyle() {
             font-family: "Segoe UI", sans-serif;
             font-size: 9px;
             font-weight: 600;
-        }
-
-        /* ═══ ALL KEYS DIRECTORY HUD ═══ */
-        QWidget#allKeysHUD {
-            background: rgba(14, 14, 20, 220);
-            border: 1px solid rgba(0, 229, 255, 0.25);
-            border-radius: 8px;
-        }
-
-        QLabel#hudHeader {
-            color: #00e5ff;
-            font-family: "Segoe UI", -apple-system, sans-serif;
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: 1.5px;
-            padding: 2px 0;
-            background: transparent;
-        }
-
-        QScrollArea#hudScrollArea {
-            background: transparent;
-            border: none;
-        }
-
-        .hudCategoryCard {
-            background: rgba(18, 22, 32, 200);
-            border: 1px solid rgba(0, 229, 255, 0.18);
-            border-radius: 6px;
-        }
-
-        .hudCategoryTitle {
-            color: #00e5ff;
-            font-family: "Segoe UI", sans-serif;
-            font-size: 10px;
-            font-weight: 800;
-            letter-spacing: 1px;
-            margin-bottom: 2px;
-        }
-
-        .hudBadge {
-            background: rgba(0, 229, 255, 0.14);
-            color: #ffffff;
-            border: 1px solid rgba(0, 229, 255, 0.40);
-            border-radius: 4px;
-            padding: 2px 6px;
-            font-family: "Consolas", monospace;
-            font-size: 9px;
-            font-weight: bold;
-        }
-
-        .hudBadgeDanger {
-            background: rgba(255, 60, 60, 0.22);
-            color: #ff6b6b;
-            border: 1px solid #ff4444;
-            border-radius: 4px;
-            padding: 2px 6px;
-            font-family: "Consolas", monospace;
-            font-size: 9px;
-            font-weight: bold;
-        }
-
-        .hudAction {
-            color: #d0e4f5;
-            font-family: "Segoe UI", sans-serif;
-            font-size: 10px;
-            font-weight: 500;
-        }
-
-        .hudActionDanger {
-            color: #ff8b8b;
-            font-family: "Segoe UI", sans-serif;
-            font-size: 10px;
-            font-weight: bold;
-        }
-
-        QLabel#hudFooter {
-            color: #00e5ff;
-            font-family: "Consolas", monospace;
-            font-size: 10px;
-            font-weight: bold;
-            padding: 2px 0;
-            background: transparent;
         }
 
         /* ═══ BOTTOM HELP HINT ═══ */
@@ -891,9 +795,6 @@ void OverlayWindow::doGetAnswer() {
         return;
     }
     showStatusMessage(QString("Sending %1 images to AI...").arg(m_screenshots.size()));
-    if (m_contentStack) {
-        m_contentStack->setCurrentIndex(0);
-    }
     m_answerDisplay->clear();
     m_ai->askWithImages(m_screenshots);
 }
@@ -924,9 +825,6 @@ void OverlayWindow::cycleTransparency() {
 void OverlayWindow::clearAll() {
     if (m_ghostWriterWorker) {
         m_ghostWriterWorker->requestStop();
-    }
-    if (m_contentStack) {
-        m_contentStack->setCurrentIndex(0);
     }
     m_answerDisplay->clear();
     m_screenshots.clear();
@@ -972,109 +870,6 @@ static QString vkToKeyName(int vk) {
         case 0x28: return "Down";
         default:   return QString("0x%1").arg(vk, 2, 16, QChar('0')).toUpper();
     }
-}
-
-void OverlayWindow::buildAllKeysHUD() {
-    if (!m_allKeysHUD || !m_allKeysLayout) return;
-
-    // Clear previous items in m_allKeysLayout
-    QLayoutItem* item;
-    while ((item = m_allKeysLayout->takeAt(0)) != nullptr) {
-        if (item->widget()) item->widget()->deleteLater();
-        delete item;
-    }
-
-    auto& cfg = AppConfig::instance();
-
-    QLabel* header = new QLabel(QString::fromUtf8("◈ SHADOW_AI // SHORTCUTS DIRECTORY"));
-    header->setObjectName("hudHeader");
-    header->setAlignment(Qt::AlignCenter);
-    m_allKeysLayout->addWidget(header);
-
-    // ZERO SCROLLING: Symmetrical, compact 2x2 grid fitting 100% in single view
-    QGridLayout* gridLayout = new QGridLayout;
-    gridLayout->setContentsMargins(4, 2, 4, 2);
-    gridLayout->setSpacing(6);
-
-    auto makeCategoryCard = [](const QString& title, const QList<QPair<QString, QString>>& items, bool isEmergency = false) -> QWidget* {
-        QFrame* card = new QFrame;
-        card->setProperty("class", "hudCategoryCard");
-        QVBoxLayout* cl = new QVBoxLayout(card);
-        cl->setContentsMargins(8, 6, 8, 6);
-        cl->setSpacing(3);
-
-        QLabel* tLbl = new QLabel(title);
-        tLbl->setProperty("class", "hudCategoryTitle");
-        if (isEmergency) {
-            tLbl->setStyleSheet("color: #ff6b6b; font-weight: bold; font-family: 'Segoe UI', sans-serif; font-size: 12px;");
-        } else {
-            tLbl->setStyleSheet("font-weight: bold; font-family: 'Segoe UI', sans-serif; font-size: 12px; color: #a8edea;");
-        }
-        cl->addWidget(tLbl);
-
-        for (const auto& pair : items) {
-            QWidget* row = new QWidget;
-            QHBoxLayout* rl = new QHBoxLayout(row);
-            rl->setContentsMargins(0, 1, 0, 1);
-            rl->setSpacing(6);
-
-            QLabel* kBadge = new QLabel(pair.first);
-            kBadge->setProperty("class", isEmergency ? "hudBadgeDanger" : "hudBadge");
-            kBadge->setAlignment(Qt::AlignCenter);
-            kBadge->setMinimumWidth(120);
-            kBadge->setStyleSheet(kBadge->styleSheet() + "font-size: 11px;");
-
-            QLabel* aLbl = new QLabel(pair.second);
-            aLbl->setProperty("class", isEmergency ? "hudActionDanger" : "hudAction");
-            aLbl->setStyleSheet("font-size: 11px;");
-
-            rl->addWidget(kBadge);
-            rl->addWidget(aLbl, 1);
-            cl->addWidget(row);
-        }
-        return card;
-    };
-
-    // 1. AI & Capture (Row 0, Col 0)
-    QList<QPair<QString, QString>> aiItems = {
-        {"Shift+Alt+" + vkToKeyName(cfg.hotkeyScreenshot()), "Capture Screen Selection"},
-        {"Shift+Alt+" + vkToKeyName(cfg.hotkeyGetAnswer()), "Snap & Solve (AI Solution)"},
-        {"Shift+Alt+" + vkToKeyName(cfg.hotkeyVoice()), "Microphone Voice Input"},
-        {"Shift+Alt+" + vkToKeyName(cfg.hotkeyGhostWriter()), "Auto-Type Ghost Writer"},
-        {"Shift+Alt+" + vkToKeyName(cfg.hotkeyCopyScreenshot()), "Copy Last Screen Snapshot"}
-    };
-    gridLayout->addWidget(makeCategoryCard("📸 AI & CAPTURE CONTROLS", aiItems), 0, 0);
-
-    // 2. View & Stealth (Row 0, Col 1)
-    QList<QPair<QString, QString>> viewItems = {
-        {"Shift+Alt+" + vkToKeyName(cfg.hotkeyToggle()), "Show / Hide Overlay Window"},
-        {"Shift+Alt+" + vkToKeyName(cfg.hotkeyTransparency()), "Cycle Transparency (9 Presets)"},
-        {"Shift+Alt+" + vkToKeyName(cfg.hotkeyClear()), "Clear Output & Chat History"},
-        {"Shift+Alt+" + vkToKeyName(cfg.hotkeyToggleBadges()), "Toggle All Keys Directory HUD"}
-    };
-    gridLayout->addWidget(makeCategoryCard("🪟 OVERLAY & STEALTH CONTROLS", viewItems), 0, 1);
-
-    // 3. Navigation & Movement (Row 1, Col 0)
-    QList<QPair<QString, QString>> navItems = {
-        {"Shift+Alt+" + vkToKeyName(cfg.hotkeyMoveLeft()) + "/" + vkToKeyName(cfg.hotkeyMoveRight()), "Nudge Window Left / Right"},
-        {"Shift+Alt+" + vkToKeyName(cfg.hotkeyMoveUp()) + "/" + vkToKeyName(cfg.hotkeyMoveDown()), "Nudge Window Up / Down"},
-        {"Shift+Alt+" + vkToKeyName(cfg.hotkeyScrollUp()) + "/" + vkToKeyName(cfg.hotkeyScrollDown()), "Scroll Answer Output Up / Down"}
-    };
-    gridLayout->addWidget(makeCategoryCard("🧭 NAVIGATION & MOVEMENT", navItems), 1, 0);
-
-    // 4. Emergency (Row 1, Col 1) — no duplicate, just panic info
-    QList<QPair<QString, QString>> emergItems = {
-        {"Ctrl+Shift+" + vkToKeyName(cfg.hotkeyPanic()), "PANIC KILL (Wipe Process & Clipboard)"},
-        {"Shift+Alt+" + vkToKeyName(cfg.hotkeyHideStrip()), "Hide Key Strip (Clean Answer View)"}
-    };
-    gridLayout->addWidget(makeCategoryCard("🚨 EMERGENCY & CONTROLS", emergItems, true), 1, 1);
-
-    m_allKeysLayout->addLayout(gridLayout, 1);
-
-    QLabel* footer = new QLabel(QString("[Shift+Alt+%1] Press hotkey again to return to AI answer").arg(vkToKeyName(cfg.hotkeyToggleBadges())));
-    footer->setObjectName("hudFooter");
-    footer->setAlignment(Qt::AlignCenter);
-    m_allKeysLayout->addWidget(footer);
 }
 
 void OverlayWindow::refreshKeyBadges() {
@@ -1124,31 +919,27 @@ void OverlayWindow::refreshKeyBadges() {
 
     QString scrollKeys = "Shift+Alt+" + vkToKeyName(cfg.hotkeyScrollUp()) + "/" + vkToKeyName(cfg.hotkeyScrollDown());
 
-    // Mode 0: Core Keys (Answer & Scroll seen FIRST!)
+    // Row 1: Core Navigation & Solution (Snap & Solve + Scroll Ans seen first!)
     m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyGetAnswer()), "Snap & Solve"));
     m_keysLayout1->addWidget(makeKey(scrollKeys, "Scroll Ans"));
     m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyScreenshot()), "Screenshot"));
     m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyClear()), "Clear"));
-    m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyToggleBadges()), "Shuffle ☰"));
+    m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyToggle()), "Hide/Show"));
+    m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyToggleBadges()), "Toggle Keys"));
 
-    // Mode 1: Extra Tools
-    if (m_keysLayout2) {
-        m_keysLayout2->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyGhostWriter()), "Auto-Type"));
-        m_keysLayout2->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyVoice()), "Voice Rec"));
-        m_keysLayout2->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyToggle()), "Hide/Show"));
-        m_keysLayout2->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyTransparency()), "Transparency"));
-        m_keysLayout2->addWidget(makeKey("Ctrl+Shift+" + vkToKeyName(cfg.hotkeyPanic()), "Panic Kill"));
-        m_keysLayout2->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyToggleBadges()), "Shuffle ☰"));
-    }
+    // Row 2: Interaction & Emergency Controls
+    m_keysLayout2->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyGhostWriter()), "Auto-Type"));
+    m_keysLayout2->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyVoice()), "Voice Rec"));
+    m_keysLayout2->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyTransparency()), "Transparency"));
+    m_keysLayout2->addWidget(makeKey("Shift+Alt+Arrows", "Move Window"));
+    m_keysLayout2->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyCopyScreenshot()), "Copy Shot"));
+    m_keysLayout2->addWidget(makeKey("Ctrl+Shift+" + vkToKeyName(cfg.hotkeyPanic()), "Panic Kill", true));
 
     if (m_bottomHintLabel) {
-        m_bottomHintLabel->setText(QString("[Shift+Alt+%1] Shuffle Options  |  [Shift+Alt+%2] Hide Keys")
+        m_bottomHintLabel->setText(QString("[Shift+Alt+%1] Show Key Badges  |  [Shift+Alt+%2] Clean View")
             .arg(vkToKeyName(cfg.hotkeyToggleBadges()))
             .arg(vkToKeyName(cfg.hotkeyHideStrip())));
     }
-
-    // Dynamically rebuild the All Keys HUD to reflect updated keys
-    buildAllKeysHUD();
 
     // Dynamically update placeholder text in answer display
     if (m_answerDisplay) {
@@ -1159,11 +950,13 @@ void OverlayWindow::refreshKeyBadges() {
                     "  %2  →  Scroll Answer Up / Down\n"
                     "  Shift+Alt+%3  →  Capture Screenshot\n"
                     "  Shift+Alt+%4  →  Clear Chat Output\n"
-                    "  Shift+Alt+%5  →  Shuffle Options ☰ (Cycle Tools)")
+                    "  Shift+Alt+%5  →  Hide / Show Overlay\n"
+                    "  Shift+Alt+%6  →  Toggle Key Badges (Collapse / Expand)")
                 .arg(vkToKeyName(cfg.hotkeyGetAnswer()))
                 .arg(scrollKeys)
                 .arg(vkToKeyName(cfg.hotkeyScreenshot()))
                 .arg(vkToKeyName(cfg.hotkeyClear()))
+                .arg(vkToKeyName(cfg.hotkeyToggle()))
                 .arg(vkToKeyName(cfg.hotkeyToggleBadges()))
         );
     }
@@ -1673,44 +1466,19 @@ void OverlayWindow::onRecordingFinished(const QString& filePath) {
 }
 
 void OverlayWindow::toggleBadgesVisibility() {
-    m_shuffleMode = (m_shuffleMode + 1) % 3;
-    if (m_shuffleMode == 0) {
-        // Mode 0: Core Controls (Snap & Solve, Scroll Ans, Screenshot, Clear, Shuffle)
-        if (m_contentStack) m_contentStack->setCurrentIndex(0);
-        if (m_helpGroupsContainer) m_helpGroupsContainer->setVisible(true);
-        if (m_group1) m_group1->setVisible(true);
-        if (m_group2) m_group2->setVisible(false);
-        if (m_bottomHintLabel) m_bottomHintLabel->setVisible(true);
-        showStatusMessage("Core Controls (Snap & Scroll)");
-    } else if (m_shuffleMode == 1) {
-        // Mode 1: Extra Tools (Auto-Type, Voice Rec, Hide/Show, Transparency, Panic Kill, Shuffle)
-        if (m_contentStack) m_contentStack->setCurrentIndex(0);
-        if (m_helpGroupsContainer) m_helpGroupsContainer->setVisible(true);
-        if (m_group1) m_group1->setVisible(false);
-        if (m_group2) m_group2->setVisible(true);
-        if (m_bottomHintLabel) m_bottomHintLabel->setVisible(true);
-        showStatusMessage("Extra Tools (Ghost, Voice, Panic)");
-    } else {
-        // Mode 2: Full 4-Quadrant Directory HUD
-        if (m_contentStack) m_contentStack->setCurrentIndex(1);
-        if (m_helpGroupsContainer) m_helpGroupsContainer->setVisible(false);
-        if (m_bottomHintLabel) m_bottomHintLabel->setVisible(false);
-        showStatusMessage("All Keys Directory Active");
+    if (m_helpGroupsContainer && m_bottomHintLabel) {
+        bool currentlyVisible = m_helpGroupsContainer->isVisible();
+        m_helpGroupsContainer->setVisible(!currentlyVisible);
+        m_bottomHintLabel->setVisible(currentlyVisible);
+        if (m_screenshotFrame) m_screenshotFrame->setVisible(!currentlyVisible);
+        if (m_divider) m_divider->setVisible(!currentlyVisible);
+        showStatusMessage(currentlyVisible ? "View collapsed" : "View expanded");
+        update();
     }
-    update();
 }
 
-
 void OverlayWindow::toggleHideStrip() {
-    // Shift+Alt+L: hide the key badge strip so ONLY the AI answer is visible
-    // Press again to bring badges back
-    if (!m_helpGroupsContainer) return;
-    bool isCurrentlyVisible = m_helpGroupsContainer->isVisible();
-    m_helpGroupsContainer->setVisible(!isCurrentlyVisible);
-    if (m_bottomHintLabel)
-        m_bottomHintLabel->setVisible(!isCurrentlyVisible);
-    showStatusMessage(isCurrentlyVisible ? "Keys hidden — clean view" : "Keys restored");
-    update();
+    toggleBadgesVisibility();
 }
 
 void OverlayWindow::copyScreenshotToClipboard() {
