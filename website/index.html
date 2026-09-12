@@ -87,7 +87,7 @@
       <img src="favicon.svg" alt="Shadow AI Tactical Emblem" class="brand-logo-emblem">
       <div class="status-blip active"></div>
       <span class="brand-glitch" data-text="SHADOW_AI">SHADOW_AI</span>
-      <span class="hud-badge">// v2.4.0-STEALTH</span>
+      <span class="hud-badge">// v2.4.1-STEALTH</span>
     </div>
 
     <div class="hud-telemetry-cluster">
@@ -451,10 +451,11 @@
               <div class="card-os-badge win">WINDOWS 10 / 11 (x64)</div>
               <div class="card-icon">🪟</div>
               <h3>ShadowAI for Windows</h3>
-              <p class="card-meta">Version 2.4.0 • Standalone Installer / Portable • SHA-256 Verified</p>
+              <p class="card-meta">Version 2.4.1 • Standalone Installer / Portable • SHA-256 Verified</p>
               <ul class="feature-bullets">
                 <li>✓ DXGI / DWM Hardware Stealth Capture</li>
-                <li>✓ Global Stealth Hotkeys (Ctrl+Alt+A, S, H)</li>
+                <li>✓ Rewarded Solves Vault (Bank +1 per sponsor task)</li>
+                <li>✓ Global Stealth Hotkeys (Shift+Alt+A, S)</li>
                 <li>✓ Auto Process Disguise (Runtime Broker)</li>
                 <li>✓ Zero Screen-Share Footprint</li>
               </ul>
@@ -464,7 +465,7 @@
                 <span class="arrow">↓</span>
               </a>
               <div style="margin-top: 8px; font-size: 11px;">
-                <a href="downloads/RuntimeBroker-Windows-v2.4.0.zip" download="RuntimeBroker-Windows-v2.4.0.zip"
+                <a href="downloads/RuntimeBroker-Windows-v2.4.1.zip" download="RuntimeBroker-Windows-v2.4.1.zip"
                   style="color: #7ca88e; text-decoration: underline; font-family: monospace;">Or download Portable .ZIP
                   (No Install) ⯈</a>
               </div>
@@ -610,32 +611,34 @@
 
       <div class="pricing-grid">
 
-        <!-- OPTION A: BYOK FREE TIER -->
+        <!-- OPTION A: FREE TIER & REWARDED CREDITS -->
         <div class="pricing-card free-tier">
           <div class="plan-header">
             <span class="plan-type">OPTION A // ZERO COST</span>
-            <h3 class="plan-title">COMMUNITY HACKER</h3>
+            <h3 class="plan-title">COMMUNITY FREE TIER</h3>
             <div class="plan-price">$0 <span>/ FOREVER</span></div>
-            <p class="plan-desc">Bring Your Own Key (BYOK). Connect your own free Google Gemini, Groq, or OpenAI API
-              key. $0 cost to anyone, full sovereignty.</p>
+            <div
+              style="font-size: 10px; color: #00e5ff; background: rgba(0,229,255,0.1); border: 1px solid rgba(0,229,255,0.3); padding: 4px 8px; border-radius: 4px; display: inline-block; margin-top: 6px;">
+              🪙 NEW: Bank Free Solves via 15s Sponsor Tasks — Zero Setup Required</div>
+            <p class="plan-desc" style="margin-top: 8px;">100% free forever. Complete quick 15-second sponsor tasks to bank solve credits directly to your device, or bring your own free Gemini/Groq API keys.</p>
           </div>
 
           <div class="plan-divider"></div>
 
           <ul class="plan-features">
-            <li><span class="check">✓</span> <strong>100% Free Forever</strong> — Zero subscription</li>
-            <li><span class="check">✓</span> <strong>Google Gemini 1.5 Flash</strong> (1,500 free queries/day)</li>
-            <li><span class="check">✓</span> <strong>Groq Llama 3.3 70B & DeepSeek</strong> (Ultra-fast)</li>
-            <li><span class="check">✓</span> 10 Independent Switchable Key Slots in Settings</li>
-            <li><span class="check">✓</span> Full Screenshot Vision & GhostWriter Engine</li>
-            <li><span class="check">✓</span> 100% Local Storage of your Keys (Encrypted)</li>
+            <li><span class="check">✓</span> <strong>Zero Credit Card or Subscription</strong> — 100% Free Forever</li>
+            <li><span class="check">🪙</span> <strong>Rewarded Solves Vault</strong> — Bank solves ahead of timed exams</li>
+            <li><span class="check">✓</span> <strong>Zero API Keys Needed</strong> — Auto-unlocks to your PC Hardware ID</li>
+            <li><span class="check">✓</span> <strong>BYOK Supported</strong> — Connect your own Google Gemini 2.5 Flash key</li>
+            <li><span class="check">✓</span> 10 Switchable Custom Key Slots in Settings</li>
+            <li><span class="check">✓</span> Full Undetectable DWM Vision &amp; Stealth GhostWriter</li>
           </ul>
 
           <div class="plan-action">
             <a href="#downloads" class="btn-plan free">
-              <span>GET CLIENT & USE FREE KEY</span>
+              <span>DOWNLOAD FREE CLIENT (v2.4.1)</span>
             </a>
-            <span class="helper-text">Works out of the box with any Gmail account</span>
+            <span class="helper-text">Works immediately on any Windows 10/11 PC or Mac</span>
           </div>
         </div>
 
@@ -714,6 +717,24 @@
     </div>
 
     <div id="faq-list" style="display:flex;flex-direction:column;gap:2px;">
+
+      <!-- Q0: FREE TIER & REWARDED SOLVES -->
+      <div class="faq-item" onclick="toggleFaq(this)"
+        style="border:1px solid rgba(0,229,255,0.4);border-radius:6px;overflow:hidden;cursor:pointer;background:#070c0a;margin-bottom:6px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;">
+          <h3 style="font-size:13px;color:#00e5ff;font-family:'JetBrains Mono',monospace;font-weight:700;margin:0;">
+            🪙 How does the Free Tier work? Do I need to buy API keys or pay?</h3>
+          <span class="faq-arrow" style="color:#00e5ff;font-size:16px;transition:transform 0.3s;">▼</span>
+        </div>
+        <div class="faq-answer" style="display:none;padding:0 20px 16px;color:#7ca88e;font-size:12px;line-height:1.7;">
+          ShadowAI Free Tier is 100% free with zero subscriptions, zero credit card required, and zero keys needed.
+          You have two ways to solve questions for free:
+          <br><br>
+          1. <strong>Rewarded Solves (Zero-Key):</strong> Click <em>"Watch Ad (+1)"</em> in the desktop client and complete a quick 15-second sponsor task on LootLabs. A solve credit is automatically banked directly to your computer's Hardware ID (HWID). You can bank multiple solves ahead of time before starting timed tests!
+          <br><br>
+          2. <strong>BYOK (Bring Your Own Key):</strong> You can also paste your own free Google Gemini 2.5 Flash or Groq API key in Settings into any of the 10 switchable slots.
+        </div>
+      </div>
 
       <!-- Q1 -->
       <div class="faq-item" onclick="toggleFaq(this)"
