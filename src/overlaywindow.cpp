@@ -20,6 +20,7 @@
 #include <dwmapi.h>
 #endif
 #include <QScrollBar>
+#include <QScroller>
 #include <QFrame>
 #include <QRegularExpression>
 #include <QThread>
@@ -398,6 +399,7 @@ void OverlayWindow::setupUI() {
     m_answerDisplay->setOpenExternalLinks(false);
     m_answerDisplay->setReadOnly(true);
     m_answerDisplay->installEventFilter(this);
+    QScroller::grabGesture(m_answerDisplay->viewport(), QScroller::TouchGesture);
 
     m_allKeysHUD = new QWidget;
     m_allKeysHUD->setObjectName("allKeysHUD");
