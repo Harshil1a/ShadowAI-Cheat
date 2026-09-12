@@ -21,8 +21,16 @@ AccountManager& AccountManager::instance() {
 AccountManager::AccountManager(QObject* parent) : QObject(parent) {
     m_nam = new QNetworkAccessManager(this);
     m_tcpServer = new QTcpServer(this);
+    connect(m_tcpServer, &QTcpServer::newConnection, this, &AccountManager::onNewTcpConnection);
     m_creditsPollTimer = new QTimer(this);
     connect(m_creditsPollTimer, &QTimer::timeout, this, &AccountManager::onPollCreditsTimer);
+
+    // Auto-listen on startup so incoming callbacks are immediately handled
+    if (!m_tcpServer->listen(QHostAddress::LocalHost, m_authPort)) {
+        qWarning() << "AccountManager: Could not bind auth listener on" << m_authPort << m_tcpServer->errorString();
+    } else {
+        qDebug() << "AccountManager: Auth listener running on port" << m_authPort;
+    }
 
     // Auto-sync Google Account, Pro license, and Free Credits on startup
     QTimer::singleShot(500, this, [this]() {
@@ -190,26 +198,30 @@ void AccountManager::activateLicenseKey(const QString& rawKey) {
 }
 
 void AccountManager::onNewTcpConnection() {
-    QTcpSocket* socket = m_tcpServer->nextPendingConnection();
-    if (!socket) return;
+    while (m_tcpServer && m_tcpServer->hasPendingConnections()) {
+        QTcpSocket* socket = m_tcpServer->nextPendingConnection();
+        if (!socket) continue;
 
-    connect(socket, &QTcpSocket::readyRead, this, [this, socket]() {
-        QByteArray data = socket->readAll();
-        QString request = QString::fromUtf8(data);
-        handleHttpAuthCallback(socket, request);
-    });
+        connect(socket, &QTcpSocket::readyRead, this, [this, socket]() {
+            QByteArray data = socket->readAll();
+            QString request = QString::fromUtf8(data);
+            handleHttpAuthCallback(socket, request);
+        });
+        connect(socket, &QTcpSocket::disconnected, socket, &QObject::deleteLater);
+    }
 }
 
 void AccountManager::handleHttpAuthCallback(QTcpSocket* socket, const QString& requestData) {
     QString firstLine = requestData.section("\r\n", 0, 0);
     QString path = firstLine.section(' ', 1, 1);
 
-    // Support CORS preflight
+    // Support CORS and Private Network Access (PNA) preflight
     if (firstLine.startsWith("OPTIONS")) {
         QByteArray corsResp = "HTTP/1.1 204 No Content\r\n"
                               "Access-Control-Allow-Origin: *\r\n"
                               "Access-Control-Allow-Methods: GET, OPTIONS\r\n"
                               "Access-Control-Allow-Headers: *\r\n"
+                              "Access-Control-Allow-Private-Network: true\r\n"
                               "Connection: close\r\n\r\n";
         socket->write(corsResp);
         socket->flush();
@@ -222,12 +234,15 @@ void AccountManager::handleHttpAuthCallback(QTcpSocket* socket, const QString& r
         QUrlQuery query(url);
         QString rawEmail = query.queryItemValue("email");
         QString email = QUrl::fromPercentEncoding(rawEmail.toUtf8()).trimmed();
+        while (email.contains("%40", Qt::CaseInsensitive)) {
+            email = QUrl::fromPercentEncoding(email.toUtf8()).trimmed();
+        }
         QString name = QUrl::fromPercentEncoding(query.queryItemValue("name").toUtf8()).trimmed();
         QString licenseKey = QUrl::fromPercentEncoding(query.queryItemValue("license_key").toUtf8()).trimmed();
         bool isPro = (query.queryItemValue("is_pro") == "1");
 
         // Clean out legacy mock placeholder
-        if (email.contains("operator@gmail.com", Qt::CaseInsensitive) || email.contains("%40")) {
+        if (email.contains("operator@gmail.com", Qt::CaseInsensitive)) {
             email = "";
         }
 
@@ -288,6 +303,7 @@ void AccountManager::handleHttpAuthCallback(QTcpSocket* socket, const QString& r
         QByteArray resp = "HTTP/1.1 200 OK\r\n"
                           "Content-Type: text/html; charset=utf-8\r\n"
                           "Access-Control-Allow-Origin: *\r\n"
+                          "Access-Control-Allow-Private-Network: true\r\n"
                           "Connection: close\r\n\r\n" + html.toUtf8();
         socket->write(resp);
         socket->flush();
@@ -299,10 +315,6 @@ void AccountManager::handleHttpAuthCallback(QTcpSocket* socket, const QString& r
         }
 
         emit accountStateChanged(true, email, isPro);
-
-        QTimer::singleShot(2000, this, [this]() {
-            if (m_tcpServer && m_tcpServer->isListening()) m_tcpServer->close();
-        });
         return;
     }
 

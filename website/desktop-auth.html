@@ -400,15 +400,38 @@
 
       statusMsg.innerHTML = '<span class="spinner"></span> Connecting to running ShadowAI Desktop...';
 
-      // Send GET to local desktop server
+      let connected = false;
+
+      // 1. Non-blocking Fetch with 1.8s timeout
       try {
-        await fetch(callbackUrl, { mode: 'no-cors' });
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 1800);
+        fetch(callbackUrl, { mode: 'no-cors', signal: controller.signal })
+          .then(() => {
+            connected = true;
+            statusMsg.innerHTML = '<span style="color:#00ff66;font-weight:bold;">✓ CONNECTED!</span> Account verified and synced with ShadowAI Desktop.<br><span style="color:#7ca88e;font-size:11px;">You can close this window now.</span>';
+          })
+          .catch(() => {});
       } catch(e) {}
 
-      // Also navigate browser to callback or show confirmation
+      // 2. Direct Fallback Action & Navigation
       setTimeout(() => {
-        window.location.href = callbackUrl;
-      }, 400);
+        if (!connected) {
+          statusMsg.innerHTML = `
+            <div style="margin-top: 10px; text-align: center;">
+              <a href="${callbackUrl}" style="display:inline-block;background:linear-gradient(135deg,#00ff66,#00b84d);color:#030508;font-weight:900;font-family:'Orbitron',sans-serif;font-size:11px;padding:10px 20px;border-radius:6px;text-decoration:none;box-shadow:0 0 20px rgba(0,255,102,0.4);letter-spacing:1px;">
+                ⚡ CLICK TO FINISH SIGN-IN ➔
+              </a>
+              <div style="font-size:11px;color:#7ca88e;margin-top:10px;line-height:1.5;">
+                If your desktop app didn't automatically focus, click the green button above to sync immediately!
+              </div>
+            </div>
+          `;
+          try {
+            window.location.href = callbackUrl;
+          } catch(e) {}
+        }
+      }, 800);
     }
 
     async function initSession() {
