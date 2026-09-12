@@ -442,18 +442,21 @@ void OverlayWindow::setupUI() {
         return w;
     };
 
-    m_group1 = makeGroup("Overlay & View Controls");
+    m_group1 = makeGroup("Core Controls");
     m_keysLayout1 = m_group1->findChild<QHBoxLayout*>("keysLayout");
 
-    m_group2 = makeGroup("Interaction & Emergency Controls");
+    m_group2 = makeGroup("Other Options");
     m_keysLayout2 = m_group2->findChild<QHBoxLayout*>("keysLayout");
+    m_group1->setVisible(true);
+    m_group2->setVisible(false);
+    m_activeRow = 0;
 
     // Container for helper groups so they can be hidden together
     m_helpGroupsContainer = new QWidget;
     m_helpGroupsContainer->setObjectName("helpGroupsContainer");
     QVBoxLayout* hgLayout = new QVBoxLayout(m_helpGroupsContainer);
     hgLayout->setContentsMargins(0, 0, 0, 0);
-    hgLayout->setSpacing(5);
+    hgLayout->setSpacing(0);
     hgLayout->addWidget(m_group1);
     hgLayout->addWidget(m_group2);
 
@@ -919,24 +922,24 @@ void OverlayWindow::refreshKeyBadges() {
 
     QString scrollKeys = "Shift+Alt+" + vkToKeyName(cfg.hotkeyScrollUp()) + "/" + vkToKeyName(cfg.hotkeyScrollDown());
 
-    // Row 1: Core Navigation & Solution (Snap & Solve + Scroll Ans seen first!)
+    // Row 1: Core Navigation & Solution (Snap & Solve, Scroll Ans, and Options seen first!)
     m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyGetAnswer()), "Snap & Solve"));
     m_keysLayout1->addWidget(makeKey(scrollKeys, "Scroll Ans"));
     m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyScreenshot()), "Screenshot"));
     m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyClear()), "Clear"));
-    m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyToggle()), "Hide/Show"));
-    m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyToggleBadges()), "Toggle Keys"));
+    m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyToggleBadges()), "Options ☰"));
 
-    // Row 2: Interaction & Emergency Controls
+    // Row 2: Other Tools & Emergency Controls (Revealed when Options ☰ is pressed)
     m_keysLayout2->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyGhostWriter()), "Auto-Type"));
     m_keysLayout2->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyVoice()), "Voice Rec"));
     m_keysLayout2->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyTransparency()), "Transparency"));
+    m_keysLayout2->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyToggle()), "Hide/Show"));
     m_keysLayout2->addWidget(makeKey("Shift+Alt+Arrows", "Move Window"));
-    m_keysLayout2->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyCopyScreenshot()), "Copy Shot"));
     m_keysLayout2->addWidget(makeKey("Ctrl+Shift+" + vkToKeyName(cfg.hotkeyPanic()), "Panic Kill", true));
+    m_keysLayout2->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyToggleBadges()), "Back ☰"));
 
     if (m_bottomHintLabel) {
-        m_bottomHintLabel->setText(QString("[Shift+Alt+%1] Show Key Badges  |  [Shift+Alt+%2] Clean View")
+        m_bottomHintLabel->setText(QString("[Shift+Alt+%1] Swap Options (Core / Other)  |  [Shift+Alt+%2] Clean View")
             .arg(vkToKeyName(cfg.hotkeyToggleBadges()))
             .arg(vkToKeyName(cfg.hotkeyHideStrip())));
     }
@@ -950,14 +953,14 @@ void OverlayWindow::refreshKeyBadges() {
                     "  %2  →  Scroll Answer Up / Down\n"
                     "  Shift+Alt+%3  →  Capture Screenshot\n"
                     "  Shift+Alt+%4  →  Clear Chat Output\n"
-                    "  Shift+Alt+%5  →  Hide / Show Overlay\n"
-                    "  Shift+Alt+%6  →  Toggle Key Badges (Collapse / Expand)")
+                    "  Shift+Alt+%5  →  Options ☰ (Swap to Other Tools)\n"
+                    "  Shift+Alt+%6  →  Hide / Show Overlay")
                 .arg(vkToKeyName(cfg.hotkeyGetAnswer()))
                 .arg(scrollKeys)
                 .arg(vkToKeyName(cfg.hotkeyScreenshot()))
                 .arg(vkToKeyName(cfg.hotkeyClear()))
-                .arg(vkToKeyName(cfg.hotkeyToggle()))
                 .arg(vkToKeyName(cfg.hotkeyToggleBadges()))
+                .arg(vkToKeyName(cfg.hotkeyToggle()))
         );
     }
 }
@@ -1466,19 +1469,23 @@ void OverlayWindow::onRecordingFinished(const QString& filePath) {
 }
 
 void OverlayWindow::toggleBadgesVisibility() {
-    if (m_helpGroupsContainer && m_bottomHintLabel) {
-        bool currentlyVisible = m_helpGroupsContainer->isVisible();
-        m_helpGroupsContainer->setVisible(!currentlyVisible);
-        m_bottomHintLabel->setVisible(currentlyVisible);
-        if (m_screenshotFrame) m_screenshotFrame->setVisible(!currentlyVisible);
-        if (m_divider) m_divider->setVisible(!currentlyVisible);
-        showStatusMessage(currentlyVisible ? "View collapsed" : "View expanded");
-        update();
-    }
+    m_activeRow = (m_activeRow == 0) ? 1 : 0;
+    if (m_group1) m_group1->setVisible(m_activeRow == 0);
+    if (m_group2) m_group2->setVisible(m_activeRow == 1);
+    if (m_helpGroupsContainer) m_helpGroupsContainer->setVisible(true);
+    if (m_bottomHintLabel) m_bottomHintLabel->setVisible(false);
+    showStatusMessage(m_activeRow == 0 ? "Core Controls (Snap & Scroll)" : "Other Options (Tools & Controls)");
+    update();
 }
 
 void OverlayWindow::toggleHideStrip() {
-    toggleBadgesVisibility();
+    if (!m_helpGroupsContainer) return;
+    bool currentlyVisible = m_helpGroupsContainer->isVisible();
+    m_helpGroupsContainer->setVisible(!currentlyVisible);
+    if (m_bottomHintLabel)
+        m_bottomHintLabel->setVisible(!currentlyVisible);
+    showStatusMessage(currentlyVisible ? "Key strip hidden — clean view" : "Key strip restored");
+    update();
 }
 
 void OverlayWindow::copyScreenshotToClipboard() {

@@ -92,6 +92,7 @@ private:
     QWidget*      m_helpGroupsContainer;
     QFrame*       m_group1 = nullptr;
     QFrame*       m_group2 = nullptr;
+    int           m_activeRow = 0;
     QLabel*       m_bottomHintLabel;
     QFrame*       m_divider;
 
