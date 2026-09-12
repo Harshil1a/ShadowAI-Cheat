@@ -123,23 +123,86 @@
     }
     table {
       width: 100%;
+      table-layout: fixed;
       border-collapse: collapse;
       font-size: 12px;
     }
     th {
       text-align: left;
-      padding: 10px;
+      padding: 12px 10px;
       color: #7ca88e;
-      border-bottom: 1px solid rgba(0, 255, 102, 0.2);
-      font-weight: 600;
+      border-bottom: 2px solid rgba(0, 255, 102, 0.25);
+      font-weight: 700;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      box-sizing: border-box;
+      background: rgba(0, 255, 102, 0.02);
     }
     td {
-      padding: 12px 10px;
-      border-bottom: 1px solid rgba(0, 255, 102, 0.1);
+      padding: 10px 10px;
+      border-bottom: 1px solid rgba(0, 255, 102, 0.08);
+      vertical-align: middle;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      box-sizing: border-box;
+    }
+    tr:hover td {
+      background: rgba(0, 255, 102, 0.04);
+    }
+    .cell-truncate {
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      display: inline-block;
       vertical-align: middle;
     }
-    tr:hover {
-      background: rgba(0, 255, 102, 0.03);
+    .user-cell {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow: hidden;
+      min-width: 0;
+    }
+    .user-cell-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 600;
+      font-size: 12px;
+    }
+    .action-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+    .filter-tab {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: #7ca88e;
+      padding: 5px 12px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .filter-tab:hover {
+      background: rgba(0,255,102,0.1);
+      color: #00ff66;
+      border-color: rgba(0,255,102,0.3);
+    }
+    .filter-tab.active {
+      background: rgba(0,255,102,0.18);
+      color: #00ff66;
+      border-color: #00ff66;
+      box-shadow: 0 0 10px rgba(0,255,102,0.25);
     }
     .badge-status {
       display: inline-block;
@@ -147,6 +210,7 @@
       border-radius: 3px;
       font-size: 10px;
       font-weight: 700;
+      white-space: nowrap;
     }
     .badge-active {
       background: rgba(0, 255, 102, 0.15);
@@ -171,7 +235,6 @@
       font-size: 10px;
       border-radius: 3px;
       cursor: pointer;
-      margin-right: 6px;
     }
     .btn-action-copy:hover {
       background: #00ff66;
@@ -198,7 +261,6 @@
       font-size: 10px;
       border-radius: 3px;
       cursor: pointer;
-      margin-left: 4px;
       font-weight: 700;
     }
     .btn-action-delete:hover {
@@ -214,7 +276,6 @@
       font-size: 10px;
       border-radius: 3px;
       cursor: pointer;
-      margin-left: 4px;
     }
     .btn-action-reset:hover {
       background: #00e5ff;
@@ -376,18 +437,6 @@
       </div>
     </div>
 
-    <!-- MASTER CLOUD GEMINI KEY CONFIGURATION -->
-    <div style="background: #070c0a; border: 1px solid rgba(255, 165, 2, 0.4); border-radius: 6px; padding: 16px 20px; margin-bottom: 24px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;">
-      <div style="display: flex; gap: 10px; align-items: center; flex: 1; min-width: 320px;">
-        <span style="font-family: 'Orbitron'; font-size: 11px; color: #ffa502; font-weight: 700; white-space: nowrap;">⚡ CLOUD GEMINI KEY:</span>
-        <input type="password" id="cloud-gemini-key-input" placeholder="Fetching active key from Supabase..." 
-               style="flex: 1; background: #030508; border: 1px solid rgba(255,165,2,0.4); color: #00e5ff; padding: 8px 12px; border-radius: 4px; font-family: monospace; font-size: 12px;">
-        <button id="btn-toggle-key-view" style="background:transparent;border:1px solid #7ca88e;color:#7ca88e;border-radius:4px;padding:6px 10px;cursor:pointer;">👁</button>
-        <button class="btn-gen" id="btn-save-cloud-key" style="background:linear-gradient(135deg,#ffa502 0%,#ff7b00 100%);box-shadow:0 0 15px rgba(255,165,2,0.4);padding:8px 16px;font-size:11px;white-space:nowrap;">💾 UPDATE KEY IN CLOUD</button>
-      </div>
-      <span id="cloud-key-status" style="font-size: 11px; color: #7ca88e; font-family: monospace;">Syncing...</span>
-    </div>
-
     <!-- QUICK PRO GRANT & SEARCH -->
     <div style="background: #070c0a; border: 1px solid rgba(0, 229, 255, 0.3); border-radius: 6px; padding: 16px 20px; margin-bottom: 24px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;">
       <div style="display: flex; gap: 10px; align-items: center; flex: 1; min-width: 280px;">
@@ -398,67 +447,9 @@
       </div>
       <div style="display: flex; gap: 8px; align-items: center;">
         <span style="font-size: 11px; color: #7ca88e;">🔍 SEARCH:</span>
-        <input type="text" id="admin-search-input" placeholder="Search by ID, Email, Order #, Gift Card Code, TxID..." 
+        <input type="text" id="admin-search-input" placeholder="Search by ID, Email, HWID, Key, Order #..." 
                style="background: #030508; border: 1px solid rgba(0,255,102,0.3); color: #e2fced; padding: 8px 12px; border-radius: 4px; font-family: monospace; font-size: 12px; width: 260px;">
       </div>
-    </div>
-
-    <!-- PENDING APPROVALS QUEUE (AMAZON PAY / CRYPTO QUEUE) -->
-    <div class="admin-card" style="margin-bottom: 24px; border-color: rgba(0, 229, 255, 0.4); box-shadow: 0 0 25px rgba(0,229,255,0.08);">
-      <div class="admin-card-title">
-        <span style="color: #00e5ff;">⏳ PENDING PAYMENT APPROVALS (AMAZON PAY / CRYPTO QUEUE)</span>
-        <span id="pending-count-badge" style="font-size: 11px; background: rgba(0,229,255,0.15); color: #00e5ff; border: 1px solid #00e5ff; padding: 2px 8px; border-radius: 3px; font-weight: 800;">0 PENDING</span>
-      </div>
-
-      <table>
-        <thead>
-          <tr>
-            <th>ORDER #</th>
-            <th>BUYER EMAIL</th>
-            <th>METHOD & AMOUNT</th>
-            <th>GIFT CARD CODE / TxID</th>
-            <th>SUBMITTED</th>
-            <th>ACTION</th>
-          </tr>
-        </thead>
-        <tbody id="pending-table-body">
-          <tr>
-            <td colspan="6" style="text-align:center;color:#7ca88e;padding:20px;">No pending approvals right now. All orders clear!</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- ALL REGISTERED USERS DIRECTORY -->
-    <div class="admin-card" style="margin-bottom: 24px; border-color: rgba(0, 255, 102, 0.35);">
-      <div class="admin-card-title">
-        <span style="color: #00ff66;">👥 ALL REGISTERED USERS (SEARCH BY ID / EMAIL & 1-CLICK GRANT)</span>
-        <span id="users-count-badge" style="font-size: 11px; background: rgba(0,255,102,0.15); color: #00ff66; border: 1px solid #00ff66; padding: 2px 8px; border-radius: 3px; font-weight: 800;">0 USERS</span>
-      </div>
-
-      <table>
-        <thead>
-          <tr>
-            <th>USER / RECORD ID</th>
-            <th>USER EMAIL (GOOGLE ACCOUNT)</th>
-            <th>STATUS</th>
-            <th>HARDWARE / QUERIES</th>
-            <th>JOINED / SYNCED</th>
-            <th>ACTION</th>
-          </tr>
-        </thead>
-        <tbody id="users-table-body">
-          <tr>
-            <td colspan="6" style="text-align:center;color:#7ca88e;padding:16px;">Loading registered users from database...</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- ACTIONS -->
-    <div class="admin-actions">
-      <button class="btn-gen" id="btn-create-key">+ GENERATE NEW PRO LICENSE KEY</button>
-      <button class="btn-refresh" id="btn-refresh-table">↻ REFRESH ALL RECORDS</button>
     </div>
 
     <!-- MASTER PRO CLOUD ENGINE (GEMINI 2.5 FLASH) KEY MANAGER -->
@@ -478,27 +469,117 @@
       <div id="gemini-key-feedback" style="margin-top: 10px; font-size: 11px;"></div>
     </div>
 
-    <!-- TABLE -->
-    <div class="admin-card">
+    <!-- PENDING APPROVALS QUEUE (AMAZON PAY / CRYPTO QUEUE) -->
+    <div class="admin-card" style="margin-bottom: 24px; border-color: rgba(0, 229, 255, 0.4); box-shadow: 0 0 25px rgba(0,229,255,0.08);">
       <div class="admin-card-title">
-        <span>ACTIVE SUBSCRIBERS & HARDWARE LOCKS</span>
+        <span style="color: #00e5ff;">⏳ PENDING PAYMENT APPROVALS (AMAZON PAY / CRYPTO QUEUE)</span>
+        <span id="pending-count-badge" style="font-size: 11px; background: rgba(0,229,255,0.15); color: #00e5ff; border: 1px solid #00e5ff; padding: 2px 8px; border-radius: 3px; font-weight: 800;">0 PENDING</span>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 14%;">ORDER #</th>
+            <th style="width: 25%;">BUYER EMAIL</th>
+            <th style="width: 17%;">METHOD & AMOUNT</th>
+            <th style="width: 20%;">GIFT CARD CODE / TxID</th>
+            <th style="width: 10%;">SUBMITTED</th>
+            <th style="width: 14%;">ACTION</th>
+          </tr>
+        </thead>
+        <tbody id="pending-table-body">
+          <tr>
+            <td colspan="6" style="text-align:center;color:#7ca88e;padding:20px;">No pending approvals right now. All orders clear!</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ALL REGISTERED USERS DIRECTORY -->
+    <div class="admin-card" style="margin-bottom: 24px; border-color: rgba(0, 255, 102, 0.35);">
+      <div class="admin-card-title">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <span style="color: #00ff66;">👥 ALL REGISTERED USERS</span>
+          <div style="display: flex; gap: 6px;" id="directory-tabs">
+            <button class="filter-tab active" onclick="setDirectoryFilter('ALL', this)">ALL (<span id="tab-count-all">0</span>)</button>
+            <button class="filter-tab" onclick="setDirectoryFilter('PRO', this)">⚡ PRO ONLY (<span id="tab-count-pro">0</span>)</button>
+            <button class="filter-tab" onclick="setDirectoryFilter('FREE', this)">🪙 FREE SOLVES (<span id="tab-count-free">0</span>)</button>
+          </div>
+        </div>
+        <span id="users-count-badge" style="font-size: 11px; background: rgba(0,255,102,0.15); color: #00ff66; border: 1px solid #00ff66; padding: 2px 8px; border-radius: 3px; font-weight: 800;">0 USERS</span>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 14%;">RECORD / USER ID</th>
+            <th style="width: 28%;">ACCOUNT / MACHINE IDENTITY</th>
+            <th style="width: 15%;">MEMBERSHIP TIER</th>
+            <th style="width: 17%;">HARDWARE LOCK / SOLVES</th>
+            <th style="width: 11%;">LAST SYNC</th>
+            <th style="width: 15%;">ADMIN ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody id="users-table-body">
+          <tr>
+            <td colspan="6" style="text-align:center;color:#7ca88e;padding:16px;">Loading registered users from database...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="admin-actions">
+      <button class="btn-gen" id="btn-create-key">+ GENERATE NEW PRO LICENSE KEY</button>
+      <button class="btn-refresh" id="btn-refresh-table">↻ REFRESH ALL RECORDS</button>
+    </div>
+
+    <!-- ACTIVE PRO SUBSCRIBERS TABLE -->
+    <div class="admin-card" style="margin-bottom: 24px; border-color: rgba(0, 255, 102, 0.35);">
+      <div class="admin-card-title">
+        <span>⚡ ACTIVE PRO SUBSCRIBERS & HARDWARE LOCKS</span>
         <span id="load-status" style="font-size:11px;color:#7ca88e;">Live Supabase Sync</span>
       </div>
 
       <table>
         <thead>
           <tr>
-            <th>SUBSCRIBER EMAIL</th>
-            <th>STATUS</th>
-            <th>BOUND HARDWARE ID (PC LOCK)</th>
-            <th>LICENSE KEY</th>
-            <th>ACTIVATED</th>
-            <th>ACTIONS</th>
+            <th style="width: 24%;">SUBSCRIBER EMAIL</th>
+            <th style="width: 16%;">PRO STATUS & EXPIRY</th>
+            <th style="width: 18%;">BOUND PC (HWID LOCK)</th>
+            <th style="width: 18%;">LICENSE KEY</th>
+            <th style="width: 10%;">ACTIVATED</th>
+            <th style="width: 14%;">ACTIONS</th>
           </tr>
         </thead>
         <tbody id="license-table-body">
           <tr>
             <td colspan="6" style="text-align:center;color:#7ca88e;padding:20px;">Loading subscribers from database...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- FREE SOLVES & LOOTLABS AD REWARD BALANCES -->
+    <div class="admin-card" style="margin-bottom: 24px; border-color: rgba(0, 229, 255, 0.35);">
+      <div class="admin-card-title">
+        <span style="color: #00e5ff;">🪙 FREE SOLVES & LOOTLABS AD REWARD BALANCES</span>
+        <span id="free-credits-badge" style="font-size: 11px; background: rgba(0,229,255,0.15); color: #00e5ff; border: 1px solid #00e5ff; padding: 2px 8px; border-radius: 3px; font-weight: 800;">0 USERS</span>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 22%;">MACHINE HWID (PC IDENTIFIER)</th>
+            <th style="width: 18%;">SOLVE CREDITS</th>
+            <th style="width: 16%;">STATUS</th>
+            <th style="width: 16%;">LAST AD TASK</th>
+            <th style="width: 28%;">ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody id="free-table-body">
+          <tr>
+            <td colspan="5" style="text-align:center;color:#7ca88e;padding:16px;">Loading free credit balances...</td>
           </tr>
         </tbody>
       </table>
@@ -930,95 +1011,14 @@
       });
     }
 
-    // ── MASTER CLOUD GEMINI KEY CONTROL ─────────────────────────────────────
-    const cloudKeyInput = document.getElementById('cloud-gemini-key-input');
-    const cloudKeyStatus = document.getElementById('cloud-key-status');
-    const btnSaveCloudKey = document.getElementById('btn-save-cloud-key');
-    const btnToggleKeyView = document.getElementById('btn-toggle-key-view');
-
-    if (btnToggleKeyView && cloudKeyInput) {
-      btnToggleKeyView.addEventListener('click', () => {
-        cloudKeyInput.type = cloudKeyInput.type === 'password' ? 'text' : 'password';
-      });
-    }
-
-    async function loadCloudGeminiKey() {
-      if (!cloudKeyInput || !cloudKeyStatus) return;
-      cloudKeyStatus.innerText = 'Syncing...';
-      try {
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/licenses?customer_email=eq.system@shadowai.local&select=*`, {
-          headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-        });
-        const rows = await res.json();
-        if (Array.isArray(rows) && rows.length > 0) {
-          cloudKeyInput.value = rows[0].bound_hwid || '';
-          cloudKeyStatus.innerText = '✓ Active in Supabase';
-          cloudKeyStatus.style.color = '#00ff66';
-        } else {
-          cloudKeyStatus.innerText = '⚠️ No key set. Please enter key and click save.';
-          cloudKeyStatus.style.color = '#ffa502';
-        }
-      } catch(e) {
-        cloudKeyStatus.innerText = '⚠️ Fetch error';
-        cloudKeyStatus.style.color = '#ff4757';
-      }
-    }
-
-    if (btnSaveCloudKey && cloudKeyInput) {
-      btnSaveCloudKey.addEventListener('click', async () => {
-        const newKey = cloudKeyInput.value.trim();
-        if (!newKey) {
-          alert('Please enter a valid Gemini API key.');
-          return;
-        }
-        btnSaveCloudKey.disabled = true;
-        btnSaveCloudKey.innerText = 'SAVING...';
-        cloudKeyStatus.innerText = 'Saving to Supabase...';
-        try {
-          const checkRes = await fetch(`${SUPABASE_URL}/rest/v1/licenses?customer_email=eq.system@shadowai.local&select=id`, {
-            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-          });
-          const checkRows = await checkRes.json();
-          if (Array.isArray(checkRows) && checkRows.length > 0) {
-            await fetch(`${SUPABASE_URL}/rest/v1/licenses?customer_email=eq.system@shadowai.local`, {
-              method: 'PATCH',
-              headers: {
-                'apikey': SUPABASE_KEY,
-                'Authorization': `Bearer ${SUPABASE_KEY}`,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ bound_hwid: newKey, is_active: true })
-            });
-          } else {
-            await fetch(`${SUPABASE_URL}/rest/v1/licenses`, {
-              method: 'POST',
-              headers: {
-                'apikey': SUPABASE_KEY,
-                'Authorization': `Bearer ${SUPABASE_KEY}`,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                license_key: 'PRO_CLOUD_ENGINE',
-                customer_email: 'system@shadowai.local',
-                bound_hwid: newKey,
-                plan_tier: 'SYSTEM_CONFIG',
-                is_active: true
-              })
-            });
-          }
-          cloudKeyStatus.innerText = '✓ Saved to Supabase!';
-          cloudKeyStatus.style.color = '#00ff66';
-          alert('✓ Cloud Gemini Key successfully updated in Supabase!\nAll desktop apps will now use this key.');
-        } catch(e) {
-          cloudKeyStatus.innerText = 'Error: ' + e.message;
-          cloudKeyStatus.style.color = '#ff4757';
-          alert('Save failed: ' + e.message);
-        } finally {
-          btnSaveCloudKey.disabled = false;
-          btnSaveCloudKey.innerText = '💾 UPDATE KEY IN CLOUD';
-        }
-      });
-    }
+    // Directory Filter Tab State
+    window.currentDirectoryFilter = 'ALL';
+    window.setDirectoryFilter = function(filter, btn) {
+      window.currentDirectoryFilter = filter;
+      document.querySelectorAll('#directory-tabs .filter-tab').forEach(t => t.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      loadLicenses();
+    };
 
     // Load & Render Tables
     const btnRefresh = document.getElementById('btn-refresh-table');
@@ -1033,10 +1033,37 @@
       await window.grantProDirect(email, id);
     };
 
+    window.addFreeCredits = async function(id, newCount) {
+      try {
+        await fetch(`${SUPABASE_URL}/rest/v1/licenses?id=eq.${id}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            plan_tier: `CREDITS:${newCount}`,
+            last_used_at: new Date().toISOString()
+          })
+        });
+        alert(`✓ Added solve credits! New balance: ${newCount} Solves.`);
+        loadLicenses();
+      } catch(e) {
+        alert('Error: ' + e.message);
+      }
+    };
+
     async function loadLicenses() {
       const pbody = document.getElementById('pending-table-body');
       const tbody = document.getElementById('license-table-body');
+      const ubody = document.getElementById('users-table-body');
+      const fbody = document.getElementById('free-table-body');
+
       const pbadge = document.getElementById('pending-count-badge');
+      const ubadge = document.getElementById('users-count-badge');
+      const fbadge = document.getElementById('free-credits-badge');
+
       const searchInputEl = document.getElementById('admin-search-input');
       const searchVal = searchInputEl ? searchInputEl.value.trim().toLowerCase() : '';
 
@@ -1076,12 +1103,34 @@
           });
         }
 
-        // Separate pending orders from active subscribers
-        const pendingItems = filtered.filter(item => !item.is_active || (item.license_key && item.license_key.startsWith('PENDING-')));
-        const activeItems = filtered.filter(item => item.is_active && (!item.license_key || !item.license_key.startsWith('PENDING-')));
+        // Separate pending orders, active PRO subscribers, and free ad reward items
+        const pendingItems = filtered.filter(item => {
+          const lk = (item.license_key || '').toUpperCase();
+          return !item.is_active || lk.startsWith('PENDING-');
+        });
+
+        const activeProItems = filtered.filter(item => {
+          if (!item.is_active) return false;
+          const lk = (item.license_key || '').toUpperCase();
+          const tier = (item.plan_tier || '').toUpperCase();
+          const em = (item.customer_email || '').toLowerCase();
+          if (lk.startsWith('PENDING-')) return false;
+          if (lk.startsWith('FREE-')) return false;
+          if (tier.startsWith('CREDITS:')) return false;
+          if (em.endsWith('@free.shadowai')) return false;
+          return true;
+        });
+
+        const freeCreditItems = filtered.filter(item => {
+          const lk = (item.license_key || '').toUpperCase();
+          const tier = (item.plan_tier || '').toUpperCase();
+          const em = (item.customer_email || '').toLowerCase();
+          return lk.startsWith('FREE-') || tier.startsWith('CREDITS:') || em.endsWith('@free.shadowai');
+        });
 
         if (pbadge) pbadge.innerText = `${pendingItems.length} PENDING`;
-        updateStats(activeItems);
+        if (fbadge) fbadge.innerText = `${freeCreditItems.length} MACHINES`;
+        updateStats(activeProItems);
 
         // 1. Render Pending Approvals Queue
         if (pendingItems.length === 0) {
@@ -1122,16 +1171,24 @@
               ? `<span style="font-size:10px;color:#00e5ff;background:rgba(0,229,255,0.12);border:1px solid rgba(0,229,255,0.4);padding:3px 6px;border-radius:3px;font-weight:700;">🌍 BNB ($6.00)</span>`
               : `<span style="font-size:10px;color:#00ff66;background:rgba(0,255,102,0.12);border:1px solid rgba(0,255,102,0.4);padding:3px 6px;border-radius:3px;font-weight:700;">🇮🇳 Amazon Pay (₹100)</span>`;
 
+            const cleanEmail = (item.customer_email || '').split(',')[0].trim();
+
             return `
               <tr style="background: rgba(0, 229, 255, 0.04);">
                 <td><strong style="color:#00e5ff;font-family:'Orbitron',monospace;font-size:13px;">${orderCode}</strong></td>
-                <td><strong style="color:#ffffff;">${item.customer_email}</strong></td>
+                <td>
+                  <div class="user-cell" title="${cleanEmail}">
+                    <span class="user-cell-text" style="color:#ffffff;">${cleanEmail}</span>
+                  </div>
+                </td>
                 <td>${methodBadge}</td>
-                <td><code style="color:#00ff66;background:#030805;padding:3px 6px;border-radius:3px;border:1px dashed rgba(0,255,102,0.4);word-break:break-all;font-size:11px;">${utr}</code></td>
+                <td><code style="color:#00ff66;background:#030805;padding:3px 6px;border-radius:3px;border:1px dashed rgba(0,255,102,0.4);font-size:11px;" title="${utr}">${utr}</code></td>
                 <td style="color:#7ca88e;font-size:11px;">${created}</td>
-                <td style="white-space:nowrap;">
-                  <button class="btn-gen" style="padding:6px 14px;font-size:11px;" onclick="approveOrder('${item.id}', '${item.customer_email}')">APPROVE & GRANT PRO ✓</button>
-                  <button class="btn-action-delete" style="padding:6px 10px;" onclick="deleteLicense('${item.id}', '${item.license_key}')">REJECT</button>
+                <td>
+                  <div class="action-group">
+                    <button class="btn-gen" style="padding:5px 12px;font-size:10px;" onclick="approveOrder('${item.id}', '${cleanEmail}')">APPROVE ✓</button>
+                    <button class="btn-action-delete" style="padding:5px 8px;" onclick="deleteLicense('${item.id}', '${item.license_key}')">REJECT</button>
+                  </div>
                 </td>
               </tr>
             `;
@@ -1153,15 +1210,20 @@
 
         const unifiedUsersMap = new Map();
 
-        // Add users from profiles
+        // Add users from profiles (Google OAuth logins)
         profilesData.forEach(p => {
-          const key = (p.email || p.id || '').toLowerCase().trim();
+          const rawEmail = (p.email || '').toLowerCase().trim();
+          const key = rawEmail || (p.id || '').toLowerCase().trim();
           if (key) {
             unifiedUsersMap.set(key, {
               id: p.id,
               email: p.email || 'Google User',
               is_pro: !!p.is_pro,
-              daily_queries_used: p.daily_queries_used || 0,
+              is_pending: false,
+              is_free_credits: false,
+              credits: 0,
+              bound_hwid: null,
+              license_key: null,
               created_at: p.created_at,
               source: 'Google SSO'
             });
@@ -1170,40 +1232,70 @@
 
         // Merge users from licenses table
         allKeys.forEach(lic => {
-          const emailKey = (lic.customer_email || '').toLowerCase().trim();
-          if (emailKey && !emailKey.includes('unassigned')) {
-            const isLicPro = !!lic.is_active && (!lic.license_key || !lic.license_key.startsWith('PENDING-'));
-            const isPending = !lic.is_active || (lic.license_key && lic.license_key.startsWith('PENDING-'));
-            const existing = unifiedUsersMap.get(emailKey);
+          let emailRaw = (lic.customer_email || '').trim();
+          if (!emailRaw || emailRaw.includes('unassigned')) return;
 
-            if (existing) {
-              existing.is_pro = existing.is_pro || isLicPro;
-              existing.is_pending = isPending;
-              existing.id = existing.id || lic.id;
-              existing.bound_hwid = lic.bound_hwid || existing.bound_hwid;
-              existing.license_key = lic.license_key;
-            } else {
-              unifiedUsersMap.set(emailKey, {
-                id: lic.id,
-                email: lic.customer_email,
-                is_pro: isLicPro,
-                is_pending: isPending,
-                bound_hwid: lic.bound_hwid,
-                license_key: lic.license_key,
-                daily_queries_used: isLicPro ? 'UNLIMITED' : 0,
-                created_at: lic.created_at,
-                source: 'Account'
-              });
-            }
+          const cleanEmail = emailRaw.split(',')[0].trim().toLowerCase();
+          const isFreeCredits = (lic.license_key && lic.license_key.startsWith('FREE-')) || 
+                               (lic.plan_tier && lic.plan_tier.startsWith('CREDITS:')) ||
+                               cleanEmail.endsWith('@free.shadowai');
+          const isPending = !isFreeCredits && (!lic.is_active || (lic.license_key && lic.license_key.startsWith('PENDING-')));
+          const isLicPro = !isFreeCredits && !isPending && !!lic.is_active;
+
+          let creditsCount = 0;
+          if (isFreeCredits && lic.plan_tier && lic.plan_tier.includes('CREDITS:')) {
+            creditsCount = parseInt(lic.plan_tier.split('CREDITS:')[1], 10) || 1;
+          }
+
+          const existing = unifiedUsersMap.get(cleanEmail);
+
+          if (existing) {
+            existing.is_pro = existing.is_pro || isLicPro;
+            existing.is_pending = isPending;
+            existing.is_free_credits = existing.is_free_credits || isFreeCredits;
+            if (creditsCount > (existing.credits || 0)) existing.credits = creditsCount;
+            existing.id = existing.id || lic.id;
+            existing.bound_hwid = lic.bound_hwid || existing.bound_hwid;
+            existing.license_key = lic.license_key || existing.license_key;
+          } else {
+            unifiedUsersMap.set(cleanEmail, {
+              id: lic.id,
+              email: cleanEmail,
+              is_pro: isLicPro,
+              is_pending: isPending,
+              is_free_credits: isFreeCredits,
+              credits: creditsCount,
+              bound_hwid: lic.bound_hwid,
+              license_key: lic.license_key,
+              created_at: lic.created_at,
+              source: isFreeCredits ? 'Ad Reward' : 'Account'
+            });
           }
         });
 
         const allDirectoryUsers = Array.from(unifiedUsersMap.values());
 
-        // Filter directory by search query (Search by ID, Email, Order #, UTR, HWID)
+        // Update tab count badges
+        const totalUsers = allDirectoryUsers.length;
+        const totalPro = allDirectoryUsers.filter(u => u.is_pro).length;
+        const totalFree = allDirectoryUsers.filter(u => u.is_free_credits).length;
+        const tabAllEl = document.getElementById('tab-count-all');
+        const tabProEl = document.getElementById('tab-count-pro');
+        const tabFreeEl = document.getElementById('tab-count-free');
+        if (tabAllEl) tabAllEl.innerText = totalUsers;
+        if (tabProEl) tabProEl.innerText = totalPro;
+        if (tabFreeEl) tabFreeEl.innerText = totalFree;
+
         let filteredDirectory = allDirectoryUsers;
+
+        if (window.currentDirectoryFilter === 'PRO') {
+          filteredDirectory = filteredDirectory.filter(u => u.is_pro);
+        } else if (window.currentDirectoryFilter === 'FREE') {
+          filteredDirectory = filteredDirectory.filter(u => u.is_free_credits);
+        }
+
         if (searchVal) {
-          filteredDirectory = allDirectoryUsers.filter(u => {
+          filteredDirectory = filteredDirectory.filter(u => {
             const uid = (u.id || '').toLowerCase();
             const uem = (u.email || '').toLowerCase();
             const uhw = (u.bound_hwid || '').toLowerCase();
@@ -1212,13 +1304,10 @@
           });
         }
 
-        const ubody = document.getElementById('users-table-body');
-        const ubadge = document.getElementById('users-count-badge');
-
         if (ubadge) ubadge.innerText = `${filteredDirectory.length} USERS`;
 
         if (filteredDirectory.length === 0) {
-          ubody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#7ca88e;padding:16px;">No users match search criteria.</td></tr>';
+          ubody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#7ca88e;padding:16px;">No users match current criteria.</td></tr>';
         } else {
           ubody.innerHTML = filteredDirectory.map(u => {
             const created = u.created_at ? new Date(u.created_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recent';
@@ -1227,15 +1316,42 @@
             if (u.is_pro) {
               statusBadge = '<span class="badge-status badge-active">PRO ACTIVE ✓</span>';
             } else if (u.is_pending) {
-              statusBadge = '<span class="badge-status" style="background:rgba(0,229,255,0.15);color:#00e5ff;border:1px solid #00e5ff;">PENDING APPROVAL ⏳</span>';
+              statusBadge = '<span class="badge-status" style="background:rgba(0,229,255,0.15);color:#00e5ff;border:1px solid #00e5ff;">PENDING ⏳</span>';
+            } else if (u.is_free_credits) {
+              statusBadge = `<span class="badge-status" style="background:rgba(0,229,255,0.12);color:#00e5ff;border:1px solid rgba(0,229,255,0.4);">🪙 ${u.credits || 1} SOLVE${(u.credits || 1) > 1 ? 'S' : ''}</span>`;
+            }
+
+            const cleanEmail = (u.email || '').split(',')[0].trim();
+            const isFreeAccount = cleanEmail.toLowerCase().endsWith('@free.shadowai');
+            let emailHtml = '';
+
+            if (isFreeAccount) {
+              let rawHwid = cleanEmail.split('@')[0];
+              if (rawHwid.includes(',')) rawHwid = rawHwid.split(',')[0];
+              const shortHwid = rawHwid.length > 14 ? rawHwid.slice(0, 8) + '...' + rawHwid.slice(-4) : rawHwid;
+              emailHtml = `
+                <div class="user-cell" title="Free Ad Reward Machine: ${cleanEmail}">
+                  <span class="user-cell-text" style="color:#00e5ff;font-family:monospace;">🪙 Free User (<span style="color:#7ca88e;">${shortHwid}</span>)</span>
+                  <span style="font-size:9px;color:#00e5ff;background:rgba(0,229,255,0.12);border:1px solid rgba(0,229,255,0.3);padding:1px 5px;border-radius:2px;white-space:nowrap;">AD REWARD</span>
+                </div>
+              `;
+            } else {
+              emailHtml = `
+                <div class="user-cell" title="${cleanEmail}">
+                  <span class="user-cell-text" style="color:#ffffff;">${cleanEmail || 'Google User'}</span>
+                  <span style="font-size:9px;color:#00ff66;background:rgba(0,255,102,0.1);border:1px solid rgba(0,255,102,0.3);padding:1px 5px;border-radius:2px;white-space:nowrap;">${u.source || 'SSO'} ✓</span>
+                </div>
+              `;
             }
 
             let hwidInfo = '<span style="color:#7ca88e;font-size:11px;">No PC Bound</span>';
-            if (u.bound_hwid) {
-              if (u.bound_hwid.includes('Order')) {
-                hwidInfo = `<span style="color:#00e5ff;font-size:11px;">${u.bound_hwid.split('|')[0]}</span>`;
+            let targetHwid = (u.bound_hwid || (isFreeAccount ? cleanEmail.split('@')[0] : '')).split(',')[0].trim();
+            if (targetHwid) {
+              if (targetHwid.includes('Order')) {
+                hwidInfo = `<span style="color:#00e5ff;font-size:11px;" title="${targetHwid}">${targetHwid.split('|')[0]}</span>`;
               } else {
-                hwidInfo = `<span class="badge-status badge-bound" title="${u.bound_hwid}">🔒 PC LOCKED</span>`;
+                const shortHwid = targetHwid.length > 14 ? targetHwid.slice(0, 8) + '...' + targetHwid.slice(-4) : targetHwid;
+                hwidInfo = `<span class="badge-status badge-bound" title="${targetHwid}">🔒 PC: ${shortHwid}</span>`;
               }
             }
 
@@ -1248,85 +1364,144 @@
                         title="Click to copy full ID: ${u.id}" 
                         onclick="copyText('${u.id}', this)">${shortId} 📋</code>
                 </td>
-                <td>
-                  <strong style="color:#ffffff;">${u.email}</strong> 
-                  <span style="font-size:9px;color:#00ff66;background:rgba(0,255,102,0.1);padding:2px 5px;border-radius:2px;margin-left:4px;">${u.source} ✓</span>
-                </td>
+                <td>${emailHtml}</td>
                 <td>${statusBadge}</td>
                 <td>${hwidInfo}</td>
                 <td style="color:#7ca88e;font-size:11px;">${created}</td>
-                <td style="white-space:nowrap;">
-                  ${u.is_pro 
-                    ? `<button class="btn-action-revoke" onclick="revokeUserPro('${u.email}', '${u.id || ''}')">REVOKE PRO</button>`
-                    : `<button class="btn-gen" style="padding:5px 12px;font-size:10px;" onclick="grantProDirect('${u.email}', '${u.id || ''}')">+ GRANT PRO NOW ✓</button>`
-                  }
-                  <button class="btn-action-copy" style="margin-left:4px;" onclick="copyText('${u.id || u.email}', this)">COPY ID</button>
+                <td>
+                  <div class="action-group">
+                    ${u.is_pro 
+                      ? `<button class="btn-action-revoke" onclick="revokeUserPro('${cleanEmail}', '${u.id || ''}')">REVOKE</button>`
+                      : `<button class="btn-gen" style="padding:4px 10px;font-size:10px;" onclick="grantProDirect('${cleanEmail}', '${u.id || ''}')">+ GRANT PRO ✓</button>`
+                    }
+                    <button class="btn-action-copy" onclick="copyText('${u.id || cleanEmail}', this)">COPY</button>
+                  </div>
                 </td>
               </tr>
             `;
           }).join('');
         }
 
-        // 3. Render Active Subscribers & Hardware Locks
-        if (activeItems.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#7ca88e;padding:20px;">No active subscribers yet.</td></tr>';
-          return;
+        // 3. Render Active PRO Subscribers & Hardware Locks
+        if (activeProItems.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#7ca88e;padding:20px;">No active PRO subscribers found.</td></tr>';
+        } else {
+          tbody.innerHTML = activeProItems.map(item => {
+            const createdDate = new Date(item.created_at);
+            const now = new Date();
+            const diffDays = Math.max(0, (now - createdDate) / (1000 * 60 * 60 * 24));
+            const isMonthly = !item.plan_tier || item.plan_tier === 'PRO_MONTHLY';
+            const isExpired = isMonthly && diffDays >= 30;
+            const daysLeft = Math.max(0, Math.ceil(30 - diffDays));
+
+            let statusBadge = `<span class="badge-status badge-active">PRO ACTIVE (${daysLeft}d left)</span>`;
+            if (isExpired) {
+              statusBadge = '<span class="badge-status" style="background:rgba(255,165,2,0.15);color:#ffa502;border:1px solid #ffa502;">EXPIRED (30d)</span>';
+            } else if (!item.is_active) {
+              statusBadge = '<span class="badge-status badge-revoked">REVOKED</span>';
+            }
+
+            let hwidDisplay = '<span style="color:#a855f7;font-size:11px;">🟢 READY (NO PC BOUND)</span>';
+            if (item.bound_hwid) {
+              const rawHwid = item.bound_hwid.split(',')[0].trim();
+              const shortHwid = rawHwid.length > 14 ? rawHwid.substring(0, 8) + '...' + rawHwid.substring(rawHwid.length - 4) : rawHwid;
+              hwidDisplay = `<span class="badge-status badge-bound" title="${rawHwid}">🔒 PC: ${shortHwid}</span>`;
+            }
+
+            const cleanEmail = (item.customer_email || 'unassigned').split(',')[0].trim();
+
+            const created = new Date(item.created_at).toLocaleDateString('en-IN', {
+              month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
+
+            return `
+              <tr>
+                <td>
+                  <div class="user-cell" title="${cleanEmail}">
+                    <span class="user-cell-text" style="color:#ffffff;">${cleanEmail}</span>
+                  </div>
+                </td>
+                <td>${statusBadge}</td>
+                <td>${hwidDisplay}</td>
+                <td><code style="color:#00ff66;font-size:11px;" title="${item.license_key}">${item.license_key}</code></td>
+                <td style="color:#7ca88e;font-size:11px;">${created}</td>
+                <td>
+                  <div class="action-group">
+                    <button class="btn-action-copy" onclick="copyText('${item.license_key}', this)">COPY KEY</button>
+                    ${item.bound_hwid ? `<button class="btn-action-reset" title="Unbind PC HWID lock so customer can activate on a new laptop" onclick="resetHwid('${item.id}', '${item.license_key}')">UNBIND</button>` : ''}
+                    <button class="btn-action-revoke" onclick="toggleRevoke('${item.id}', false)">REVOKE</button>
+                    <button class="btn-action-delete" title="Permanently delete from database" onclick="deleteLicense('${item.id}', '${item.license_key}')">DEL</button>
+                  </div>
+                </td>
+              </tr>
+            `;
+          }).join('');
         }
 
-        tbody.innerHTML = activeItems.map(item => {
-          const createdDate = new Date(item.created_at);
-          const now = new Date();
-          const diffDays = Math.max(0, (now - createdDate) / (1000 * 60 * 60 * 24));
-          const isMonthly = !item.plan_tier || item.plan_tier === 'PRO_MONTHLY';
-          const isExpired = isMonthly && diffDays >= 30;
-          const daysLeft = Math.max(0, Math.ceil(30 - diffDays));
+        // 4. Render Free Solve Balances (LootLabs Ad Rewards)
+        if (fbody) {
+          if (freeCreditItems.length === 0) {
+            fbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#7ca88e;padding:16px;">No free credit users recorded yet.</td></tr>';
+          } else {
+            fbody.innerHTML = freeCreditItems.map(item => {
+              let rawHwid = (item.bound_hwid || (item.customer_email || '').split('@')[0]).split(',')[0].trim();
+              const shortHwid = rawHwid.length > 16 ? rawHwid.substring(0, 8) + '...' + rawHwid.substring(rawHwid.length - 6) : rawHwid;
+              
+              let credits = 1;
+              if (item.plan_tier && item.plan_tier.includes('CREDITS:')) {
+                credits = parseInt(item.plan_tier.split('CREDITS:')[1], 10) || 1;
+              }
 
-          let statusBadge = `<span class="badge-status badge-active">PRO ACTIVE (${daysLeft}d left)</span>`;
-          if (isExpired) {
-            statusBadge = '<span class="badge-status" style="background:rgba(255,165,2,0.15);color:#ffa502;border:1px solid #ffa502;">EXPIRED (30d)</span>';
-          } else if (!item.is_active) {
-            statusBadge = '<span class="badge-status badge-revoked">REVOKED</span>';
+              const lastActive = item.last_used_at 
+                ? new Date(item.last_used_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                : (item.created_at ? new Date(item.created_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recent');
+
+              return `
+                <tr>
+                  <td>
+                    <div class="user-cell" title="Full Machine HWID: ${rawHwid}">
+                      <code style="color:#00e5ff;font-size:11px;">🔒 ${shortHwid}</code>
+                    </div>
+                  </td>
+                  <td>
+                    <span style="color:#00ff66;font-weight:800;font-size:12px;background:rgba(0,255,102,0.1);padding:3px 8px;border-radius:3px;border:1px solid rgba(0,255,102,0.3);">
+                      🪙 ${credits} Solve${credits > 1 ? 's' : ''} Left
+                    </span>
+                  </td>
+                  <td>
+                    <span class="badge-status badge-active" style="font-size:10px;">AD VERIFIED ✓</span>
+                  </td>
+                  <td style="color:#7ca88e;font-size:11px;">${lastActive}</td>
+                  <td>
+                    <div class="action-group">
+                      <button class="btn-gen" style="padding:4px 10px;font-size:10px;" onclick="grantProDirect('${item.customer_email}', '${item.id}')">+ UPGRADE TO PRO ✓</button>
+                      <button class="btn-action-reset" style="padding:4px 8px;" onclick="addFreeCredits('${item.id}', ${credits + 5})">+5 SOLVES</button>
+                      <button class="btn-action-copy" onclick="copyText('${rawHwid}', this)">COPY HWID</button>
+                      <button class="btn-action-delete" onclick="deleteLicense('${item.id}', '${item.license_key}')">DEL</button>
+                    </div>
+                  </td>
+                </tr>
+              `;
+            }).join('');
           }
-
-          let hwidDisplay = '<span style="color:#a855f7;font-size:11px;">🟢 READY (NO PC BOUND)</span>';
-          if (item.bound_hwid) {
-            const shortHwid = item.bound_hwid.length > 18 ? item.bound_hwid.substring(0, 16) + '...' : item.bound_hwid;
-            hwidDisplay = `<span class="badge-status badge-bound" title="${item.bound_hwid}">🔒 PC: ${shortHwid}</span>`;
-          }
-
-          const created = new Date(item.created_at).toLocaleDateString('en-IN', {
-            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-          });
-
-          return `
-            <tr>
-              <td><strong style="color:#ffffff;">${item.customer_email || 'unassigned'}</strong></td>
-              <td>${statusBadge}</td>
-              <td>${hwidDisplay}</td>
-              <td><code style="color:#00ff66;font-size:11px;">${item.license_key}</code></td>
-              <td style="color:#7ca88e;font-size:11px;">${created}</td>
-              <td style="white-space:nowrap;">
-                <button class="btn-action-copy" onclick="copyText('${item.license_key}', this)">COPY KEY</button>
-                ${item.bound_hwid ? `<button class="btn-action-reset" title="Unbind PC HWID lock so customer can activate on a new laptop" onclick="resetHwid('${item.id}', '${item.license_key}')">UNBIND HWID</button>` : ''}
-                <button class="btn-action-revoke" onclick="toggleRevoke('${item.id}', false)">REVOKE PRO</button>
-                <button class="btn-action-delete" title="Permanently delete from database" onclick="deleteLicense('${item.id}', '${item.license_key}')">DELETE</button>
-              </td>
-            </tr>
-          `;
-        }).join('');
+        }
 
       } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ff4757;padding:20px;">Error loading data: ${err.message}</td></tr>`;
+        if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ff4757;padding:20px;">Error loading data: ${err.message}</td></tr>`;
       }
     }
 
-    function updateStats(data) {
-      document.getElementById('stat-total').innerText = data.length;
-      const boundCount = data.filter(d => d.bound_hwid && d.is_active).length;
-      const unusedCount = data.filter(d => !d.bound_hwid && d.is_active).length;
-      document.getElementById('stat-bound').innerText = boundCount;
-      document.getElementById('stat-unused').innerText = unusedCount;
-      document.getElementById('stat-rev').innerText = `₹${data.length * 100}`;
+    function updateStats(proData) {
+      const elTotal = document.getElementById('stat-total');
+      const elBound = document.getElementById('stat-bound');
+      const elUnused = document.getElementById('stat-unused');
+      const elRev = document.getElementById('stat-rev');
+      if (elTotal) elTotal.innerText = proData.length;
+      const boundCount = proData.filter(d => d.bound_hwid && d.is_active).length;
+      const unusedCount = proData.filter(d => !d.bound_hwid && d.is_active).length;
+      if (elBound) elBound.innerText = boundCount;
+      if (elUnused) elUnused.innerText = unusedCount;
+      if (elRev) elRev.innerText = `₹${proData.length * 100}`;
     }
 
     window.copyText = function(text, btn) {
