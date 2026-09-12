@@ -488,9 +488,12 @@
                     style="color:#00ff66;font-weight:bold;">"Run anyway"</span>. (Standard for unsigned low-level
                   stealth hooks).</div>
 
-                <div style="color:#e2fced;font-size:10px;margin-bottom:6px;"><strong>Step 2: Silent System
+                <div style="color:#e2fced;font-size:10px;margin-bottom:8px;"><strong>Step 2: Silent System
                     Tray:</strong> ShadowAI disguises itself as <code>RuntimeBroker.exe</code> and docks silently in
                   your <strong>Taskbar System Tray (near the clock ^ icon)</strong> with zero visible taskbar trace.
+                  <div style="margin-top:6px;border-radius:6px;overflow:hidden;border:1px solid rgba(0,255,102,0.4);box-shadow:0 0 15px rgba(0,255,102,0.1);">
+                    <img src="tray_guide.jpg" alt="Windows Taskbar System Tray Hidden Icons Location" style="width:100%;height:auto;display:block;" loading="lazy">
+                  </div>
                 </div>
 
                 <div style="color:#e2fced;font-size:10px;margin-bottom:2px;"><strong>Step 3: Stealth Hotkeys:</strong>
@@ -600,6 +603,82 @@
               </div>
             </div>
           </div>
+    </section>
+
+    <!-- STEALTH TRAY ACCESS GUIDE (SHOWING REAL TRAY IMAGE) -->
+    <section id="tray-guide" style="max-width: 1200px; margin: 40px auto; padding: 0 20px;">
+      <div style="background: linear-gradient(135deg, rgba(3,8,5,0.95) 0%, rgba(7,14,10,0.95) 100%); border: 1px solid rgba(0, 255, 102, 0.3); border-radius: 12px; padding: 32px; box-shadow: 0 0 35px rgba(0,255,102,0.06); position: relative; overflow: hidden;">
+        <div style="position: absolute; top: -50px; right: -50px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(0,255,102,0.15) 0%, transparent 70%); pointer-events: none;"></div>
+
+        <div style="text-align: center; margin-bottom: 28px;">
+          <div class="section-tag" style="display: inline-block; margin-bottom: 8px;">// STEALTH OPERATION PROTOCOL // TASKBAR DOCKING</div>
+          <h2 style="font-family: 'Orbitron', monospace; font-size: 24px; color: #e2fced; margin-bottom: 10px;">
+            WHERE IS THE APP AFTER LAUNCHING? <span style="color: #00ff66;">(SYSTEM TRAY DOCKED)</span>
+          </h2>
+          <p style="color: #7ca88e; font-size: 13px; max-width: 780px; margin: 0 auto; line-height: 1.6;">
+            To ensure <strong>100% undetected stealth</strong> against exam proctors, lockdown browsers, and screen shares, ShadowAI <strong>never opens a noisy window on your desktop</strong>. It launches silently into your <strong>Windows Hidden Icons Tray</strong>.
+          </p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: center;">
+          <!-- Left: Real Screenshot Frame -->
+          <div style="position: relative; border-radius: 8px; overflow: hidden; border: 1px solid rgba(0, 229, 255, 0.4); box-shadow: 0 0 25px rgba(0,229,255,0.15); background: #030508;">
+            <div style="background: rgba(3,5,8,0.9); padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(0,229,255,0.2);">
+              <span style="font-family: 'Orbitron', monospace; font-size: 10px; color: #00e5ff;">// WINDOWS 11 NOTIFICATION TRAY</span>
+              <span style="font-size: 9px; color: #00ff66; background: rgba(0,255,102,0.12); padding: 2px 6px; border-radius: 3px; font-weight: 700;">🟢 ACTIVE PROCESS</span>
+            </div>
+            <img src="tray_guide.jpg" alt="ShadowAI Windows System Tray Hidden Icons Location" style="width: 100%; display: block; height: auto;" loading="lazy">
+            <div style="padding: 10px 14px; background: rgba(3,5,8,0.95); font-size: 11px; color: #7ca88e; border-top: 1px solid rgba(0,255,102,0.2); display: flex; align-items: center; gap: 8px;">
+              <span style="color: #00ff66; font-size: 14px;">📍</span>
+              <span>Click the <strong>^ (upward arrow)</strong> near your system clock, then <strong>Right-Click</strong> the glowing icon.</span>
+            </div>
+          </div>
+
+          <!-- Right: Instructions & Hotkeys -->
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="background: rgba(0, 255, 102, 0.04); border: 1px solid rgba(0, 255, 102, 0.2); border-radius: 8px; padding: 16px;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                <span style="background: rgba(0,255,102,0.2); color: #00ff66; font-family: 'Orbitron'; font-weight: 700; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px;">1</span>
+                <strong style="color: #00ff66; font-family: 'Orbitron'; font-size: 13px;">CLICK THE '^' ARROW</strong>
+              </div>
+              <p style="color: #cad8cf; font-size: 12px; line-height: 1.6; margin: 0;">
+                Look at the bottom right corner of your screen (next to the Windows clock &amp; Wi-Fi icons). Click the small <strong>^ caret arrow</strong> to open the <em>Show hidden icons</em> popup menu.
+              </p>
+            </div>
+
+            <div style="background: rgba(0, 229, 255, 0.04); border: 1px solid rgba(0, 229, 255, 0.2); border-radius: 8px; padding: 16px;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                <span style="background: rgba(0,229,255,0.2); color: #00e5ff; font-family: 'Orbitron'; font-weight: 700; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px;">2</span>
+                <strong style="color: #00e5ff; font-family: 'Orbitron'; font-size: 13px;">RIGHT-CLICK THE ICON FOR MENU</strong>
+              </div>
+              <p style="color: #cad8cf; font-size: 12px; line-height: 1.6; margin: 0 0 8px 0;">
+                Right-click the icon to open all control windows:
+              </p>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 11px;">
+                <span style="color: #e2fced;">🎛️ <strong>Dashboard:</strong> Solves vault</span>
+                <span style="color: #e2fced;">⚙️ <strong>Settings:</strong> 10-slot auto rotation</span>
+                <span style="color: #e2fced;">👁️ <strong>Overlay:</strong> Vision solver</span>
+                <span style="color: #ff4757;">❌ <strong>Exit:</strong> Stealth shutdown</span>
+              </div>
+            </div>
+
+            <div style="background: rgba(255, 183, 0, 0.04); border: 1px solid rgba(255, 183, 0, 0.2); border-radius: 8px; padding: 16px;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                <span style="background: rgba(255,183,0,0.2); color: #ffb700; font-family: 'Orbitron'; font-weight: 700; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px;">3</span>
+                <strong style="color: #ffb700; font-family: 'Orbitron'; font-size: 13px;">OR USE STEALTH HOTKEYS ANYWHERE</strong>
+              </div>
+              <p style="color: #cad8cf; font-size: 12px; line-height: 1.6; margin: 0 0 8px 0;">
+                You don't even need to open the tray during an exam! Press these stealth hotkeys anytime:
+              </p>
+              <div style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; font-family: monospace;">
+                <div><code style="color: #00ff66; background: #030805; padding: 2px 6px; border-radius: 3px;">Ctrl + Shift + A</code> <span style="color: #7ca88e;">➔ Open / Close Stealth Overlay</span></div>
+                <div><code style="color: #00e5ff; background: #030805; padding: 2px 6px; border-radius: 3px;">Shift + Alt + S</code> <span style="color: #7ca88e;">➔ Instant 1-Key Snapshot &amp; Solve</span></div>
+                <div><code style="color: #ff4757; background: #030805; padding: 2px 6px; border-radius: 3px;">Ctrl + Shift + Del</code> <span style="color: #7ca88e;">➔ Emergency Panic Kill-Switch</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- DUAL PRICING / ACCESS MATRIX SECTION (OPTION A & B) -->
