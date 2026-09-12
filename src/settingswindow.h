@@ -127,4 +127,15 @@ protected:
     QLabel*      m_creditsStatusLabel = nullptr;
     QPushButton* m_watchAdSettingsBtn = nullptr;
     void refreshAccountTab();
+
+    // Persistent Top Profile & Credits Header (Visible across all tabs)
+    QWidget*     m_topProfileBar       = nullptr;
+    QLabel*      m_topAvatarLabel      = nullptr;
+    QLabel*      m_topUserEmailLabel   = nullptr;
+    QLabel*      m_topUserTierLabel    = nullptr;
+    QLabel*      m_topCreditsBadge     = nullptr;
+    QPushButton* m_topWatchAdBtn       = nullptr;
+    QPushButton* m_topUpgradeBtn       = nullptr;
+    void updateTopProfileBar();
 };
+

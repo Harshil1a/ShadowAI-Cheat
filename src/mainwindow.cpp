@@ -1,5 +1,7 @@
 #include "mainwindow.h"
 #include "dashboard.h"
+#include "accountmanager.h"
+#include "appconfig.h"
 #include <QPainter>
 #include <QPainterPath>
 #include <QGraphicsDropShadowEffect>
@@ -7,6 +9,8 @@
 #include <QApplication>
 #include <QGuiApplication>
 #include <QScreen>
+#include <QDesktopServices>
+#include <QUrl>
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -52,6 +56,20 @@ void MainWindow::setupUI() {
 
     tbLayout->addStretch();
 
+    // Credits / Solves indicator button on top
+    m_tbCreditsBtn = new QPushButton(titleBar);
+    m_tbCreditsBtn->setObjectName("tbCreditsBtn");
+    m_tbCreditsBtn->setCursor(Qt::PointingHandCursor);
+    m_tbCreditsBtn->setFixedHeight(24);
+    tbLayout->addWidget(m_tbCreditsBtn);
+
+    // Quick Pro upgrade button on top
+    m_tbProBtn = new QPushButton("⚡ PRO", titleBar);
+    m_tbProBtn->setObjectName("tbProBtn");
+    m_tbProBtn->setCursor(Qt::PointingHandCursor);
+    m_tbProBtn->setFixedHeight(24);
+    tbLayout->addWidget(m_tbProBtn);
+
     // — button: hide window, keep app running in tray
     m_hideBtn = new QPushButton("—", titleBar);
     m_hideBtn->setObjectName("tbHideBtn");
@@ -79,6 +97,24 @@ void MainWindow::setupUI() {
     rootLayout->addWidget(m_dashboard, 1);
 
     // ── CONNECTIONS ────────────────────────────────────────────────────────────
+    connect(m_tbCreditsBtn, &QPushButton::clicked, this, []() {
+        if (!AccountManager::instance().isPro()) {
+            AccountManager::instance().openWatchAdUrl();
+        }
+    });
+
+    connect(m_tbProBtn, &QPushButton::clicked, this, []() {
+        QDesktopServices::openUrl(QUrl("https://shadow-ai-cheat.vercel.app/#pricing"));
+    });
+
+    connect(&AccountManager::instance(), &AccountManager::creditsUpdated, this, [this](int) {
+        updateTopBarCredits();
+    });
+
+    connect(&AccountManager::instance(), &AccountManager::accountStateChanged, this, [this](bool, const QString&, bool) {
+        updateTopBarCredits();
+    });
+
     connect(m_hideBtn, &QPushButton::clicked, this, [this]() {
         emit m_dashboard->hideOverlay();
         hide();
@@ -87,6 +123,8 @@ void MainWindow::setupUI() {
     connect(m_closeBtn, &QPushButton::clicked, this, [this]() {
         emit m_dashboard->quitApp();
     });
+
+    updateTopBarCredits();
 }
 
 void MainWindow::paintEvent(QPaintEvent*) {
@@ -134,7 +172,33 @@ void MainWindow::showEvent(QShowEvent* event) {
     exStyle &= ~WS_EX_APPWINDOW;
     SetWindowLongPtr(hwnd, GWL_EXSTYLE, exStyle);
 #endif
+    updateTopBarCredits();
 }
+
+void MainWindow::updateTopBarCredits() {
+    if (!m_tbCreditsBtn || !m_tbProBtn) return;
+    bool isPro = AccountManager::instance().isPro();
+    if (isPro) {
+        m_tbCreditsBtn->setText(QString::fromUtf8("💎 PRO UNLIMITED"));
+        m_tbCreditsBtn->setStyleSheet("background: rgba(0, 255, 102, 0.15); border: 1px solid rgba(0, 255, 102, 0.5); color: #00ff66; font-size: 11px; font-weight: bold; border-radius: 4px; padding: 2px 8px;");
+        m_tbCreditsBtn->setToolTip("Pro Active: Unlimited Solves Enabled");
+        m_tbProBtn->hide();
+    } else {
+        int credits = AppConfig::instance().freeCredits();
+        if (credits > 0) {
+            m_tbCreditsBtn->setText(QString::fromUtf8("🪙 %1 Solves [+1 Ad]").arg(credits));
+            m_tbCreditsBtn->setStyleSheet("background: rgba(0, 229, 255, 0.15); border: 1px solid rgba(0, 229, 255, 0.5); color: #00e5ff; font-size: 11px; font-weight: bold; border-radius: 4px; padding: 2px 8px;");
+        } else {
+            m_tbCreditsBtn->setText(QString::fromUtf8("🪙 0 Solves [Get +1]"));
+            m_tbCreditsBtn->setStyleSheet("background: rgba(255, 71, 87, 0.18); border: 1px solid rgba(255, 71, 87, 0.6); color: #ff4757; font-size: 11px; font-weight: bold; border-radius: 4px; padding: 2px 8px;");
+        }
+        m_tbCreditsBtn->setToolTip("Available Solve Credits. Click to complete a sponsor task on LootLabs (+1 solve).");
+        m_tbProBtn->show();
+        m_tbProBtn->setStyleSheet("background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #ff9900, stop:1 #ff5500); border: none; color: #ffffff; font-size: 11px; font-weight: bold; border-radius: 4px; padding: 2px 8px;");
+        m_tbProBtn->setToolTip("Upgrade to Shadow PRO for Unlimited Solves");
+    }
+}
+
 
 void MainWindow::applyStyle() {
     setStyleSheet(R"(

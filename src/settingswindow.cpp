@@ -105,6 +105,13 @@ SettingsWindow::SettingsWindow(QWidget* parent)
     setupUI();
     loadValues();
     applyStyle();
+
+    connect(&AccountManager::instance(), &AccountManager::creditsUpdated, this, [this](int) {
+        refreshAccountTab();
+    });
+    connect(&AccountManager::instance(), &AccountManager::accountStateChanged, this, [this](bool, const QString&, bool) {
+        refreshAccountTab();
+    });
 }
 
 void SettingsWindow::setupUI() {
@@ -112,9 +119,72 @@ void SettingsWindow::setupUI() {
     root->setContentsMargins(16, 16, 16, 16);
     root->setSpacing(12);
 
+    // ── PERSISTENT TOP PROFILE & CREDITS HEADER (Visible across all tabs) ──
+    m_topProfileBar = new QWidget(this);
+    m_topProfileBar->setObjectName("topProfileBar");
+    m_topProfileBar->setFixedHeight(68);
+
+    QHBoxLayout* topLayout = new QHBoxLayout(m_topProfileBar);
+    topLayout->setContentsMargins(16, 10, 16, 10);
+    topLayout->setSpacing(14);
+
+    // Left: Avatar Icon
+    m_topAvatarLabel = new QLabel(QString::fromUtf8("👤"), m_topProfileBar);
+    m_topAvatarLabel->setObjectName("topAvatarLabel");
+    m_topAvatarLabel->setFixedSize(42, 42);
+    m_topAvatarLabel->setAlignment(Qt::AlignCenter);
+    topLayout->addWidget(m_topAvatarLabel);
+
+    // User Details Column
+    QVBoxLayout* userDetailCol = new QVBoxLayout();
+    userDetailCol->setContentsMargins(0, 0, 0, 0);
+    userDetailCol->setSpacing(2);
+
+    m_topUserEmailLabel = new QLabel(m_topProfileBar);
+    m_topUserEmailLabel->setObjectName("topUserEmail");
+
+    m_topUserTierLabel = new QLabel(m_topProfileBar);
+    m_topUserTierLabel->setObjectName("topUserTier");
+
+    userDetailCol->addWidget(m_topUserEmailLabel);
+    userDetailCol->addWidget(m_topUserTierLabel);
+    topLayout->addLayout(userDetailCol);
+
+    topLayout->addStretch();
+
+    // Right: Credits Badge
+    m_topCreditsBadge = new QLabel(m_topProfileBar);
+    m_topCreditsBadge->setObjectName("topCreditsBadge");
+    m_topCreditsBadge->setAlignment(Qt::AlignCenter);
+    topLayout->addWidget(m_topCreditsBadge);
+
+    // Right: Action Buttons
+    m_topWatchAdBtn = new QPushButton("📺 Watch Ad (+1)", m_topProfileBar);
+    m_topWatchAdBtn->setObjectName("topWatchAdBtn");
+    m_topWatchAdBtn->setCursor(Qt::PointingHandCursor);
+    m_topWatchAdBtn->setFixedHeight(32);
+    m_topWatchAdBtn->setToolTip("Complete a 15-second sponsor task on LootLabs to bank +1 solve credit immediately.");
+    connect(m_topWatchAdBtn, &QPushButton::clicked, this, []() {
+        AccountManager::instance().openWatchAdUrl();
+    });
+    topLayout->addWidget(m_topWatchAdBtn);
+
+    m_topUpgradeBtn = new QPushButton("⚡ Get PRO", m_topProfileBar);
+    m_topUpgradeBtn->setObjectName("topUpgradeBtn");
+    m_topUpgradeBtn->setCursor(Qt::PointingHandCursor);
+    m_topUpgradeBtn->setFixedHeight(32);
+    m_topUpgradeBtn->setToolTip("Upgrade to Shadow PRO for Unlimited Solves & Cloud AI");
+    connect(m_topUpgradeBtn, &QPushButton::clicked, this, []() {
+        QDesktopServices::openUrl(QUrl("https://shadow-ai-cheat.vercel.app/#pricing"));
+    });
+    topLayout->addWidget(m_topUpgradeBtn);
+
+    root->addWidget(m_topProfileBar);
+
     // Create the Tab Widget
     QTabWidget* tabWidget = new QTabWidget(this);
     tabWidget->setObjectName("settingsTabs");
+
 
     // ─────────────────────────────────────────────────────────────────────────
     // ─────────────────────────────────────────────────────────────────────────
@@ -1187,6 +1257,28 @@ void SettingsWindow::applyStyle() {
                 stop:0 #060f1e, stop:1 #0a1628);
         }
 
+        /* ═══ Persistent Top Profile & Credits Header ═══ */
+        QWidget#topProfileBar {
+            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 rgba(14, 25, 48, 0.95), stop:1 rgba(7, 14, 28, 0.98));
+            border: 1px solid rgba(0, 229, 255, 0.28);
+            border-radius: 8px;
+        }
+        QLabel#topAvatarLabel {
+            background: qradialgradient(cx:0.5, cy:0.5, radius:0.5, fx:0.5, fy:0.5,
+                stop:0 rgba(0, 229, 255, 0.25), stop:1 rgba(0, 229, 255, 0.05));
+            border: 2px solid rgba(0, 229, 255, 0.55);
+            border-radius: 21px;
+            font-size: 20px;
+            color: #00e5ff;
+        }
+        QLabel#topUserEmail {
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
         /* ═══ TAB BAR — bigger, bolder, readable ═══ */
         QTabWidget::pane {
             border: 1px solid rgba(0, 229, 255, 0.25);
@@ -1448,4 +1540,64 @@ void SettingsWindow::refreshAccountTab() {
             if (m_watchAdSettingsBtn) m_watchAdSettingsBtn->setEnabled(true);
         }
     }
+
+    updateTopProfileBar();
 }
+
+void SettingsWindow::updateTopProfileBar() {
+    if (!m_topProfileBar || !m_topUserEmailLabel) return;
+
+    bool loggedIn = AccountManager::instance().isLoggedIn();
+    bool isPro = AccountManager::instance().isPro();
+    QString rawEmail = AccountManager::instance().userEmail();
+    QString email = QUrl::fromPercentEncoding(rawEmail.toUtf8()).trimmed();
+    if (email.contains("operator@gmail.com", Qt::CaseInsensitive)) {
+        email = "";
+        loggedIn = false;
+    }
+
+    if (loggedIn && !email.isEmpty()) {
+        m_topUserEmailLabel->setText(email);
+    } else {
+        QString hwid = AccountManager::instance().getMachineHwid();
+        QString shortHwid = hwid.left(12);
+        m_topUserEmailLabel->setText(QString("Guest Device • HWID: %1...").arg(shortHwid));
+    }
+
+    if (isPro) {
+        int days = AppConfig::instance().proDaysLeft();
+        QString plan = AppConfig::instance().proPlanTier();
+        if (days < 0 || plan.contains("LIFETIME")) {
+            m_topUserTierLabel->setText("⚡ PRO LIFETIME ACTIVE");
+        } else {
+            m_topUserTierLabel->setText(QString("⚡ PRO ACTIVE (%1 DAYS REMAINING)").arg(days));
+        }
+        m_topUserTierLabel->setStyleSheet("color: #00ff66; font-size: 11px; font-weight: 800; font-family: 'Consolas', monospace;");
+
+        m_topCreditsBadge->setText("💎 UNLIMITED SOLVES");
+        m_topCreditsBadge->setStyleSheet("background: rgba(0, 255, 102, 0.15); border: 1px solid rgba(0, 255, 102, 0.5); color: #00ff66; font-size: 12px; font-weight: bold; border-radius: 6px; padding: 4px 12px; font-family: 'Consolas', monospace;");
+
+        m_topWatchAdBtn->setVisible(false);
+        m_topUpgradeBtn->setText("💎 PRO Active");
+        m_topUpgradeBtn->setStyleSheet("background: rgba(0, 255, 102, 0.2); border: 1px solid #00ff66; color: #00ff66; font-size: 11px; font-weight: bold; border-radius: 6px; padding: 4px 12px;");
+    } else {
+        m_topUserTierLabel->setText("🛡️ COMMUNITY FREE TIER");
+        m_topUserTierLabel->setStyleSheet("color: #00e5ff; font-size: 11px; font-weight: 800; font-family: 'Consolas', monospace;");
+
+        int credits = AppConfig::instance().freeCredits();
+        if (credits > 0) {
+            m_topCreditsBadge->setText(QString("🪙 %1 SOLVES BANKED").arg(credits));
+            m_topCreditsBadge->setStyleSheet("background: rgba(0, 229, 255, 0.15); border: 1px solid rgba(0, 229, 255, 0.5); color: #00e5ff; font-size: 12px; font-weight: bold; border-radius: 6px; padding: 4px 12px; font-family: 'Consolas', monospace;");
+        } else {
+            m_topCreditsBadge->setText("🪙 0 SOLVES (LOCKED)");
+            m_topCreditsBadge->setStyleSheet("background: rgba(255, 71, 87, 0.2); border: 1px solid rgba(255, 71, 87, 0.6); color: #ff4757; font-size: 12px; font-weight: bold; border-radius: 6px; padding: 4px 12px; font-family: 'Consolas', monospace;");
+        }
+
+        m_topWatchAdBtn->setVisible(true);
+        m_topWatchAdBtn->setText("📺 Watch Ad (+1)");
+        m_topWatchAdBtn->setStyleSheet("background: rgba(0, 229, 255, 0.2); border: 1px solid #00e5ff; color: #00e5ff; font-size: 11px; font-weight: bold; border-radius: 6px; padding: 4px 12px;");
+
+        m_topUpgradeBtn->setText("⚡ Upgrade PRO");
+        m_topUpgradeBtn->setStyleSheet("background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #ff9900, stop:1 #ff5500); border: none; color: #ffffff; font-size: 11px; font-weight: bold; border-radius: 6px; padding: 4px 12px;");
+    }
+}
