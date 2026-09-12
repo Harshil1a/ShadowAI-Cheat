@@ -121,35 +121,35 @@ void Dashboard::setupUI() {
     cLayout->addSpacing(8);
 
     // ── ACCOUNT & LICENSE BADGE ───────────────────────────────────────
-    QWidget* accRow = new QWidget(content);
-    QHBoxLayout* accLayout = new QHBoxLayout(accRow);
-    accLayout->setContentsMargins(0, 0, 0, 0);
-    accLayout->setSpacing(8);
+    QWidget* accContainer = new QWidget(content);
+    QVBoxLayout* accVLayout = new QVBoxLayout(accContainer);
+    accVLayout->setContentsMargins(0, 0, 0, 0);
+    accVLayout->setSpacing(6);
 
-    m_accountBadge = new QLabel(accRow);
+    m_accountBadge = new QLabel(accContainer);
     m_accountBadge->setObjectName("accountBadge");
     m_accountBadge->setAlignment(Qt::AlignCenter);
 
-    m_loginBtn = new QPushButton("Login", accRow);
+    m_loginBtn = new QPushButton("Login", accContainer);
     m_loginBtn->setObjectName("accLoginBtn");
-    m_loginBtn->setFixedSize(65, 24);
+    m_loginBtn->setFixedHeight(26);
     m_loginBtn->setCursor(Qt::PointingHandCursor);
 
-    m_proBtn = new QPushButton("Pro ⚡", accRow);
+    m_proBtn = new QPushButton("⚡ PRO", accContainer);
     m_proBtn->setObjectName("accProBtn");
-    m_proBtn->setMinimumSize(88, 24);
+    m_proBtn->setFixedHeight(26);
     m_proBtn->setCursor(Qt::PointingHandCursor);
 
-    m_creditsBtn = new QPushButton("🪙 0 Solves [+1 Ad]", accRow);
+    m_creditsBtn = new QPushButton("🪙 0 Solves [Get +1]", accContainer);
     m_creditsBtn->setObjectName("accCreditsBtn");
-    m_creditsBtn->setMinimumSize(110, 24);
+    m_creditsBtn->setFixedHeight(26);
     m_creditsBtn->setCursor(Qt::PointingHandCursor);
     m_creditsBtn->setToolTip("Complete a 15-second sponsor task on LootLabs to bank +1 solve credit.");
     connect(m_creditsBtn, &QPushButton::clicked, this, []() {
         AccountManager::instance().openWatchAdUrl();
     });
 
-    m_updateBadge = new QPushButton("⚡ Update Available", accRow);
+    m_updateBadge = new QPushButton("⚡ Update Available", accContainer);
     m_updateBadge->setObjectName("accUpdateBtn");
     m_updateBadge->setCursor(Qt::PointingHandCursor);
     m_updateBadge->setVisible(false);
@@ -158,16 +158,39 @@ void Dashboard::setupUI() {
         QDesktopServices::openUrl(QUrl("https://shadow-ai-cheat.vercel.app/#downloads"));
     });
 
-    accLayout->addStretch();
-    accLayout->addWidget(m_accountBadge);
-    accLayout->addWidget(m_loginBtn);
-    accLayout->addWidget(m_creditsBtn);
-    accLayout->addWidget(m_proBtn);
-    accLayout->addWidget(m_updateBadge);
-    accLayout->addStretch();
+    // Row 1: Account status & login/logout
+    QWidget* row1 = new QWidget(accContainer);
+    QHBoxLayout* row1Layout = new QHBoxLayout(row1);
+    row1Layout->setContentsMargins(0, 0, 0, 0);
+    row1Layout->setSpacing(8);
+    row1Layout->addStretch();
+    row1Layout->addWidget(m_accountBadge);
+    row1Layout->addWidget(m_loginBtn);
+    row1Layout->addStretch();
+    accVLayout->addWidget(row1);
 
-    cLayout->addWidget(accRow);
-    cLayout->addSpacing(14);
+    // Row 2: Solves & Pro Tier
+    QWidget* row2 = new QWidget(accContainer);
+    QHBoxLayout* row2Layout = new QHBoxLayout(row2);
+    row2Layout->setContentsMargins(0, 0, 0, 0);
+    row2Layout->setSpacing(8);
+    row2Layout->addStretch();
+    row2Layout->addWidget(m_creditsBtn);
+    row2Layout->addWidget(m_proBtn);
+    row2Layout->addStretch();
+    accVLayout->addWidget(row2);
+
+    // Row 3: Update Badge
+    QWidget* row3 = new QWidget(accContainer);
+    QHBoxLayout* row3Layout = new QHBoxLayout(row3);
+    row3Layout->setContentsMargins(0, 0, 0, 0);
+    row3Layout->addStretch();
+    row3Layout->addWidget(m_updateBadge);
+    row3Layout->addStretch();
+    accVLayout->addWidget(row3);
+
+    cLayout->addWidget(accContainer);
+    cLayout->addSpacing(10);
 
     connect(m_loginBtn, &QPushButton::clicked, this, [this]() {
         if (AccountManager::instance().isLoggedIn()) {

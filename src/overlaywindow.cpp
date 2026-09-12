@@ -3,6 +3,7 @@
 #include "screencapture.h"
 #include "appconfig.h"
 #include "audiorecorder.h"
+#include "accountmanager.h"
 #include <QPainter>
 #include <QPainterPath>
 #include <QMouseEvent>
@@ -335,10 +336,23 @@ void OverlayWindow::setupUI() {
     m_statusLabel->setObjectName("statusLabel");
     m_statusLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
+    m_creditsBadge = new QLabel(topBar);
+    m_creditsBadge->setObjectName("creditsBadge");
+    m_creditsBadge->setAlignment(Qt::AlignCenter);
+
     topLayout->addWidget(appIcon);
     topLayout->addWidget(appName);
     topLayout->addStretch();
+    topLayout->addWidget(m_creditsBadge);
     topLayout->addWidget(m_statusLabel);
+
+    connect(&AccountManager::instance(), &AccountManager::creditsUpdated, this, [this](int) {
+        updateCreditsBadge();
+    });
+    connect(&AccountManager::instance(), &AccountManager::accountStateChanged, this, [this](bool, const QString&, bool) {
+        updateCreditsBadge();
+    });
+    updateCreditsBadge();
 
     // ── SCREENSHOT PANEL ─────────────────────────────────────────────────
     m_screenshotFrame = new QWidget;
@@ -1810,5 +1824,25 @@ QString OverlayWindow::extractCodeBlock(const QString& fullText, bool smartInden
     }
 
     return selectedBlock.trimmed();
+}
+
+void OverlayWindow::updateCreditsBadge() {
+    if (!m_creditsBadge) return;
+    bool isPro = AccountManager::instance().isPro();
+    if (isPro) {
+        m_creditsBadge->setText(QString::fromUtf8("⚡ PRO"));
+        m_creditsBadge->setStyleSheet("color: #00ff66; font-size: 10px; font-weight: 800; font-family: 'Consolas', monospace; background: rgba(0, 255, 102, 0.15); border: 1px solid rgba(0, 255, 102, 0.4); border-radius: 4px; padding: 1px 6px;");
+        m_creditsBadge->setToolTip("Shadow Pro Active — Unlimited Solves");
+    } else {
+        int credits = AppConfig::instance().freeCredits();
+        if (credits > 0) {
+            m_creditsBadge->setText(QString::fromUtf8("🪙 %1 Solves").arg(credits));
+            m_creditsBadge->setStyleSheet("color: #00e5ff; font-size: 10px; font-weight: 800; font-family: 'Consolas', monospace; background: rgba(0, 229, 255, 0.15); border: 1px solid rgba(0, 229, 255, 0.4); border-radius: 4px; padding: 1px 6px;");
+        } else {
+            m_creditsBadge->setText(QString::fromUtf8("🪙 0 Solves"));
+            m_creditsBadge->setStyleSheet("color: #ff4757; font-size: 10px; font-weight: 800; font-family: 'Consolas', monospace; background: rgba(255, 71, 87, 0.15); border: 1px solid rgba(255, 71, 87, 0.4); border-radius: 4px; padding: 1px 6px;");
+        }
+        m_creditsBadge->setToolTip("Live AI Solve Credits Remaining");
+    }
 }
 

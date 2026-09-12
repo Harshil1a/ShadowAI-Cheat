@@ -89,6 +89,8 @@ private:
     QWidget*        m_allKeysHUD = nullptr;
     QVBoxLayout*    m_allKeysLayout = nullptr;
     QLabel*         m_statusLabel;
+    QLabel*         m_creditsBadge = nullptr;
+    void            updateCreditsBadge();
     QWidget*        m_screenshotFrame;
     QWidget*      m_controlsPanel;
     QWidget*      m_helpGroupsContainer;

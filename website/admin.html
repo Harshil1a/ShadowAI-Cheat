@@ -461,6 +461,23 @@
       <button class="btn-refresh" id="btn-refresh-table">↻ REFRESH ALL RECORDS</button>
     </div>
 
+    <!-- MASTER PRO CLOUD ENGINE (GEMINI 2.5 FLASH) KEY MANAGER -->
+    <div class="admin-card" style="margin-bottom: 24px; border: 1px solid rgba(0, 229, 255, 0.4); background: rgba(5, 12, 20, 0.9);">
+      <div class="admin-card-title" style="color: #00e5ff; display: flex; justify-content: space-between; align-items: center;">
+        <span>⚡ MASTER PRO CLOUD ENGINE (GEMINI 2.5 FLASH KEY)</span>
+        <span id="gemini-key-status" style="font-size: 11px; color: #7ca88e;">Checking Cloud Status...</span>
+      </div>
+      <p style="color: #8b9bb4; font-size: 11px; line-height: 1.6; margin-bottom: 14px;">
+        This Google Gemini API key powers the Zero-Key Pro Cloud Engine for all PRO subscribers. It is stored securely in Supabase and never exposed to GitHub.
+      </p>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <input type="password" id="gemini-key-input" placeholder="Paste new Gemini API Key (starts with AIzaSy...)" style="flex: 1; min-width: 280px; background: rgba(0,0,0,0.6); border: 1px solid rgba(0, 229, 255, 0.4); color: #00ff66; padding: 10px 14px; font-family: monospace; border-radius: 4px; font-size: 12px;">
+        <button id="btn-save-gemini" onclick="saveCloudGeminiKey()" class="btn-gen" style="background: linear-gradient(135deg, #00e5ff 0%, #0088cc 100%); color: #020813; box-shadow: 0 0 15px rgba(0,229,255,0.4);">SAVE TO CLOUD ⚡</button>
+        <button id="btn-test-gemini" onclick="testCloudGeminiKey()" class="btn-refresh">TEST KEY 🔬</button>
+      </div>
+      <div id="gemini-key-feedback" style="margin-top: 10px; font-size: 11px;"></div>
+    </div>
+
     <!-- TABLE -->
     <div class="admin-card">
       <div class="admin-card-title">
@@ -515,6 +532,98 @@
       loadLicenses();
       loadCloudGeminiKey();
     }
+
+    async function loadCloudGeminiKey() {
+      const statusEl = document.getElementById('gemini-key-status');
+      const inputEl = document.getElementById('gemini-key-input');
+      const feedbackEl = document.getElementById('gemini-key-feedback');
+      try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/licenses?customer_email=eq.system@shadowai.local&select=*`, {
+          headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+        });
+        const rows = await res.json();
+        if (Array.isArray(rows) && rows.length > 0) {
+          const rawKey = (rows[0].bound_hwid || '').trim();
+          if (rawKey) {
+            const masked = rawKey.substring(0, 8) + '...' + rawKey.substring(rawKey.length - 4);
+            statusEl.innerHTML = `<span style="color:#00ff66;">✓ ACTIVE KEY: <code>${masked}</code></span>`;
+            inputEl.placeholder = `Current Key: ${masked} (paste new key here to replace)`;
+          } else {
+            statusEl.innerHTML = '<span style="color:#ff4757;">❌ NO CLOUD KEY CONFIGURED</span>';
+          }
+        }
+      } catch (err) {
+        if (statusEl) statusEl.innerText = 'Error loading key: ' + err.message;
+      }
+    }
+
+    window.saveCloudGeminiKey = async function() {
+      const inputEl = document.getElementById('gemini-key-input');
+      const feedbackEl = document.getElementById('gemini-key-feedback');
+      const newKey = inputEl.value.trim();
+      if (!newKey || !newKey.startsWith('AIzaSy')) {
+        feedbackEl.innerHTML = '<span style="color:#ff4757;">❌ Invalid Key: Google Gemini API keys must start with "AIzaSy..."</span>';
+        return;
+      }
+
+      feedbackEl.innerHTML = '<span style="color:#00e5ff;">⏳ Saving key to Supabase database...</span>';
+      try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/licenses?customer_email=eq.system@shadowai.local`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            bound_hwid: newKey,
+            last_used_at: new Date().toISOString()
+          })
+        });
+        feedbackEl.innerHTML = '<span style="color:#00ff66;">✓ SUCCESS: Master Cloud Key updated in Supabase! All desktop clients will now use this key.</span>';
+        inputEl.value = '';
+        await loadCloudGeminiKey();
+      } catch (err) {
+        feedbackEl.innerHTML = `<span style="color:#ff4757;">❌ Save failed: ${err.message}</span>`;
+      }
+    };
+
+    window.testCloudGeminiKey = async function() {
+      const feedbackEl = document.getElementById('gemini-key-feedback');
+      feedbackEl.innerHTML = '<span style="color:#00e5ff;">🔬 Pinging Google Gemini 2.5 Flash API directly...</span>';
+      try {
+        let testKey = document.getElementById('gemini-key-input').value.trim();
+        if (!testKey) {
+          const res = await fetch(`${SUPABASE_URL}/rest/v1/licenses?customer_email=eq.system@shadowai.local&select=bound_hwid`, {
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+          });
+          const rows = await res.json();
+          if (rows && rows[0]) testKey = rows[0].bound_hwid;
+        }
+
+        if (!testKey) {
+          feedbackEl.innerHTML = '<span style="color:#ff4757;">❌ No API key available to test.</span>';
+          return;
+        }
+
+        const t0 = performance.now();
+        const testRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${testKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: 'Respond with OK' }] }] })
+        });
+        const elapsed = Math.round(performance.now() - t0);
+
+        if (testRes.ok) {
+          feedbackEl.innerHTML = `<span style="color:#00ff66;">✓ VERIFIED ONLINE: Gemini 2.5 Flash responded in ${elapsed}ms! Key is 100% active and working.</span>`;
+        } else {
+          const errData = await testRes.json();
+          feedbackEl.innerHTML = `<span style="color:#ff4757;">❌ GOOGLE ERROR (HTTP ${testRes.status}): ${errData.error?.message || 'Unknown error'}</span>`;
+        }
+      } catch (err) {
+        feedbackEl.innerHTML = `<span style="color:#ff4757;">❌ Connection error: ${err.message}</span>`;
+      }
+    };
 
     // 1. Google OAuth Session Verification: STRICT SINGLE USER CHECK
     async function checkGoogleSession() {
