@@ -20,8 +20,10 @@
       min-height: 100vh;
     }
     .admin-container {
-      max-width: 1100px;
+      max-width: 1440px;
+      width: 100%;
       margin: 0 auto;
+      box-sizing: border-box;
     }
     .admin-header {
       display: flex;
@@ -109,8 +111,9 @@
       background: #070c0a;
       border: 1px solid rgba(0, 255, 102, 0.25);
       border-radius: 6px;
-      padding: 20px;
-      overflow-x: auto;
+      padding: 18px 20px;
+      margin-bottom: 24px;
+      position: relative;
     }
     .admin-card-title {
       font-size: 14px;
@@ -120,33 +123,72 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-x pan-y;
+      padding-bottom: 10px;
+      cursor: grab;
+    }
+    .table-responsive:active {
+      cursor: grabbing;
+    }
+    .table-responsive::-webkit-scrollbar {
+      height: 9px;
+    }
+    .table-responsive::-webkit-scrollbar-track {
+      background: rgba(3, 5, 8, 0.95);
+      border-radius: 4px;
+      border: 1px solid rgba(0, 255, 102, 0.1);
+    }
+    .table-responsive::-webkit-scrollbar-thumb {
+      background: rgba(0, 255, 102, 0.35);
+      border-radius: 4px;
+      border: 1px solid rgba(0, 255, 102, 0.25);
+    }
+    .table-responsive::-webkit-scrollbar-thumb:hover {
+      background: #00ff66;
+      box-shadow: 0 0 10px rgba(0, 255, 102, 0.8);
+    }
+    .swipe-hint {
+      font-size: 10px;
+      color: #7ca88e;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 3px 8px;
+      border-radius: 3px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
     }
     table {
       width: 100%;
-      table-layout: fixed;
       border-collapse: collapse;
       font-size: 12px;
     }
     th {
       text-align: left;
-      padding: 12px 10px;
+      padding: 12px 12px;
       color: #7ca88e;
       border-bottom: 2px solid rgba(0, 255, 102, 0.25);
       font-weight: 700;
       font-size: 11px;
       letter-spacing: 0.5px;
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
       box-sizing: border-box;
       background: rgba(0, 255, 102, 0.02);
     }
     td {
-      padding: 10px 10px;
+      padding: 12px 12px;
       border-bottom: 1px solid rgba(0, 255, 102, 0.08);
       vertical-align: middle;
-      overflow: hidden;
-      text-overflow: ellipsis;
       white-space: nowrap;
       box-sizing: border-box;
     }
@@ -154,7 +196,7 @@
       background: rgba(0, 255, 102, 0.04);
     }
     .cell-truncate {
-      max-width: 100%;
+      max-width: 260px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -165,7 +207,6 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      overflow: hidden;
       min-width: 0;
     }
     .user-cell-text {
@@ -174,11 +215,12 @@
       white-space: nowrap;
       font-weight: 600;
       font-size: 12px;
+      max-width: 260px;
     }
     .action-group {
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
       white-space: nowrap;
     }
     .filter-tab {
@@ -470,33 +512,38 @@
     </div>
 
     <!-- PENDING APPROVALS QUEUE (AMAZON PAY / CRYPTO QUEUE) -->
-    <div class="admin-card" style="margin-bottom: 24px; border-color: rgba(0, 229, 255, 0.4); box-shadow: 0 0 25px rgba(0,229,255,0.08);">
+    <div class="admin-card" style="border-color: rgba(0, 229, 255, 0.4); box-shadow: 0 0 25px rgba(0,229,255,0.08);">
       <div class="admin-card-title">
-        <span style="color: #00e5ff;">⏳ PENDING PAYMENT APPROVALS (AMAZON PAY / CRYPTO QUEUE)</span>
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <span style="color: #00e5ff;">⏳ PENDING PAYMENT APPROVALS (AMAZON PAY / CRYPTO QUEUE)</span>
+          <span class="swipe-hint">⇄ Swipe / Scrollable</span>
+        </div>
         <span id="pending-count-badge" style="font-size: 11px; background: rgba(0,229,255,0.15); color: #00e5ff; border: 1px solid #00e5ff; padding: 2px 8px; border-radius: 3px; font-weight: 800;">0 PENDING</span>
       </div>
 
-      <table>
-        <thead>
-          <tr>
-            <th style="width: 14%;">ORDER #</th>
-            <th style="width: 25%;">BUYER EMAIL</th>
-            <th style="width: 17%;">METHOD & AMOUNT</th>
-            <th style="width: 20%;">GIFT CARD CODE / TxID</th>
-            <th style="width: 10%;">SUBMITTED</th>
-            <th style="width: 14%;">ACTION</th>
-          </tr>
-        </thead>
-        <tbody id="pending-table-body">
-          <tr>
-            <td colspan="6" style="text-align:center;color:#7ca88e;padding:20px;">No pending approvals right now. All orders clear!</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="table-responsive">
+        <table style="min-width: 1000px;">
+          <thead>
+            <tr>
+              <th style="width: 12%; min-width: 110px;">ORDER #</th>
+              <th style="width: 25%; min-width: 240px;">BUYER EMAIL</th>
+              <th style="width: 17%; min-width: 160px;">METHOD & AMOUNT</th>
+              <th style="width: 20%; min-width: 190px;">GIFT CARD CODE / TxID</th>
+              <th style="width: 13%; min-width: 140px;">SUBMITTED</th>
+              <th style="width: 13%; min-width: 160px;">ACTION</th>
+            </tr>
+          </thead>
+          <tbody id="pending-table-body">
+            <tr>
+              <td colspan="6" style="text-align:center;color:#7ca88e;padding:20px;">No pending approvals right now. All orders clear!</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- ALL REGISTERED USERS DIRECTORY -->
-    <div class="admin-card" style="margin-bottom: 24px; border-color: rgba(0, 255, 102, 0.35);">
+    <div class="admin-card" style="border-color: rgba(0, 255, 102, 0.35);">
       <div class="admin-card-title">
         <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
           <span style="color: #00ff66;">👥 ALL REGISTERED USERS</span>
@@ -505,27 +552,30 @@
             <button class="filter-tab" onclick="setDirectoryFilter('PRO', this)">⚡ PRO ONLY (<span id="tab-count-pro">0</span>)</button>
             <button class="filter-tab" onclick="setDirectoryFilter('FREE', this)">🪙 FREE SOLVES (<span id="tab-count-free">0</span>)</button>
           </div>
+          <span class="swipe-hint">⇄ Swipe / Scrollable</span>
         </div>
         <span id="users-count-badge" style="font-size: 11px; background: rgba(0,255,102,0.15); color: #00ff66; border: 1px solid #00ff66; padding: 2px 8px; border-radius: 3px; font-weight: 800;">0 USERS</span>
       </div>
 
-      <table>
-        <thead>
-          <tr>
-            <th style="width: 14%;">RECORD / USER ID</th>
-            <th style="width: 28%;">ACCOUNT / MACHINE IDENTITY</th>
-            <th style="width: 15%;">MEMBERSHIP TIER</th>
-            <th style="width: 17%;">HARDWARE LOCK / SOLVES</th>
-            <th style="width: 11%;">LAST SYNC</th>
-            <th style="width: 15%;">ADMIN ACTIONS</th>
-          </tr>
-        </thead>
-        <tbody id="users-table-body">
-          <tr>
-            <td colspan="6" style="text-align:center;color:#7ca88e;padding:16px;">Loading registered users from database...</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="table-responsive">
+        <table style="min-width: 1150px;">
+          <thead>
+            <tr>
+              <th style="width: 13%; min-width: 120px;">RECORD / USER ID</th>
+              <th style="width: 27%; min-width: 260px;">ACCOUNT / MACHINE IDENTITY</th>
+              <th style="width: 13%; min-width: 130px;">MEMBERSHIP TIER</th>
+              <th style="width: 17%; min-width: 180px;">HARDWARE LOCK / SOLVES</th>
+              <th style="width: 12%; min-width: 130px;">LAST SYNC</th>
+              <th style="width: 18%; min-width: 240px;">ADMIN ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody id="users-table-body">
+            <tr>
+              <td colspan="6" style="text-align:center;color:#7ca88e;padding:16px;">Loading registered users from database...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- ACTIONS -->
@@ -535,54 +585,64 @@
     </div>
 
     <!-- ACTIVE PRO SUBSCRIBERS TABLE -->
-    <div class="admin-card" style="margin-bottom: 24px; border-color: rgba(0, 255, 102, 0.35);">
+    <div class="admin-card" style="border-color: rgba(0, 255, 102, 0.35);">
       <div class="admin-card-title">
-        <span>⚡ ACTIVE PRO SUBSCRIBERS & HARDWARE LOCKS</span>
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <span>⚡ ACTIVE PRO SUBSCRIBERS & HARDWARE LOCKS</span>
+          <span class="swipe-hint">⇄ Swipe / Scrollable</span>
+        </div>
         <span id="load-status" style="font-size:11px;color:#7ca88e;">Live Supabase Sync</span>
       </div>
 
-      <table>
-        <thead>
-          <tr>
-            <th style="width: 24%;">SUBSCRIBER EMAIL</th>
-            <th style="width: 16%;">PRO STATUS & EXPIRY</th>
-            <th style="width: 18%;">BOUND PC (HWID LOCK)</th>
-            <th style="width: 18%;">LICENSE KEY</th>
-            <th style="width: 10%;">ACTIVATED</th>
-            <th style="width: 14%;">ACTIONS</th>
-          </tr>
-        </thead>
-        <tbody id="license-table-body">
-          <tr>
-            <td colspan="6" style="text-align:center;color:#7ca88e;padding:20px;">Loading subscribers from database...</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="table-responsive">
+        <table style="min-width: 1160px;">
+          <thead>
+            <tr>
+              <th style="width: 22%; min-width: 220px;">SUBSCRIBER EMAIL</th>
+              <th style="width: 16%; min-width: 160px;">PRO STATUS & EXPIRY</th>
+              <th style="width: 18%; min-width: 180px;">BOUND PC (HWID LOCK)</th>
+              <th style="width: 20%; min-width: 200px;">LICENSE KEY</th>
+              <th style="width: 10%; min-width: 120px;">ACTIVATED</th>
+              <th style="width: 14%; min-width: 190px;">ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody id="license-table-body">
+            <tr>
+              <td colspan="6" style="text-align:center;color:#7ca88e;padding:20px;">Loading subscribers from database...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- FREE SOLVES & LOOTLABS AD REWARD BALANCES -->
-    <div class="admin-card" style="margin-bottom: 24px; border-color: rgba(0, 229, 255, 0.35);">
+    <div class="admin-card" style="border-color: rgba(0, 229, 255, 0.35);">
       <div class="admin-card-title">
-        <span style="color: #00e5ff;">🪙 FREE SOLVES & LOOTLABS AD REWARD BALANCES</span>
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <span style="color: #00e5ff;">🪙 FREE SOLVES & LOOTLABS AD REWARD BALANCES</span>
+          <span class="swipe-hint">⇄ Swipe / Scrollable</span>
+        </div>
         <span id="free-credits-badge" style="font-size: 11px; background: rgba(0,229,255,0.15); color: #00e5ff; border: 1px solid #00e5ff; padding: 2px 8px; border-radius: 3px; font-weight: 800;">0 USERS</span>
       </div>
 
-      <table>
-        <thead>
-          <tr>
-            <th style="width: 22%;">MACHINE HWID (PC IDENTIFIER)</th>
-            <th style="width: 18%;">SOLVE CREDITS</th>
-            <th style="width: 16%;">STATUS</th>
-            <th style="width: 16%;">LAST AD TASK</th>
-            <th style="width: 28%;">ACTIONS</th>
-          </tr>
-        </thead>
-        <tbody id="free-table-body">
-          <tr>
-            <td colspan="5" style="text-align:center;color:#7ca88e;padding:16px;">Loading free credit balances...</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="table-responsive">
+        <table style="min-width: 1020px;">
+          <thead>
+            <tr>
+              <th style="width: 24%; min-width: 240px;">MACHINE HWID (PC IDENTIFIER)</th>
+              <th style="width: 16%; min-width: 150px;">SOLVE CREDITS</th>
+              <th style="width: 14%; min-width: 130px;">STATUS</th>
+              <th style="width: 16%; min-width: 140px;">LAST AD TASK</th>
+              <th style="width: 30%; min-width: 260px;">ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody id="free-table-body">
+            <tr>
+              <td colspan="5" style="text-align:center;color:#7ca88e;padding:16px;">Loading free credit balances...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -1632,6 +1692,47 @@
         alert('Reset HWID failed: ' + e.message);
       }
     };
+
+    // Enable touch and mouse drag-to-swipe for all responsive tables
+    function initSwipeableTables() {
+      document.querySelectorAll('.table-responsive').forEach(slider => {
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+
+        slider.addEventListener('mousedown', (e) => {
+          if (['BUTTON', 'A', 'INPUT', 'CODE'].includes(e.target.tagName)) return;
+          isDown = true;
+          slider.style.cursor = 'grabbing';
+          startX = e.pageX - slider.offsetLeft;
+          scrollLeft = slider.scrollLeft;
+        });
+
+        slider.addEventListener('mouseleave', () => {
+          isDown = false;
+          slider.style.cursor = 'grab';
+        });
+
+        slider.addEventListener('mouseup', () => {
+          isDown = false;
+          slider.style.cursor = 'grab';
+        });
+
+        slider.addEventListener('mousemove', (e) => {
+          if (!isDown) return;
+          e.preventDefault();
+          const x = e.pageX - slider.offsetLeft;
+          const walk = (x - startX) * 1.6;
+          slider.scrollLeft = scrollLeft - walk;
+        });
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initSwipeableTables);
+    } else {
+      initSwipeableTables();
+    }
   </script>
 </body>
 </html>
