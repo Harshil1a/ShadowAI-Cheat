@@ -260,6 +260,13 @@ void Dashboard::setupUI() {
         emit quitApp();
     });
 
+    connect(&AccountManager::instance(), &AccountManager::accountStateChanged, this, [this](bool, const QString&, bool) {
+        refreshAccountUI();
+    });
+    connect(&AccountManager::instance(), &AccountManager::creditsUpdated, this, [this](int) {
+        refreshAccountUI();
+    });
+
     refreshAccountUI();
 }
 
@@ -739,7 +746,7 @@ void Dashboard::refreshAccountUI() {
         }
         m_proBtn->setText(QString::fromUtf8("⚡ UPGRADE TO PRO"));
         m_proBtn->setStyleSheet("background: rgba(0, 229, 255, 0.16); color: #00e5ff; border: 1px solid #00e5ff; font-size: 10px; font-weight: 800; border-radius: 4px; padding: 2px 6px; font-family: 'Consolas', monospace;");
-        m_proBtn->setToolTip("Click to upgrade to Shadow Pro (₹99 / $6.00) for unlimited Gemini 2.5 Flash Cloud AI");
+        m_proBtn->setToolTip("Click to upgrade to Shadow Pro (₹100 / $6.00) for unlimited Gemini 2.5 Flash Cloud AI");
     }
 }
 

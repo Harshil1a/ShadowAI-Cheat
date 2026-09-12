@@ -227,20 +227,17 @@ void AIManager::performRequest(const QList<QPixmap>& screenshots, const QString&
         // CUSTOM / BYOK MODE or FREE REWARDED TIER
         if (!isProUser) {
             if (!cfg.canUseFreeQuery()) {
-                emit errorOccurred("🔒 0 Solve Credits Remaining!\n\nTo unlock free AI solves, complete a quick 15-second sponsor task to earn credits.\n\nLaunching sponsor task in your browser... (Your solve will unlock automatically once completed!)");
-                AccountManager::instance().openWatchAdUrl();
+                emit errorOccurred("🔒 0 Solve Credits Remaining!\n\nTo unlock more AI solves, open Settings (Ctrl+S or tray icon) to bank credits.");
                 return;
             }
 
-            // Deduct 1 credit or 1 trial query
+            // Deduct 1 credit or 1 trial query silently without polluting exam chat
             if (cfg.freeCredits() > 0) {
                 AccountManager::instance().consumeCredit();
-                int remaining = cfg.freeCredits();
-                emit responseChunk(QString("[🪙 1 Solve Credit Consumed • %1 Banked Solves Remaining]\n\n").arg(remaining));
+                qDebug() << "[Credits] Consumed 1 solve credit. Remaining:" << cfg.freeCredits();
             } else {
                 int used = cfg.recordFreeQuery();
-                int rem = qMax(0, 3 - used);
-                emit responseChunk(QString("[⚡ Free Trial: %1/3 queries used today • %2 remaining. Watch sponsor ads to bank solves!]\n\n").arg(used).arg(rem));
+                qDebug() << "[Credits] Free trial query used:" << used << "/ 3";
             }
         }
 

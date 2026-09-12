@@ -453,30 +453,31 @@ int AccountManager::getFreeCredits() const {
     return AppConfig::instance().freeCredits();
 }
 
-void AccountManager::fetchFreeCredits() {
+void AccountManager::fetchFreeCredits(std::function<void(bool success, int credits)> callback) {
     QString hwid = getMachineHwid();
     QUrl url(QString("https://shadow-ai-cheat.vercel.app/api/user-credits?hwid=%1").arg(QString::fromUtf8(QUrl::toPercentEncoding(hwid))));
     QNetworkRequest req(url);
     req.setHeader(QNetworkRequest::UserAgentHeader, "ShadowAI-Desktop-Client");
 
     QNetworkReply* reply = m_nam->get(req);
-    connect(reply, &QNetworkReply::finished, this, [this, reply]() {
+    connect(reply, &QNetworkReply::finished, this, [this, reply, callback]() {
+        bool success = false;
+        int credits = AppConfig::instance().freeCredits();
         if (reply->error() == QNetworkReply::NoError) {
             QByteArray data = reply->readAll();
             QJsonDocument doc = QJsonDocument::fromJson(data);
             if (doc.isObject()) {
                 QJsonObject obj = doc.object();
                 if (obj.value("success").toBool()) {
-                    int credits = obj.value("credits").toInt();
-                    int previous = AppConfig::instance().freeCredits();
+                    credits = obj.value("credits").toInt();
                     AppConfig::instance().setFreeCredits(credits);
-                    if (credits != previous) {
-                        qDebug() << "[Credits] Synced balance from cloud:" << credits;
-                        emit creditsUpdated(credits);
-                    }
+                    qDebug() << "[Credits] Synced balance from cloud:" << credits;
+                    emit creditsUpdated(credits);
+                    success = true;
                 }
             }
         }
+        if (callback) callback(success, credits);
         reply->deleteLater();
     });
 }
@@ -524,7 +525,7 @@ void AccountManager::consumeCredit(std::function<void(bool success, int remainin
 
 void AccountManager::openWatchAdUrl() {
     QString hwid = getMachineHwid();
-    QString adLink = QString("https://loot-link.com/s?bz4nCWsI&puid=%1").arg(hwid);
+    QString adLink = QString("https://loot-link.com/s?bz4nCWsI&click_id=%1&puid=%1").arg(hwid);
     QDesktopServices::openUrl(QUrl(adLink));
 
     // Poll for up to 2 minutes (24 checks * 5s) to auto-detect when task completes
@@ -538,12 +539,11 @@ void AccountManager::onPollCreditsTimer() {
     m_pollAttemptsLeft--;
     int prevCredits = AppConfig::instance().freeCredits();
 
-    fetchFreeCredits();
-
-    // If new credits were detected or attempts exhausted, stop polling
-    if (AppConfig::instance().freeCredits() > prevCredits || m_pollAttemptsLeft <= 0) {
-        if (m_creditsPollTimer) {
-            m_creditsPollTimer->stop();
+    fetchFreeCredits([this, prevCredits](bool success, int newCredits) {
+        if (success && (newCredits > prevCredits || m_pollAttemptsLeft <= 0)) {
+            if (m_creditsPollTimer) {
+                m_creditsPollTimer->stop();
+            }
         }
-    }
+    });
 }

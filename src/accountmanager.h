@@ -28,7 +28,7 @@ public:
 
     // Rewarded Free Solve Credits (LootLabs)
     int getFreeCredits() const;
-    void fetchFreeCredits();
+    void fetchFreeCredits(std::function<void(bool success, int credits)> callback = nullptr);
     void consumeCredit(std::function<void(bool success, int remaining)> callback = nullptr);
     void openWatchAdUrl();
 

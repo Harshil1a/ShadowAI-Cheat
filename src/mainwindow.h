@@ -35,6 +35,7 @@ private:
     // UI elements
     QLabel*         m_titleLabel    = nullptr;
     QPushButton*    m_tbCreditsBtn  = nullptr;
+    QPushButton*    m_tbRefreshBtn  = nullptr;
     QPushButton*    m_tbProBtn      = nullptr;
     QPushButton*    m_hideBtn       = nullptr;
     QPushButton*    m_closeBtn      = nullptr;

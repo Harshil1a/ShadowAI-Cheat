@@ -50,9 +50,19 @@ module.exports = async (req, res) => {
         // Query parameters sent by LootLabs
         // Example: /api/lootlabs-postback?click_id=HWID&ip=1.2.3.4&unique_id=TX123
         const query = req.query || {};
-        const clickId = (query.click_id || query.puid || '').toString().trim().toUpperCase();
-        const ip = (query.ip || req.headers['x-forwarded-for'] || '').toString();
-        const uniqueId = (query.unique_id || '').toString();
+        let clickId = query.click_id || query.puid || query.uid || query.subid || '';
+        if (Array.isArray(clickId)) {
+            clickId = clickId.find(x => x && x.trim().length > 0) || clickId[0] || '';
+        }
+        clickId = clickId.toString().split(',')[0].trim().toUpperCase();
+
+        let ip = query.ip || req.headers['x-forwarded-for'] || '';
+        if (Array.isArray(ip)) ip = ip[0];
+        ip = ip.toString().split(',')[0].trim();
+
+        let uniqueId = query.unique_id || '';
+        if (Array.isArray(uniqueId)) uniqueId = uniqueId[0];
+        uniqueId = uniqueId.toString().trim();
 
         if (!clickId) {
             console.warn('[LootLabs Webhook] Missing click_id (HWID).');

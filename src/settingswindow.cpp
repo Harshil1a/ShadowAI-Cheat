@@ -158,6 +158,22 @@ void SettingsWindow::setupUI() {
     m_topCreditsBadge->setAlignment(Qt::AlignCenter);
     topLayout->addWidget(m_topCreditsBadge);
 
+    m_topRefreshCreditsBtn = new QPushButton("🔄", m_topProfileBar);
+    m_topRefreshCreditsBtn->setObjectName("topRefreshCreditsBtn");
+    m_topRefreshCreditsBtn->setFixedSize(30, 32);
+    m_topRefreshCreditsBtn->setCursor(Qt::PointingHandCursor);
+    m_topRefreshCreditsBtn->setToolTip("Refresh & sync solve credits from cloud");
+    m_topRefreshCreditsBtn->setStyleSheet("background: rgba(0, 229, 255, 0.12); border: 1px solid rgba(0, 229, 255, 0.35); color: #00e5ff; font-weight: bold; border-radius: 6px;");
+    connect(m_topRefreshCreditsBtn, &QPushButton::clicked, this, [this]() {
+        m_topRefreshCreditsBtn->setText("⏳");
+        AccountManager::instance().fetchFreeCredits([this](bool, int) {
+            m_topRefreshCreditsBtn->setText("🔄");
+            updateTopProfileBar();
+            refreshAccountTab();
+        });
+    });
+    topLayout->addWidget(m_topRefreshCreditsBtn);
+
     // Right: Action Buttons
     m_topWatchAdBtn = new QPushButton("📺 Watch Ad (+1)", m_topProfileBar);
     m_topWatchAdBtn->setObjectName("topWatchAdBtn");
@@ -582,9 +598,28 @@ void SettingsWindow::setupUI() {
     credDesc->setStyleSheet("color: #8b9bb4; font-size: 11px;");
     credLayout->addWidget(credDesc);
 
+    QHBoxLayout* credRow = new QHBoxLayout();
     m_creditsStatusLabel = new QLabel(creditsGroup);
     m_creditsStatusLabel->setStyleSheet("font-size: 13px; font-family: monospace; color: #00e5ff; font-weight: bold;");
-    credLayout->addWidget(m_creditsStatusLabel);
+    credRow->addWidget(m_creditsStatusLabel, 1);
+
+    m_refreshCreditsSettingsBtn = new QPushButton("🔄 Refresh Balance", creditsGroup);
+    m_refreshCreditsSettingsBtn->setFixedHeight(32);
+    m_refreshCreditsSettingsBtn->setCursor(Qt::PointingHandCursor);
+    m_refreshCreditsSettingsBtn->setStyleSheet("background: rgba(0, 229, 255, 0.12); color: #00e5ff; border: 1px solid #00e5ff; font-size: 11px; font-weight: bold; border-radius: 4px; padding: 4px 14px;");
+    connect(m_refreshCreditsSettingsBtn, &QPushButton::clicked, this, [this]() {
+        m_refreshCreditsSettingsBtn->setText("⏳ Syncing...");
+        AccountManager::instance().fetchFreeCredits([this](bool, int) {
+            m_refreshCreditsSettingsBtn->setText("✓ Synced!");
+            updateTopProfileBar();
+            refreshAccountTab();
+            QTimer::singleShot(1800, this, [this]() {
+                if (m_refreshCreditsSettingsBtn) m_refreshCreditsSettingsBtn->setText("🔄 Refresh Balance");
+            });
+        });
+    });
+    credRow->addWidget(m_refreshCreditsSettingsBtn);
+    credLayout->addLayout(credRow);
 
     m_watchAdSettingsBtn = new QPushButton("📺 Watch Sponsor Ad to Bank Solves (+1 Each)", creditsGroup);
     m_watchAdSettingsBtn->setFixedHeight(36);
@@ -1578,6 +1613,7 @@ void SettingsWindow::updateTopProfileBar() {
         m_topCreditsBadge->setStyleSheet("background: rgba(0, 255, 102, 0.15); border: 1px solid rgba(0, 255, 102, 0.5); color: #00ff66; font-size: 12px; font-weight: bold; border-radius: 6px; padding: 4px 12px; font-family: 'Consolas', monospace;");
 
         m_topWatchAdBtn->setVisible(false);
+        if (m_topRefreshCreditsBtn) m_topRefreshCreditsBtn->setVisible(false);
         m_topUpgradeBtn->setText("💎 PRO Active");
         m_topUpgradeBtn->setStyleSheet("background: rgba(0, 255, 102, 0.2); border: 1px solid #00ff66; color: #00ff66; font-size: 11px; font-weight: bold; border-radius: 6px; padding: 4px 12px;");
     } else {
@@ -1593,6 +1629,7 @@ void SettingsWindow::updateTopProfileBar() {
             m_topCreditsBadge->setStyleSheet("background: rgba(255, 71, 87, 0.2); border: 1px solid rgba(255, 71, 87, 0.6); color: #ff4757; font-size: 12px; font-weight: bold; border-radius: 6px; padding: 4px 12px; font-family: 'Consolas', monospace;");
         }
 
+        if (m_topRefreshCreditsBtn) m_topRefreshCreditsBtn->setVisible(true);
         m_topWatchAdBtn->setVisible(true);
         m_topWatchAdBtn->setText("📺 Watch Ad (+1)");
         m_topWatchAdBtn->setStyleSheet("background: rgba(0, 229, 255, 0.2); border: 1px solid #00e5ff; color: #00e5ff; font-size: 11px; font-weight: bold; border-radius: 6px; padding: 4px 12px;");

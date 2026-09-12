@@ -63,6 +63,21 @@ void MainWindow::setupUI() {
     m_tbCreditsBtn->setFixedHeight(24);
     tbLayout->addWidget(m_tbCreditsBtn);
 
+    m_tbRefreshBtn = new QPushButton("🔄", titleBar);
+    m_tbRefreshBtn->setObjectName("tbRefreshBtn");
+    m_tbRefreshBtn->setCursor(Qt::PointingHandCursor);
+    m_tbRefreshBtn->setFixedSize(24, 24);
+    m_tbRefreshBtn->setToolTip("Refresh & sync solve credits from cloud");
+    m_tbRefreshBtn->setStyleSheet("background: rgba(0, 229, 255, 0.12); border: 1px solid rgba(0, 229, 255, 0.35); color: #00e5ff; font-weight: bold; border-radius: 4px; padding: 0px;");
+    connect(m_tbRefreshBtn, &QPushButton::clicked, this, [this]() {
+        m_tbRefreshBtn->setText("⏳");
+        AccountManager::instance().fetchFreeCredits([this](bool, int) {
+            m_tbRefreshBtn->setText("🔄");
+            updateTopBarCredits();
+        });
+    });
+    tbLayout->addWidget(m_tbRefreshBtn);
+
     // Quick Pro upgrade button on top
     m_tbProBtn = new QPushButton("⚡ PRO", titleBar);
     m_tbProBtn->setObjectName("tbProBtn");
@@ -183,6 +198,7 @@ void MainWindow::updateTopBarCredits() {
         m_tbCreditsBtn->setStyleSheet("background: rgba(0, 255, 102, 0.15); border: 1px solid rgba(0, 255, 102, 0.5); color: #00ff66; font-size: 11px; font-weight: bold; border-radius: 4px; padding: 2px 8px;");
         m_tbCreditsBtn->setToolTip("Pro Active: Unlimited Solves Enabled");
         m_tbProBtn->hide();
+        if (m_tbRefreshBtn) m_tbRefreshBtn->hide();
     } else {
         int credits = AppConfig::instance().freeCredits();
         if (credits > 0) {
@@ -196,6 +212,7 @@ void MainWindow::updateTopBarCredits() {
         m_tbProBtn->show();
         m_tbProBtn->setStyleSheet("background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #ff9900, stop:1 #ff5500); border: none; color: #ffffff; font-size: 11px; font-weight: bold; border-radius: 4px; padding: 2px 8px;");
         m_tbProBtn->setToolTip("Upgrade to Shadow PRO for Unlimited Solves");
+        if (m_tbRefreshBtn) m_tbRefreshBtn->show();
     }
 }
 
