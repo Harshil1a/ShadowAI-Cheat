@@ -455,20 +455,17 @@ void OverlayWindow::setupUI() {
         return w;
     };
 
-    QFrame* group1 = makeGroup("Overlay & View Controls");
+    QFrame* group1 = makeGroup("Quick Controls");
     m_keysLayout1 = group1->findChild<QHBoxLayout*>("keysLayout");
-    
-    QFrame* group2 = makeGroup("Interaction & Emergency Controls");
-    m_keysLayout2 = group2->findChild<QHBoxLayout*>("keysLayout");
+    m_keysLayout2 = nullptr;
 
     // Container for helper groups so they can be hidden together
     m_helpGroupsContainer = new QWidget;
     m_helpGroupsContainer->setObjectName("helpGroupsContainer");
     QVBoxLayout* hgLayout = new QVBoxLayout(m_helpGroupsContainer);
     hgLayout->setContentsMargins(0, 0, 0, 0);
-    hgLayout->setSpacing(5);
+    hgLayout->setSpacing(0);
     hgLayout->addWidget(group1);
-    hgLayout->addWidget(group2);
 
     // Label that remains visible when badges are hidden
     m_bottomHintLabel = new QLabel("[Shift+Alt+B] All Keys Directory");
@@ -1121,22 +1118,14 @@ void OverlayWindow::refreshKeyBadges() {
 
     auto& cfg = AppConfig::instance();
 
-    m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyToggle()), "Show/Hide"));
-    m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyTransparency()), "Transparency"));
+    m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyGetAnswer()), "Snap & Solve"));
+    m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyScreenshot()), "Screenshot"));
+    m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyToggle()), "Hide/Show"));
+    m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyClear()), "Clear"));
     m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyToggleBadges()), "All Keys ☰"));
-    m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyHideStrip()), "Hide Keys"));
-    m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyCopyScreenshot()), "Copy Shot"));
-    m_keysLayout1->addWidget(makeKey("Shift+Alt+Arrows", "Move Overlay"));
-
-    m_keysLayout2->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyScreenshot()), "Screenshot"));
-    m_keysLayout2->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyGetAnswer()), "Get Answer"));
-    m_keysLayout2->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyGhostWriter()), "Auto-type"));
-    m_keysLayout2->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyVoice()), "Voice Rec"));
-    m_keysLayout2->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyClear()), "Clear"));
-    m_keysLayout2->addWidget(makeKey("Ctrl+Shift+" + vkToKeyName(cfg.hotkeyPanic()), "Panic Kill", true));
 
     if (m_bottomHintLabel) {
-        m_bottomHintLabel->setText(QString("[Shift+Alt+%1] All Keys  |  [Shift+Alt+%2] Hide Keys")
+        m_bottomHintLabel->setText(QString("[Shift+Alt+%1] Shuffle / All Keys Directory  |  [Shift+Alt+%2] Hide Keys")
             .arg(vkToKeyName(cfg.hotkeyToggleBadges()))
             .arg(vkToKeyName(cfg.hotkeyHideStrip())));
     }
@@ -1148,25 +1137,17 @@ void OverlayWindow::refreshKeyBadges() {
     if (m_answerDisplay) {
         m_answerDisplay->setPlaceholderText(
             QString("AI answer will appear here...\n\n"
-                    "Active Shortcuts:\n"
-                    "  Shift+Alt+%1  →  Screenshot\n"
-                    "  Shift+Alt+%2  →  Get Answer (Snap & Solve)\n"
+                    "Essential Shortcuts:\n"
+                    "  Shift+Alt+%1  →  Snap & Solve (AI Solution)\n"
+                    "  Shift+Alt+%2  →  Capture Screenshot\n"
                     "  Shift+Alt+%3  →  Show / Hide Overlay\n"
-                    "  Shift+Alt+%4  →  All Keys Directory HUD\n"
-                    "  Shift+Alt+%5  →  Auto-type (Ghost Writer)\n"
-                    "  Shift+Alt+%6  →  Voice Recording\n"
-                    "  Shift+Alt+%7  →  Cycle Transparency\n"
-                    "  Shift+Alt+%8  →  Clear Output\n"
-                    "  Ctrl+Shift+%9 →  Emergency Panic Kill")
-                .arg(vkToKeyName(cfg.hotkeyScreenshot()))
+                    "  Shift+Alt+%4  →  Clear Chat Output\n"
+                    "  Shift+Alt+%5  →  All Keys Directory ☰ (Shuffle/View All Options)")
                 .arg(vkToKeyName(cfg.hotkeyGetAnswer()))
+                .arg(vkToKeyName(cfg.hotkeyScreenshot()))
                 .arg(vkToKeyName(cfg.hotkeyToggle()))
-                .arg(vkToKeyName(cfg.hotkeyToggleBadges()))
-                .arg(vkToKeyName(cfg.hotkeyGhostWriter()))
-                .arg(vkToKeyName(cfg.hotkeyVoice()))
-                .arg(vkToKeyName(cfg.hotkeyTransparency()))
                 .arg(vkToKeyName(cfg.hotkeyClear()))
-                .arg(vkToKeyName(cfg.hotkeyPanic()))
+                .arg(vkToKeyName(cfg.hotkeyToggleBadges()))
         );
     }
 }

@@ -169,14 +169,36 @@ void Dashboard::setupUI() {
     row1Layout->addStretch();
     accVLayout->addWidget(row1);
 
-    // Row 2: Solves & Pro Tier
+    // Row 2: Solves & Pro Tier + Cloud Reload
     QWidget* row2 = new QWidget(accContainer);
     QHBoxLayout* row2Layout = new QHBoxLayout(row2);
     row2Layout->setContentsMargins(0, 0, 0, 0);
-    row2Layout->setSpacing(8);
+    row2Layout->setSpacing(6);
     row2Layout->addStretch();
     row2Layout->addWidget(m_creditsBtn);
     row2Layout->addWidget(m_proBtn);
+
+    QPushButton* syncBtn = new QPushButton("↻", accContainer);
+    syncBtn->setFixedSize(26, 26);
+    syncBtn->setCursor(Qt::PointingHandCursor);
+    syncBtn->setToolTip("Reload cloud connection & sync Pro status / solve credits");
+    syncBtn->setStyleSheet("background: rgba(0, 229, 255, 0.15); color: #00e5ff; border: 1px solid #00e5ff; font-weight: bold; border-radius: 4px; font-size: 13px;");
+    connect(syncBtn, &QPushButton::clicked, this, [syncBtn, this]() {
+        syncBtn->setText("⏳");
+        syncBtn->setEnabled(false);
+        AccountManager::instance().syncAccountStatus();
+        AccountManager::instance().fetchCloudConfig();
+        AccountManager::instance().fetchFreeCredits([syncBtn, this](bool, int) {
+            syncBtn->setText("✓");
+            refreshAccountUI();
+            QTimer::singleShot(1500, this, [syncBtn]() {
+                syncBtn->setText("↻");
+                syncBtn->setEnabled(true);
+            });
+        });
+    });
+    row2Layout->addWidget(syncBtn);
+
     row2Layout->addStretch();
     accVLayout->addWidget(row2);
 

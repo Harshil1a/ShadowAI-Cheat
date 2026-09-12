@@ -11,6 +11,7 @@
 #include <QLabel>
 #include <QTabWidget>
 #include <QScrollArea>
+#include <QScroller>
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
 #include <QNetworkReply>
@@ -158,18 +159,28 @@ void SettingsWindow::setupUI() {
     m_topCreditsBadge->setAlignment(Qt::AlignCenter);
     topLayout->addWidget(m_topCreditsBadge);
 
-    m_topRefreshCreditsBtn = new QPushButton("🔄", m_topProfileBar);
+    m_topRefreshCreditsBtn = new QPushButton("↻ Sync", m_topProfileBar);
     m_topRefreshCreditsBtn->setObjectName("topRefreshCreditsBtn");
-    m_topRefreshCreditsBtn->setFixedSize(30, 32);
+    m_topRefreshCreditsBtn->setFixedHeight(32);
+    m_topRefreshCreditsBtn->setMinimumWidth(64);
     m_topRefreshCreditsBtn->setCursor(Qt::PointingHandCursor);
-    m_topRefreshCreditsBtn->setToolTip("Refresh & sync solve credits from cloud");
-    m_topRefreshCreditsBtn->setStyleSheet("background: rgba(0, 229, 255, 0.12); border: 1px solid rgba(0, 229, 255, 0.35); color: #00e5ff; font-weight: bold; border-radius: 6px;");
+    m_topRefreshCreditsBtn->setToolTip("Reload cloud connection & sync Pro status / solve credits");
+    m_topRefreshCreditsBtn->setStyleSheet("background: rgba(0, 229, 255, 0.18); border: 1px solid #00e5ff; color: #00e5ff; font-weight: bold; font-size: 11px; border-radius: 6px; padding: 4px 10px; font-family: 'Consolas', monospace;");
     connect(m_topRefreshCreditsBtn, &QPushButton::clicked, this, [this]() {
-        m_topRefreshCreditsBtn->setText("⏳");
+        m_topRefreshCreditsBtn->setText("↻ Syncing...");
+        m_topRefreshCreditsBtn->setEnabled(false);
+        AccountManager::instance().syncAccountStatus();
+        AccountManager::instance().fetchCloudConfig();
         AccountManager::instance().fetchFreeCredits([this](bool, int) {
-            m_topRefreshCreditsBtn->setText("🔄");
+            m_topRefreshCreditsBtn->setText("✓ Synced");
             updateTopProfileBar();
             refreshAccountTab();
+            QTimer::singleShot(1600, this, [this]() {
+                if (m_topRefreshCreditsBtn) {
+                    m_topRefreshCreditsBtn->setText("↻ Sync");
+                    m_topRefreshCreditsBtn->setEnabled(true);
+                }
+            });
         });
     });
     topLayout->addWidget(m_topRefreshCreditsBtn);
@@ -555,14 +566,29 @@ void SettingsWindow::setupUI() {
     wsLayout->addWidget(wsTip);
     wsLayout->addStretch();
 
-    tabWidget->addTab(tabWindowSize, "🖥  Window Size");
+    QScrollArea* wsScroll = new QScrollArea(tabWidget);
+    wsScroll->setWidgetResizable(true);
+    wsScroll->setFrameShape(QFrame::NoFrame);
+    wsScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    wsScroll->setStyleSheet("QScrollArea { background: transparent; border: none; }");
+    QScroller::grabGesture(wsScroll->viewport(), QScroller::TouchGesture);
+    wsScroll->setWidget(tabWindowSize);
+
+    tabWidget->addTab(wsScroll, "🖥  Window Size");
 
     // ─────────────────────────────────────────────────────────────────────────
-    // TAB 4: ACCOUNT & LICENSE
+    // TAB 4: ACCOUNT & LICENSE (Wrapped in smooth swipeable QScrollArea)
     // ─────────────────────────────────────────────────────────────────────────
-    QWidget* tabAccount = new QWidget(tabWidget);
+    QScrollArea* accScroll = new QScrollArea(tabWidget);
+    accScroll->setWidgetResizable(true);
+    accScroll->setFrameShape(QFrame::NoFrame);
+    accScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    accScroll->setStyleSheet("QScrollArea { background: transparent; border: none; }");
+    QScroller::grabGesture(accScroll->viewport(), QScroller::TouchGesture);
+
+    QWidget* tabAccount = new QWidget;
     QVBoxLayout* accLayout = new QVBoxLayout(tabAccount);
-    accLayout->setContentsMargins(12, 12, 12, 12);
+    accLayout->setContentsMargins(12, 12, 16, 12);
     accLayout->setSpacing(16);
 
     // Group 1: Google Account / Cloud Sync
@@ -575,11 +601,37 @@ void SettingsWindow::setupUI() {
     m_accountStatusLabel->setStyleSheet("font-size: 13px; font-family: monospace; color: #00e5ff;");
     authLayout->addWidget(m_accountStatusLabel);
 
+    QHBoxLayout* authBtnRow = new QHBoxLayout;
+    authBtnRow->setSpacing(8);
+
     m_googleAuthBtn = new QPushButton("Sign In with Google", authGroup);
     m_googleAuthBtn->setFixedHeight(36);
     m_googleAuthBtn->setCursor(Qt::PointingHandCursor);
     m_googleAuthBtn->setStyleSheet("background: #ffffff; color: #1f1f1f; font-weight: bold; border-radius: 4px; padding: 6px 16px;");
-    authLayout->addWidget(m_googleAuthBtn);
+    authBtnRow->addWidget(m_googleAuthBtn, 1);
+
+    QPushButton* reSyncBtn = new QPushButton("↻ Re-Sync Privileges", authGroup);
+    reSyncBtn->setFixedHeight(36);
+    reSyncBtn->setCursor(Qt::PointingHandCursor);
+    reSyncBtn->setStyleSheet("background: rgba(0, 255, 102, 0.15); color: #00ff66; border: 1px solid #00ff66; font-weight: bold; border-radius: 4px; padding: 6px 14px; font-size: 11px;");
+    reSyncBtn->setToolTip("Force reload Pro status, device binding, and license validity from cloud");
+    connect(reSyncBtn, &QPushButton::clicked, this, [reSyncBtn, this]() {
+        reSyncBtn->setText("⏳ Syncing...");
+        reSyncBtn->setEnabled(false);
+        AccountManager::instance().syncAccountStatus();
+        AccountManager::instance().fetchCloudConfig();
+        AccountManager::instance().fetchFreeCredits([reSyncBtn, this](bool, int) {
+            reSyncBtn->setText("✓ Privileges Synced!");
+            updateTopProfileBar();
+            refreshAccountTab();
+            QTimer::singleShot(1800, this, [reSyncBtn]() {
+                reSyncBtn->setText("↻ Re-Sync Privileges");
+                reSyncBtn->setEnabled(true);
+            });
+        });
+    });
+    authBtnRow->addWidget(reSyncBtn);
+    authLayout->addLayout(authBtnRow);
 
     accLayout->addWidget(authGroup);
 
@@ -603,7 +655,7 @@ void SettingsWindow::setupUI() {
     m_creditsStatusLabel->setStyleSheet("font-size: 13px; font-family: monospace; color: #00e5ff; font-weight: bold;");
     credRow->addWidget(m_creditsStatusLabel, 1);
 
-    m_refreshCreditsSettingsBtn = new QPushButton("🔄 Refresh Balance", creditsGroup);
+    m_refreshCreditsSettingsBtn = new QPushButton("↻ Refresh Balance", creditsGroup);
     m_refreshCreditsSettingsBtn->setFixedHeight(32);
     m_refreshCreditsSettingsBtn->setCursor(Qt::PointingHandCursor);
     m_refreshCreditsSettingsBtn->setStyleSheet("background: rgba(0, 229, 255, 0.12); color: #00e5ff; border: 1px solid #00e5ff; font-size: 11px; font-weight: bold; border-radius: 4px; padding: 4px 14px;");
@@ -614,7 +666,7 @@ void SettingsWindow::setupUI() {
             updateTopProfileBar();
             refreshAccountTab();
             QTimer::singleShot(1800, this, [this]() {
-                if (m_refreshCreditsSettingsBtn) m_refreshCreditsSettingsBtn->setText("🔄 Refresh Balance");
+                if (m_refreshCreditsSettingsBtn) m_refreshCreditsSettingsBtn->setText("↻ Refresh Balance");
             });
         });
     });
@@ -633,14 +685,22 @@ void SettingsWindow::setupUI() {
     accLayout->addWidget(creditsGroup);
     accLayout->addStretch();
 
-    tabWidget->addTab(tabAccount, "👤  Account & License");
+    accScroll->setWidget(tabAccount);
+    tabWidget->addTab(accScroll, "👤  Account & License");
 
     // ─────────────────────────────────────────────────────────────────────────
-    // TAB 5: STEALTH & DIAGNOSTICS
+    // TAB 5: STEALTH & DIAGNOSTICS (Wrapped in smooth swipeable QScrollArea)
     // ─────────────────────────────────────────────────────────────────────────
-    QWidget* tabStealthDiag = new QWidget(tabWidget);
+    QScrollArea* diagScroll = new QScrollArea(tabWidget);
+    diagScroll->setWidgetResizable(true);
+    diagScroll->setFrameShape(QFrame::NoFrame);
+    diagScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    diagScroll->setStyleSheet("QScrollArea { background: transparent; border: none; }");
+    QScroller::grabGesture(diagScroll->viewport(), QScroller::TouchGesture);
+
+    QWidget* tabStealthDiag = new QWidget;
     QVBoxLayout* diagLayout = new QVBoxLayout(tabStealthDiag);
-    diagLayout->setContentsMargins(12, 12, 12, 12);
+    diagLayout->setContentsMargins(12, 12, 16, 12);
     diagLayout->setSpacing(14);
 
     // Group 1: Screen-Share / Capture Protection Test
@@ -692,7 +752,8 @@ void SettingsWindow::setupUI() {
     diagLayout->addWidget(micGroup);
     diagLayout->addStretch();
 
-    tabWidget->addTab(tabStealthDiag, "🛡  Diagnostics");
+    diagScroll->setWidget(tabStealthDiag);
+    tabWidget->addTab(diagScroll, "🛡  Diagnostics");
 
     connect(m_testCaptureBtn, &QPushButton::clicked, this, [this]() {
         m_testCaptureStatus->setText("Analyzing window display affinity...");
@@ -1613,7 +1674,7 @@ void SettingsWindow::updateTopProfileBar() {
         m_topCreditsBadge->setStyleSheet("background: rgba(0, 255, 102, 0.15); border: 1px solid rgba(0, 255, 102, 0.5); color: #00ff66; font-size: 12px; font-weight: bold; border-radius: 6px; padding: 4px 12px; font-family: 'Consolas', monospace;");
 
         m_topWatchAdBtn->setVisible(false);
-        if (m_topRefreshCreditsBtn) m_topRefreshCreditsBtn->setVisible(false);
+        if (m_topRefreshCreditsBtn) m_topRefreshCreditsBtn->setVisible(true);
         m_topUpgradeBtn->setText("💎 PRO Active");
         m_topUpgradeBtn->setStyleSheet("background: rgba(0, 255, 102, 0.2); border: 1px solid #00ff66; color: #00ff66; font-size: 11px; font-weight: bold; border-radius: 6px; padding: 4px 12px;");
     } else {

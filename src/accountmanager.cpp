@@ -89,6 +89,9 @@ void AccountManager::logout() {
     AppConfig::instance().setUserEmail("");
     AppConfig::instance().setPro(false);
     AppConfig::instance().setLicenseKey("");
+    AppConfig::instance().setProDaysLeft(0);
+    AppConfig::instance().setProPlanTier("");
+    AppConfig::instance().setProCloudKey("");
     AppConfig::instance().save();
 
     emit accountStateChanged(false, "", false);
