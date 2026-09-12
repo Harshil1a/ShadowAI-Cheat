@@ -224,27 +224,31 @@ void AIManager::performRequest(const QList<QPixmap>& screenshots, const QString&
         model = "gemini-2.5-flash";
         apiKey = cfg.proCloudKey();
     } else {
-        // CUSTOM / BYOK MODE: Use user's selected custom slot key, provider, and model
-        if (apiKey.trimmed().isEmpty()) {
-            if (isProUser) {
-                // Pro fallback if active slot has no key
-                provider = "gemini";
-                model = "gemini-2.5-flash";
-                apiKey = cfg.proCloudKey();
-            } else {
-                // 3 Free Daily AI Queries (Zero API Key Needed)
-                if (cfg.canUseFreeQuery()) {
-                    int used = cfg.recordFreeQuery();
-                    provider = "gemini";
-                    model = "gemini-2.5-flash";
-                    apiKey = cfg.proCloudKey();
-                    int rem = qMax(0, 3 - used);
-                    emit responseChunk(QString("[⚡ Free Trial: %1/3 queries used today • %2 remaining]\n\n").arg(used).arg(rem));
-                } else {
-                    emit errorOccurred("🔒 Daily Free Limit Reached (3/3 queries used today).\nUpgrade to PRO for unlimited queries, or enter your own free Gemini/OpenAI API key in Settings (⚙).");
-                    return;
-                }
+        // CUSTOM / BYOK MODE or FREE REWARDED TIER
+        if (!isProUser) {
+            if (!cfg.canUseFreeQuery()) {
+                emit errorOccurred("🔒 0 Solve Credits Remaining!\n\nTo unlock free AI solves, complete a quick 15-second sponsor task to earn credits.\n\nLaunching sponsor task in your browser... (Your solve will unlock automatically once completed!)");
+                AccountManager::instance().openWatchAdUrl();
+                return;
             }
+
+            // Deduct 1 credit or 1 trial query
+            if (cfg.freeCredits() > 0) {
+                AccountManager::instance().consumeCredit();
+                int remaining = cfg.freeCredits();
+                emit responseChunk(QString("[🪙 1 Solve Credit Consumed • %1 Banked Solves Remaining]\n\n").arg(remaining));
+            } else {
+                int used = cfg.recordFreeQuery();
+                int rem = qMax(0, 3 - used);
+                emit responseChunk(QString("[⚡ Free Trial: %1/3 queries used today • %2 remaining. Watch sponsor ads to bank solves!]\n\n").arg(used).arg(rem));
+            }
+        }
+
+        if (apiKey.trimmed().isEmpty()) {
+            // Fallback to high-speed Gemini engine if user hasn't set their own key yet
+            provider = "gemini";
+            model = "gemini-2.5-flash";
+            apiKey = cfg.proCloudKey();
         }
     }
 

@@ -107,6 +107,10 @@ public:
     bool canUseFreeQuery();
     int recordFreeQuery();
 
+    // Rewarded Sponsor Task Free Credits (LootLabs)
+    int freeCredits() const;
+    void setFreeCredits(int credits);
+
     int ghostWriterMinDelay() const;
     void setGhostWriterMinDelay(int ms);
 
@@ -163,6 +167,7 @@ private:
     QString     m_userEmail;
     QString     m_licenseKey;
     QString     m_proCloudKey;
+    int         m_freeCredits = 0;
 
     QStringList m_apiKeys;
     QStringList m_apiProviders;

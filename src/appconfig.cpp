@@ -89,6 +89,7 @@ void AppConfig::load() {
     m_userEmail      = m_settings.value("account/email", "").toString();
     m_licenseKey     = m_settings.value("account/licenseKey", "").toString();
     m_proCloudKey    = m_settings.value("account/proCloudKey", "").toString();
+    m_freeCredits    = m_settings.value("account/freeCredits", 0).toInt();
 }
 
 void AppConfig::save() {
@@ -96,6 +97,7 @@ void AppConfig::save() {
     m_settings.setValue("account/proDaysLeft", m_proDaysLeft);
     m_settings.setValue("account/proPlanTier", m_proPlanTier);
     m_settings.setValue("account/proCloudKey", m_proCloudKey);
+    m_settings.setValue("account/freeCredits", m_freeCredits);
     m_settings.setValue("api/useProCloudEngine", m_useProCloudEngine);
     m_settings.setValue("account/email",      m_userEmail);
     m_settings.setValue("account/licenseKey", m_licenseKey);
@@ -271,7 +273,16 @@ int AppConfig::freeQueriesRemaining() {
 
 bool AppConfig::canUseFreeQuery() {
     if (isPro()) return true;
-    return freeQueriesCountToday() < 3;
+    return (m_freeCredits > 0) || (freeQueriesCountToday() < 3);
+}
+
+int AppConfig::freeCredits() const {
+    return m_freeCredits;
+}
+
+void AppConfig::setFreeCredits(int credits) {
+    m_freeCredits = qMax(0, credits);
+    m_settings.setValue("account/freeCredits", m_freeCredits);
 }
 
 int AppConfig::recordFreeQuery() {

@@ -21,12 +21,14 @@ AccountManager& AccountManager::instance() {
 AccountManager::AccountManager(QObject* parent) : QObject(parent) {
     m_nam = new QNetworkAccessManager(this);
     m_tcpServer = new QTcpServer(this);
-    connect(m_tcpServer, &QTcpServer::newConnection, this, &AccountManager::onNewTcpConnection);
+    m_creditsPollTimer = new QTimer(this);
+    connect(m_creditsPollTimer, &QTimer::timeout, this, &AccountManager::onPollCreditsTimer);
 
-    // Auto-sync Google Account and Pro license status on startup
+    // Auto-sync Google Account, Pro license, and Free Credits on startup
     QTimer::singleShot(500, this, [this]() {
         syncAccountStatus();
         fetchCloudConfig();
+        fetchFreeCredits();
     });
 }
 
@@ -433,4 +435,103 @@ void AccountManager::fetchCloudConfig() {
         }
         reply->deleteLater();
     });
+}
+
+int AccountManager::getFreeCredits() const {
+    return AppConfig::instance().freeCredits();
+}
+
+void AccountManager::fetchFreeCredits() {
+    QString hwid = getMachineHwid();
+    QUrl url(QString("https://shadow-ai-cheat.vercel.app/api/user-credits?hwid=%1").arg(QString::fromUtf8(QUrl::toPercentEncoding(hwid))));
+    QNetworkRequest req(url);
+    req.setHeader(QNetworkRequest::UserAgentHeader, "ShadowAI-Desktop-Client");
+
+    QNetworkReply* reply = m_nam->get(req);
+    connect(reply, &QNetworkReply::finished, this, [this, reply]() {
+        if (reply->error() == QNetworkReply::NoError) {
+            QByteArray data = reply->readAll();
+            QJsonDocument doc = QJsonDocument::fromJson(data);
+            if (doc.isObject()) {
+                QJsonObject obj = doc.object();
+                if (obj.value("success").toBool()) {
+                    int credits = obj.value("credits").toInt();
+                    int previous = AppConfig::instance().freeCredits();
+                    AppConfig::instance().setFreeCredits(credits);
+                    if (credits != previous) {
+                        qDebug() << "[Credits] Synced balance from cloud:" << credits;
+                        emit creditsUpdated(credits);
+                    }
+                }
+            }
+        }
+        reply->deleteLater();
+    });
+}
+
+void AccountManager::consumeCredit(std::function<void(bool success, int remaining)> callback) {
+    if (isPro()) {
+        if (callback) callback(true, 999999);
+        return;
+    }
+
+    // Local optimistic deduction
+    int current = AppConfig::instance().freeCredits();
+    if (current > 0) {
+        AppConfig::instance().setFreeCredits(current - 1);
+        emit creditsUpdated(current - 1);
+    }
+
+    // Remote sync
+    QString hwid = getMachineHwid();
+    QUrl url(QString("https://shadow-ai-cheat.vercel.app/api/user-credits?hwid=%1&action=consume").arg(QString::fromUtf8(QUrl::toPercentEncoding(hwid))));
+    QNetworkRequest req(url);
+    req.setHeader(QNetworkRequest::UserAgentHeader, "ShadowAI-Desktop-Client");
+
+    QNetworkReply* reply = m_nam->get(req);
+    connect(reply, &QNetworkReply::finished, this, [this, reply, callback]() {
+        if (reply->error() == QNetworkReply::NoError) {
+            QByteArray data = reply->readAll();
+            QJsonDocument doc = QJsonDocument::fromJson(data);
+            if (doc.isObject()) {
+                QJsonObject obj = doc.object();
+                if (obj.value("success").toBool()) {
+                    int remaining = obj.value("remaining_credits").toInt();
+                    AppConfig::instance().setFreeCredits(remaining);
+                    emit creditsUpdated(remaining);
+                    if (callback) callback(true, remaining);
+                    reply->deleteLater();
+                    return;
+                }
+            }
+        }
+        if (callback) callback(false, AppConfig::instance().freeCredits());
+        reply->deleteLater();
+    });
+}
+
+void AccountManager::openWatchAdUrl() {
+    QString hwid = getMachineHwid();
+    QString adLink = QString("https://loot-link.com/s?bz4nCWsI&puid=%1").arg(hwid);
+    QDesktopServices::openUrl(QUrl(adLink));
+
+    // Poll for up to 2 minutes (24 checks * 5s) to auto-detect when task completes
+    m_pollAttemptsLeft = 24;
+    if (m_creditsPollTimer) {
+        m_creditsPollTimer->start(5000);
+    }
+}
+
+void AccountManager::onPollCreditsTimer() {
+    m_pollAttemptsLeft--;
+    int prevCredits = AppConfig::instance().freeCredits();
+
+    fetchFreeCredits();
+
+    // If new credits were detected or attempts exhausted, stop polling
+    if (AppConfig::instance().freeCredits() > prevCredits || m_pollAttemptsLeft <= 0) {
+        if (m_creditsPollTimer) {
+            m_creditsPollTimer->stop();
+        }
+    }
 }

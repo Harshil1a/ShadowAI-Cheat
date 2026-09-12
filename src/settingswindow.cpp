@@ -496,6 +496,36 @@ void SettingsWindow::setupUI() {
     authLayout->addWidget(m_googleAuthBtn);
 
     accLayout->addWidget(authGroup);
+
+    // Group 2: Free Solve Credits Vault (LootLabs Rewards)
+    QGroupBox* creditsGroup = new QGroupBox("Free Solve Credits Vault (LootLabs Rewards)", tabAccount);
+    QVBoxLayout* credLayout = new QVBoxLayout(creditsGroup);
+    credLayout->setContentsMargins(12, 16, 12, 12);
+    credLayout->setSpacing(10);
+
+    QLabel* credDesc = new QLabel(
+        "Bank solve credits in advance before your timed exams or tests. "
+        "Each 15-second sponsor task completed adds +1 solve credit to this device.",
+        creditsGroup
+    );
+    credDesc->setWordWrap(true);
+    credDesc->setStyleSheet("color: #8b9bb4; font-size: 11px;");
+    credLayout->addWidget(credDesc);
+
+    m_creditsStatusLabel = new QLabel(creditsGroup);
+    m_creditsStatusLabel->setStyleSheet("font-size: 13px; font-family: monospace; color: #00e5ff; font-weight: bold;");
+    credLayout->addWidget(m_creditsStatusLabel);
+
+    m_watchAdSettingsBtn = new QPushButton("📺 Watch Sponsor Ad to Bank Solves (+1 Each)", creditsGroup);
+    m_watchAdSettingsBtn->setFixedHeight(36);
+    m_watchAdSettingsBtn->setCursor(Qt::PointingHandCursor);
+    m_watchAdSettingsBtn->setStyleSheet("background: rgba(0, 229, 255, 0.16); color: #00e5ff; border: 1px solid #00e5ff; font-weight: bold; border-radius: 4px; padding: 6px 16px;");
+    connect(m_watchAdSettingsBtn, &QPushButton::clicked, this, []() {
+        AccountManager::instance().openWatchAdUrl();
+    });
+    credLayout->addWidget(m_watchAdSettingsBtn);
+
+    accLayout->addWidget(creditsGroup);
     accLayout->addStretch();
 
     tabWidget->addTab(tabAccount, "👤  Account & License");
@@ -594,6 +624,10 @@ void SettingsWindow::setupUI() {
     connect(m_testProBtn, &QPushButton::clicked, this, &SettingsWindow::onTestProCloud);
 
     connect(&AccountManager::instance(), &AccountManager::accountStateChanged, this, [this]() {
+        refreshAccountTab();
+    });
+
+    connect(&AccountManager::instance(), &AccountManager::creditsUpdated, this, [this](int) {
         refreshAccountTab();
     });
 
@@ -1401,4 +1435,17 @@ void SettingsWindow::refreshAccountTab() {
         m_accountStatusLabel->setText("👤 Google Account: Not Signed In\n⚡ Status: Sign in with Google to sync privileges and enable assistant");
         m_googleAuthBtn->setText("Sign In with Google");
     }
-}
+
+    if (m_creditsStatusLabel) {
+        if (isPro) {
+            m_creditsStatusLabel->setText("💎 Unlimited Solves Active (PRO License)");
+            m_creditsStatusLabel->setStyleSheet("font-size: 12px; font-family: monospace; color: #00ff66; font-weight: bold;");
+            if (m_watchAdSettingsBtn) m_watchAdSettingsBtn->setEnabled(false);
+        } else {
+            int credits = AppConfig::instance().freeCredits();
+            m_creditsStatusLabel->setText(QString("🪙 Available Solve Credits: %1 Banked").arg(credits));
+            m_creditsStatusLabel->setStyleSheet(credits > 0 ? "font-size: 12px; font-family: monospace; color: #00e5ff; font-weight: bold;" : "font-size: 12px; font-family: monospace; color: #ff4757; font-weight: bold;");
+            if (m_watchAdSettingsBtn) m_watchAdSettingsBtn->setEnabled(true);
+        }
+    }
+}

@@ -124,5 +124,7 @@ protected:
     QPushButton* m_googleAuthBtn      = nullptr;
     QPushButton* m_upgradeBtn         = nullptr;
     QLabel*      m_licenseFeedback    = nullptr;
+    QLabel*      m_creditsStatusLabel = nullptr;
+    QPushButton* m_watchAdSettingsBtn = nullptr;
     void refreshAccountTab();
 };

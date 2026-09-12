@@ -140,6 +140,15 @@ void Dashboard::setupUI() {
     m_proBtn->setMinimumSize(88, 24);
     m_proBtn->setCursor(Qt::PointingHandCursor);
 
+    m_creditsBtn = new QPushButton("🪙 0 Solves [+1 Ad]", accRow);
+    m_creditsBtn->setObjectName("accCreditsBtn");
+    m_creditsBtn->setMinimumSize(110, 24);
+    m_creditsBtn->setCursor(Qt::PointingHandCursor);
+    m_creditsBtn->setToolTip("Complete a 15-second sponsor task on LootLabs to bank +1 solve credit.");
+    connect(m_creditsBtn, &QPushButton::clicked, this, []() {
+        AccountManager::instance().openWatchAdUrl();
+    });
+
     m_updateBadge = new QPushButton("⚡ Update Available", accRow);
     m_updateBadge->setObjectName("accUpdateBtn");
     m_updateBadge->setCursor(Qt::PointingHandCursor);
@@ -152,6 +161,7 @@ void Dashboard::setupUI() {
     accLayout->addStretch();
     accLayout->addWidget(m_accountBadge);
     accLayout->addWidget(m_loginBtn);
+    accLayout->addWidget(m_creditsBtn);
     accLayout->addWidget(m_proBtn);
     accLayout->addWidget(m_updateBadge);
     accLayout->addStretch();
@@ -177,6 +187,10 @@ void Dashboard::setupUI() {
     });
 
     connect(&AccountManager::instance(), &AccountManager::accountStateChanged, this, [this]() {
+        refreshAccountUI();
+    });
+
+    connect(&AccountManager::instance(), &AccountManager::creditsUpdated, this, [this](int) {
         refreshAccountUI();
     });
 
@@ -698,6 +712,7 @@ void Dashboard::refreshAccountUI() {
     }
 
     if (isPro) {
+        if (m_creditsBtn) m_creditsBtn->setVisible(false);
         int days = AppConfig::instance().proDaysLeft();
         QString labelText;
         if (days < 0) {
@@ -711,6 +726,17 @@ void Dashboard::refreshAccountUI() {
         m_proBtn->setStyleSheet("background: rgba(0, 255, 102, 0.22); color: #00ff66; border: 1px solid #00ff66; font-size: 10px; font-weight: 800; border-radius: 4px; padding: 2px 6px; font-family: 'Consolas', monospace;");
         m_proBtn->setToolTip(QString("Pro Active [%1] — Unlimited Cloud AI & Vision").arg(AppConfig::instance().proPlanTier()));
     } else {
+        if (m_creditsBtn) {
+            m_creditsBtn->setVisible(true);
+            int credits = AppConfig::instance().freeCredits();
+            if (credits > 0) {
+                m_creditsBtn->setText(QString("🪙 %1 Solves [+1 Ad]").arg(credits));
+                m_creditsBtn->setStyleSheet("background: rgba(0, 229, 255, 0.20); color: #00e5ff; border: 1px solid #00e5ff; font-size: 10px; font-weight: 800; border-radius: 4px; padding: 2px 8px; font-family: 'Consolas', monospace;");
+            } else {
+                m_creditsBtn->setText(QString::fromUtf8("🪙 0 Solves [Get +1 Ad]"));
+                m_creditsBtn->setStyleSheet("background: rgba(255, 71, 87, 0.20); color: #ff4757; border: 1px solid #ff4757; font-size: 10px; font-weight: 800; border-radius: 4px; padding: 2px 8px; font-family: 'Consolas', monospace;");
+            }
+        }
         m_proBtn->setText(QString::fromUtf8("⚡ UPGRADE TO PRO"));
         m_proBtn->setStyleSheet("background: rgba(0, 229, 255, 0.16); color: #00e5ff; border: 1px solid #00e5ff; font-size: 10px; font-weight: 800; border-radius: 4px; padding: 2px 6px; font-family: 'Consolas', monospace;");
         m_proBtn->setToolTip("Click to upgrade to Shadow Pro (₹99 / $6.00) for unlimited Gemini 2.5 Flash Cloud AI");

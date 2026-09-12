@@ -64,6 +64,7 @@ private:
     QLabel*         m_accountBadge     = nullptr;
     QPushButton*    m_loginBtn         = nullptr;
     QPushButton*    m_proBtn           = nullptr;
+    QPushButton*    m_creditsBtn       = nullptr;
     void refreshAccountUI();
 
     QNetworkAccessManager* m_nam       = nullptr;
