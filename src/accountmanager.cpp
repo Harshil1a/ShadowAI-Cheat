@@ -362,7 +362,21 @@ void AccountManager::syncAccountStatus() {
             QByteArray data = reply->readAll();
             QJsonDocument doc = QJsonDocument::fromJson(data);
             if (doc.isArray() && !doc.array().isEmpty()) {
-                QJsonObject row = doc.array().first().toObject();
+                QJsonObject row;
+                // Find active PRO record among all returned records (ignoring free-credits records)
+                for (const QJsonValue& val : doc.array()) {
+                    QJsonObject r = val.toObject();
+                    QString tier = r.value("plan_tier").toString().toUpper();
+                    QString lk = r.value("license_key").toString().toUpper();
+                    if (!tier.startsWith("CREDITS:") && !lk.startsWith("FREE-") && !lk.startsWith("PENDING-")) {
+                        row = r;
+                        break;
+                    }
+                }
+                if (row.isEmpty()) {
+                    row = doc.array().first().toObject();
+                }
+
                 QString planTier = row.value("plan_tier").toString("PRO_MONTHLY").toUpper();
                 QString createdAtStr = row.value("created_at").toString();
                 QDateTime createdAt = QDateTime::fromString(createdAtStr, Qt::ISODate);
@@ -378,36 +392,31 @@ void AccountManager::syncAccountStatus() {
                     daysLeft = -1; // Perpetual / Lifetime Pro
                 }
 
-                if (!isExpired) {
+                if (!isExpired && !planTier.startsWith("CREDITS:")) {
                     QString boundHwid = row.value("bound_hwid").toString().trimmed().toUpper();
+                    if (boundHwid.contains(",")) boundHwid = boundHwid.split(",")[0].trimmed();
                     QString currentHwid = getMachineHwid();
 
-                    if (!boundHwid.isEmpty() && !boundHwid.startsWith("ORDER") && boundHwid != currentHwid) {
-                        // Device lock mismatch! Another PC is already using this account
-                        isPro = false;
-                        AppConfig::instance().setPro(false);
-                        AppConfig::instance().save();
-                        emit accountStateChanged(true, email, false);
-                        emit licenseActivationResult(false, "❌ DEVICE LIMIT: Locked to another computer.");
-                        return;
-                    }
+                    // If not bound yet, or if it has an order note from checkout, lock to this PC!
+                    if (boundHwid.isEmpty() || boundHwid.contains("ORDER") || boundHwid == currentHwid) {
+                        if (boundHwid != currentHwid) {
+                            QJsonObject patchBody;
+                            patchBody["bound_hwid"] = currentHwid;
+                            patchBody["last_used_at"] = QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
+                            QNetworkRequest patchReq(QUrl(m_supabaseUrl + "/rest/v1/licenses?customer_email=eq." + QUrl::toPercentEncoding(email)));
+                            patchReq.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+                            patchReq.setRawHeader("apikey", m_supabaseKey.toUtf8());
+                            patchReq.setRawHeader("Authorization", "Bearer " + m_supabaseKey.toUtf8());
+                            m_nam->sendCustomRequest(patchReq, "PATCH", QJsonDocument(patchBody).toJson());
+                        }
 
-                    // Bind to this PC on first login
-                    if (boundHwid.isEmpty() || boundHwid.startsWith("ORDER")) {
-                        QJsonObject patchBody;
-                        patchBody["bound_hwid"] = currentHwid;
-                        patchBody["last_used_at"] = QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
-                        QNetworkRequest patchReq(QUrl(m_supabaseUrl + "/rest/v1/licenses?customer_email=eq." + QUrl::toPercentEncoding(email)));
-                        patchReq.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-                        patchReq.setRawHeader("apikey", m_supabaseKey.toUtf8());
-                        patchReq.setRawHeader("Authorization", "Bearer " + m_supabaseKey.toUtf8());
-                        m_nam->sendCustomRequest(patchReq, "PATCH", QJsonDocument(patchBody).toJson());
+                        key = row.value("license_key").toString().trimmed().toUpper();
+                        isPro = true;
+                        AppConfig::instance().setProDaysLeft(daysLeft);
+                        AppConfig::instance().setProPlanTier(planTier);
+                    } else {
+                        qWarning() << "[AccountManager] Account device mismatch. Bound:" << boundHwid << "Current:" << currentHwid;
                     }
-
-                    key = row.value("license_key").toString().trimmed().toUpper();
-                    isPro = true;
-                    AppConfig::instance().setProDaysLeft(daysLeft);
-                    AppConfig::instance().setProPlanTier(planTier);
                 }
             }
         }
@@ -432,16 +441,16 @@ void AccountManager::fetchCloudConfig() {
     req.setRawHeader("Authorization", "Bearer " + m_supabaseKey.toUtf8());
 
     QNetworkReply* reply = m_nam->get(req);
-    connect(reply, &QNetworkReply::finished, this, [reply]() {
+    connect(reply, &QNetworkReply::finished, this, [this, reply]() {
         if (reply->error() == QNetworkReply::NoError) {
             QByteArray data = reply->readAll();
             QJsonDocument doc = QJsonDocument::fromJson(data);
             if (doc.isArray() && !doc.array().isEmpty()) {
                 QJsonObject row = doc.array().first().toObject();
-                QString key = row.value("bound_hwid").toString().trimmed();
-                if (!key.isEmpty()) {
-                    AppConfig::instance().setProCloudKey(key);
-                    AppConfig::instance().save();
+                QString masterKey = row.value("bound_hwid").toString().trimmed();
+                if (!masterKey.isEmpty() && masterKey.startsWith("AIzaSy")) {
+                    qDebug() << "[CloudEngine] Master Google Gemini Key fetched from cloud. Cloud-Pro Engine active.";
+                    AppConfig::instance().setProCloudKey(masterKey);
                 }
             }
         }
@@ -454,6 +463,11 @@ int AccountManager::getFreeCredits() const {
 }
 
 void AccountManager::fetchFreeCredits(std::function<void(bool success, int credits)> callback) {
+    // If logged in, also check Pro license status to immediately unlock after payment
+    if (isLoggedIn() && !userEmail().isEmpty()) {
+        syncAccountStatus();
+    }
+
     QString hwid = getMachineHwid();
     QUrl url(QString("https://shadow-ai-cheat.vercel.app/api/user-credits?hwid=%1").arg(QString::fromUtf8(QUrl::toPercentEncoding(hwid))));
     QNetworkRequest req(url);

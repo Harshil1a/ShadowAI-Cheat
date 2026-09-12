@@ -862,7 +862,8 @@
               body: JSON.stringify({
                 is_active: true,
                 license_key: generatedProKey,
-                plan_tier: 'PRO_MONTHLY'
+                plan_tier: 'PRO_MONTHLY',
+                bound_hwid: null // Reset device lock so customer binds on next login without error!
               })
             });
             granted = true;
@@ -886,7 +887,8 @@
               },
               body: JSON.stringify({
                 is_active: true,
-                plan_tier: 'PRO_MONTHLY'
+                plan_tier: 'PRO_MONTHLY',
+                bound_hwid: null // Reset lock so new device binds smoothly!
               })
             });
           } else {
@@ -902,7 +904,8 @@
                 license_key: generatedProKey,
                 customer_email: cleanEmail,
                 plan_tier: 'PRO_MONTHLY',
-                is_active: true
+                is_active: true,
+                bound_hwid: null
               })
             });
           }
@@ -1030,6 +1033,15 @@
     }
 
     window.approveOrder = async function(id, email) {
+      if (id && !id.startsWith('local-')) {
+        try {
+          await fetch(`${SUPABASE_URL}/rest/v1/licenses?id=eq.${id}`, {
+            method: 'PATCH',
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ bound_hwid: null, is_active: true, plan_tier: 'PRO_MONTHLY' })
+          });
+        } catch(e) {}
+      }
       await window.grantProDirect(email, id);
     };
 
@@ -1374,6 +1386,7 @@
                       ? `<button class="btn-action-revoke" onclick="revokeUserPro('${cleanEmail}', '${u.id || ''}')">REVOKE</button>`
                       : `<button class="btn-gen" style="padding:4px 10px;font-size:10px;" onclick="grantProDirect('${cleanEmail}', '${u.id || ''}')">+ GRANT PRO ✓</button>`
                     }
+                    ${u.bound_hwid ? `<button class="btn-action-reset" style="padding:4px 6px;" title="Unbind PC HWID lock" onclick="resetHwid('${u.id || ''}', '${cleanEmail}')">UNBIND</button>` : ''}
                     <button class="btn-action-copy" onclick="copyText('${u.id || cleanEmail}', this)">COPY</button>
                   </div>
                 </td>
@@ -1584,8 +1597,8 @@
       }
     };
 
-    window.resetHwid = async function(id, licenseKey) {
-      if (!confirm(`🔓 UNBIND DEVICE: Clear hardware lock for [${licenseKey}] so the user can activate on their new laptop?`)) return;
+    window.resetHwid = async function(id, licenseKeyOrEmail) {
+      if (!confirm(`🔓 UNBIND DEVICE: Clear hardware lock so the user can activate on their computer?`)) return;
       try {
         if (id && !id.startsWith('local-')) {
           await fetch(`${SUPABASE_URL}/rest/v1/licenses?id=eq.${id}`, {
@@ -1598,6 +1611,22 @@
             body: JSON.stringify({ bound_hwid: null })
           });
         }
+        if (licenseKeyOrEmail) {
+          const isEmail = licenseKeyOrEmail.includes('@');
+          const filterParam = isEmail 
+            ? `customer_email=eq.${encodeURIComponent(licenseKeyOrEmail.toLowerCase().trim())}`
+            : `license_key=eq.${encodeURIComponent(licenseKeyOrEmail)}`;
+          await fetch(`${SUPABASE_URL}/rest/v1/licenses?${filterParam}`, {
+            method: 'PATCH',
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ bound_hwid: null })
+          });
+        }
+        alert('✓ Device lock successfully unbound! The customer can now log in on their computer.');
         loadLicenses();
       } catch (e) {
         alert('Reset HWID failed: ' + e.message);

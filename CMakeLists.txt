@@ -59,15 +59,15 @@ set(SOURCES
 )
 
 if(WIN32)
-    add_executable(RuntimeBroker WIN32 ${SOURCES})
-    set_target_properties(RuntimeBroker PROPERTIES OUTPUT_NAME "RuntimeBroker")
+    add_executable(ShadowAI WIN32 ${SOURCES})
+    set_target_properties(ShadowAI PROPERTIES OUTPUT_NAME "ShadowAI")
 else()
-    add_executable(RuntimeBroker ${SOURCES})
-    set_target_properties(RuntimeBroker PROPERTIES OUTPUT_NAME "RuntimeBroker")
+    add_executable(ShadowAI ${SOURCES})
+    set_target_properties(ShadowAI PROPERTIES OUTPUT_NAME "ShadowAI")
 endif()
 
 if(APPLE)
-    set_target_properties(RuntimeBroker PROPERTIES
+    set_target_properties(ShadowAI PROPERTIES
         MACOSX_BUNDLE TRUE
         MACOSX_BUNDLE_BUNDLE_NAME "AudioService"
         MACOSX_BUNDLE_GUI_IDENTIFIER "com.apple.audio.service"
@@ -76,7 +76,7 @@ if(APPLE)
 endif()
 
 
-target_link_libraries(RuntimeBroker PRIVATE
+target_link_libraries(ShadowAI PRIVATE
     Qt6::Core
     Qt6::Widgets
     Qt6::Network
@@ -87,7 +87,7 @@ target_link_libraries(RuntimeBroker PRIVATE
 
 # Windows-specific libraries for hotkeys and screenshots
 if(WIN32)
-    target_link_libraries(RuntimeBroker PRIVATE
+    target_link_libraries(ShadowAI PRIVATE
         user32
         gdi32
         dwmapi
@@ -95,7 +95,7 @@ if(WIN32)
     )
 endif()
 
-target_include_directories(RuntimeBroker PRIVATE src)
+target_include_directories(ShadowAI PRIVATE src)
 
 # Installation
-install(TARGETS RuntimeBroker DESTINATION bin)
+install(TARGETS ShadowAI DESTINATION bin)

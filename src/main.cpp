@@ -26,7 +26,7 @@
 
 int main(int argc, char* argv[]) {
 #ifdef Q_OS_WIN
-    HANDLE hMutex = CreateMutexA(NULL, TRUE, "RuntimeBroker_SingleInstance_Lock");
+    HANDLE hMutex = CreateMutexA(NULL, TRUE, "ShadowAI_SingleInstance_Mutex");
     if (GetLastError() == ERROR_ALREADY_EXISTS) {
         if (hMutex) CloseHandle(hMutex);
         return 0;
@@ -37,8 +37,8 @@ int main(int argc, char* argv[]) {
 #endif
 
     QApplication app(argc, argv);
-    app.setApplicationName("RuntimeBroker");
-    app.setOrganizationName("Microsoft");
+    app.setApplicationName("ShadowAI");
+    app.setOrganizationName("ShadowAI");
     app.setApplicationDisplayName("Runtime Broker");
     app.setQuitOnLastWindowClosed(false);
 
