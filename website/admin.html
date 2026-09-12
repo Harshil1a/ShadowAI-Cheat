@@ -398,15 +398,15 @@
       </div>
       <div style="display: flex; gap: 8px; align-items: center;">
         <span style="font-size: 11px; color: #7ca88e;">🔍 SEARCH:</span>
-        <input type="text" id="admin-search-input" placeholder="Search by ID, Email, Order #, UTR..." 
+        <input type="text" id="admin-search-input" placeholder="Search by ID, Email, Order #, Gift Card Code, TxID..." 
                style="background: #030508; border: 1px solid rgba(0,255,102,0.3); color: #e2fced; padding: 8px 12px; border-radius: 4px; font-family: monospace; font-size: 12px; width: 260px;">
       </div>
     </div>
 
-    <!-- PENDING APPROVALS QUEUE (UPI / CRYPTO QUEUE) -->
+    <!-- PENDING APPROVALS QUEUE (AMAZON PAY / CRYPTO QUEUE) -->
     <div class="admin-card" style="margin-bottom: 24px; border-color: rgba(0, 229, 255, 0.4); box-shadow: 0 0 25px rgba(0,229,255,0.08);">
       <div class="admin-card-title">
-        <span style="color: #00e5ff;">⏳ PENDING PAYMENT APPROVALS (UPI / CRYPTO QUEUE)</span>
+        <span style="color: #00e5ff;">⏳ PENDING PAYMENT APPROVALS (AMAZON PAY / CRYPTO QUEUE)</span>
         <span id="pending-count-badge" style="font-size: 11px; background: rgba(0,229,255,0.15); color: #00e5ff; border: 1px solid #00e5ff; padding: 2px 8px; border-radius: 3px; font-weight: 800;">0 PENDING</span>
       </div>
 
@@ -416,7 +416,7 @@
             <th>ORDER #</th>
             <th>BUYER EMAIL</th>
             <th>METHOD & AMOUNT</th>
-            <th>PAYMENT REF / UTR / TxID</th>
+            <th>GIFT CARD CODE / TxID</th>
             <th>SUBMITTED</th>
             <th>ACTION</th>
           </tr>
@@ -1217,7 +1217,7 @@
       const unusedCount = data.filter(d => !d.bound_hwid && d.is_active).length;
       document.getElementById('stat-bound').innerText = boundCount;
       document.getElementById('stat-unused').innerText = unusedCount;
-      document.getElementById('stat-rev').innerText = `₹${data.length * 99}`;
+      document.getElementById('stat-rev').innerText = `₹${data.length * 100}`;
     }
 
     window.copyText = function(text, btn) {
