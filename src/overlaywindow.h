@@ -98,6 +98,10 @@ private:
 
     // State
     bool     m_visible      = false;
+    bool     m_dragging     = false;
+    QPoint   m_dragOffset;
+    bool     m_showingKeyDirectoryInChat = false;
+    QString  m_previousChatContent;
     double   m_opacity      = 0.88;
     int      m_opacityStep  = 0;
     QList<QPixmap> m_screenshots;

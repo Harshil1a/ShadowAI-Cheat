@@ -364,6 +364,12 @@ void OverlayWindow::setupUI() {
   topLayout->addWidget(m_creditsBadge);
   topLayout->addWidget(m_statusLabel);
 
+  topBar->installEventFilter(this);
+  appIcon->installEventFilter(this);
+  appName->installEventFilter(this);
+  m_statusLabel->installEventFilter(this);
+  if (m_creditsBadge) m_creditsBadge->installEventFilter(this);
+
   connect(&AccountManager::instance(), &AccountManager::creditsUpdated, this,
           [this](int) { updateCreditsBadge(); });
   connect(&AccountManager::instance(), &AccountManager::accountStateChanged,
@@ -459,21 +465,20 @@ void OverlayWindow::setupUI() {
     return w;
   };
 
-  m_group1 = makeGroup("Core Controls");
+  m_group1 = makeGroup("Overlay & View Controls");
   m_keysLayout1 = m_group1->findChild<QHBoxLayout *>("keysLayout");
 
-  m_group2 = makeGroup("Other Options");
+  m_group2 = makeGroup("Interaction & Emergency Controls");
   m_keysLayout2 = m_group2->findChild<QHBoxLayout *>("keysLayout");
   m_group1->setVisible(true);
-  m_group2->setVisible(false);
-  m_activeRow = 0;
+  m_group2->setVisible(true);
 
   // Container for helper groups so they can be hidden together
   m_helpGroupsContainer = new QWidget;
   m_helpGroupsContainer->setObjectName("helpGroupsContainer");
   QVBoxLayout *hgLayout = new QVBoxLayout(m_helpGroupsContainer);
   hgLayout->setContentsMargins(0, 0, 0, 0);
-  hgLayout->setSpacing(0);
+  hgLayout->setSpacing(4);
   hgLayout->addWidget(m_group1);
   hgLayout->addWidget(m_group2);
 
@@ -971,8 +976,7 @@ void OverlayWindow::refreshKeyBadges() {
   QString scrollKeys = pfx + vkToKeyName(cfg.hotkeyScrollUp()) + "/" +
                        vkToKeyName(cfg.hotkeyScrollDown());
 
-  // Row 1: Core Navigation & Solution (Snap & Solve, Scroll Ans, and Options
-  // seen first!)
+  // Row 1: Core Navigation & Solution (Snap & Solve, Scroll Ans, Options visible!)
   m_keysLayout1->addWidget(makeKey(
       pfx + vkToKeyName(cfg.hotkeyGetAnswer()), "Snap & Solve"));
   m_keysLayout1->addWidget(makeKey(scrollKeys, "Scroll Ans"));
@@ -980,28 +984,26 @@ void OverlayWindow::refreshKeyBadges() {
       pfx + vkToKeyName(cfg.hotkeyScreenshot()), "Screenshot"));
   m_keysLayout1->addWidget(
       makeKey(pfx + vkToKeyName(cfg.hotkeyClear()), "Clear"));
+  m_keysLayout1->addWidget(
+      makeKey(pfx + vkToKeyName(cfg.hotkeyToggle()), "Hide/Show"));
   m_keysLayout1->addWidget(makeKey(
       pfx + vkToKeyName(cfg.hotkeyToggleBadges()), "Options ☰"));
 
-  // Row 2: Other Tools & Emergency Controls (Revealed when Options ☰ is
-  // pressed)
+  // Row 2: Tools & Emergency Controls
   m_keysLayout2->addWidget(makeKey(
       pfx + vkToKeyName(cfg.hotkeyGhostWriter()), "Auto-Type"));
   m_keysLayout2->addWidget(
       makeKey(pfx + vkToKeyName(cfg.hotkeyVoice()), "Voice Rec"));
   m_keysLayout2->addWidget(makeKey(
       pfx + vkToKeyName(cfg.hotkeyTransparency()), "Transparency"));
-  m_keysLayout2->addWidget(
-      makeKey(pfx + vkToKeyName(cfg.hotkeyToggle()), "Hide/Show"));
   m_keysLayout2->addWidget(makeKey(pfx + "Arrows", "Move Window"));
   m_keysLayout2->addWidget(makeKey(
+      pfx + vkToKeyName(cfg.hotkeyCopyScreenshot()), "Copy Shot"));
+  m_keysLayout2->addWidget(makeKey(
       panicPfx + vkToKeyName(cfg.hotkeyPanic()), "Panic Kill", true));
-  m_keysLayout2->addWidget(
-      makeKey(pfx + vkToKeyName(cfg.hotkeyToggleBadges()), "Back ☰"));
 
   if (m_bottomHintLabel) {
-    m_bottomHintLabel->setText(QString("[%1%2] Swap Options (Core / "
-                                       "Other)  |  [%1%3] Clean View")
+    m_bottomHintLabel->setText(QString("[%1%2] All Keys in Chat  |  [%1%3] Clean View")
                                    .arg(pfx)
                                    .arg(vkToKeyName(cfg.hotkeyToggleBadges()))
                                    .arg(vkToKeyName(cfg.hotkeyHideStrip())));
@@ -1016,15 +1018,15 @@ void OverlayWindow::refreshKeyBadges() {
                 "  %3  →  Scroll Answer Up / Down\n"
                 "  %1%4  →  Capture Screenshot\n"
                 "  %1%5  →  Clear Chat Output\n"
-                "  %1%6  →  Options ☰ (Swap to Other Tools)\n"
-                "  %1%7  →  Hide / Show Overlay")
+                "  %1%6  →  Hide / Show Overlay\n"
+                "  %1%7  →  Options ☰ (Show All Keys in Chat)")
             .arg(pfx)
             .arg(vkToKeyName(cfg.hotkeyGetAnswer()))
             .arg(scrollKeys)
             .arg(vkToKeyName(cfg.hotkeyScreenshot()))
             .arg(vkToKeyName(cfg.hotkeyClear()))
-            .arg(vkToKeyName(cfg.hotkeyToggleBadges()))
-            .arg(vkToKeyName(cfg.hotkeyToggle())));
+            .arg(vkToKeyName(cfg.hotkeyToggle()))
+            .arg(vkToKeyName(cfg.hotkeyToggleBadges())));
   }
 }
 
@@ -1395,7 +1397,13 @@ void OverlayWindow::showStatusMessage(const QString &msg, bool isError) {
 // ─── Mouse events (for move mode) ────────────────────────────────────────────
 
 void OverlayWindow::mousePressEvent(QMouseEvent *event) {
-  // Disabled: Mouse interaction not allowed
+  if (event->button() == Qt::LeftButton) {
+    m_dragging = true;
+    m_dragOffset = event->globalPosition().toPoint() - frameGeometry().topLeft();
+    event->accept();
+    return;
+  }
+  QWidget::mousePressEvent(event);
 }
 
 void OverlayWindow::showEvent(QShowEvent *event) {
@@ -1418,16 +1426,54 @@ void OverlayWindow::showEvent(QShowEvent *event) {
 }
 
 void OverlayWindow::mouseMoveEvent(QMouseEvent *event) {
-  // Mouse passes through window completely
+  if (m_dragging && (event->buttons() & Qt::LeftButton)) {
+    move(event->globalPosition().toPoint() - m_dragOffset);
+    event->accept();
+    return;
+  }
+  QWidget::mouseMoveEvent(event);
 }
 
 void OverlayWindow::mouseReleaseEvent(QMouseEvent *event) {
-  // Disabled: Mouse interaction not allowed
+  if (m_dragging) {
+    m_dragging = false;
+    auto &cfg = AppConfig::instance();
+    cfg.setOverlayPos(x(), y());
+    cfg.save();
+    event->accept();
+    return;
+  }
+  QWidget::mouseReleaseEvent(event);
 }
 
 bool OverlayWindow::eventFilter(QObject *obj, QEvent *event) {
-  // All mouse events pass through - completely transparent overlay
-  return false;
+  if (obj == findChild<QWidget *>("topBar") || (obj && obj->objectName() == "appIcon") ||
+      (obj && obj->objectName() == "appName") || obj == m_statusLabel ||
+      obj == m_creditsBadge) {
+    if (event->type() == QEvent::MouseButtonPress) {
+      auto *me = static_cast<QMouseEvent *>(event);
+      if (me->button() == Qt::LeftButton) {
+        m_dragging = true;
+        m_dragOffset = me->globalPosition().toPoint() - frameGeometry().topLeft();
+        return true;
+      }
+    } else if (event->type() == QEvent::MouseMove) {
+      auto *me = static_cast<QMouseEvent *>(event);
+      if (m_dragging && (me->buttons() & Qt::LeftButton)) {
+        move(me->globalPosition().toPoint() - m_dragOffset);
+        return true;
+      }
+    } else if (event->type() == QEvent::MouseButtonRelease) {
+      if (m_dragging) {
+        m_dragging = false;
+        auto &cfg = AppConfig::instance();
+        cfg.setOverlayPos(x(), y());
+        cfg.save();
+        return true;
+      }
+    }
+  }
+  return QWidget::eventFilter(obj, event);
 }
 
 bool OverlayWindow::nativeEvent(const QByteArray &eventType, void *message,
@@ -1436,17 +1482,14 @@ bool OverlayWindow::nativeEvent(const QByteArray &eventType, void *message,
   if (eventType == "windows_generic_MSG") {
     MSG *msg = reinterpret_cast<MSG *>(message);
 
-    // Handle WM_NCHITTEST to make window transparent to clicks
+    // Handle WM_NCHITTEST: allow clicking and dragging
     if (msg->message == WM_NCHITTEST) {
-      // Return HTTRANSPARENT to make clicks pass through to underlying windows
-      *result = HTTRANSPARENT;
+      *result = HTCLIENT;
       return true;
     }
 
     // Handle WM_MOUSEACTIVATE to prevent focus steal when clicked
     if (msg->message == WM_MOUSEACTIVATE) {
-      // MA_NOACTIVATE = stay inactive, don't discard the message (though it
-      // passes through anyway)
       *result = MA_NOACTIVATE;
       return true;
     }
@@ -1603,17 +1646,79 @@ void OverlayWindow::onRecordingFinished(const QString &filePath) {
 }
 
 void OverlayWindow::toggleBadgesVisibility() {
-  m_activeRow = (m_activeRow == 0) ? 1 : 0;
-  if (m_group1)
-    m_group1->setVisible(m_activeRow == 0);
-  if (m_group2)
-    m_group2->setVisible(m_activeRow == 1);
-  if (m_helpGroupsContainer)
-    m_helpGroupsContainer->setVisible(true);
-  if (m_bottomHintLabel)
-    m_bottomHintLabel->setVisible(false);
-  showStatusMessage(m_activeRow == 0 ? "Core Controls (Snap & Scroll)"
-                                     : "Other Options (Tools & Controls)");
+  m_showingKeyDirectoryInChat = !m_showingKeyDirectoryInChat;
+  if (m_showingKeyDirectoryInChat) {
+    auto &cfg = AppConfig::instance();
+    QString pfx = modKeyPrefix();
+    QString panicPfx = panicKeyPrefix();
+    QString scrollKeys = pfx + vkToKeyName(cfg.hotkeyScrollUp()) + "/" +
+                         vkToKeyName(cfg.hotkeyScrollDown());
+
+    m_previousChatContent = m_answerDisplay->toHtml();
+
+    QString dirHtml = QString(R"(
+<div style="font-family: 'Segoe UI', system-ui, sans-serif; padding: 10px; color: #e2e8f0; line-height: 1.5;">
+  <div style="font-size: 13px; font-weight: bold; color: #00e5ff; margin-bottom: 8px; border-bottom: 1px solid rgba(0, 229, 255, 0.35); padding-bottom: 4px;">
+    ⌨ ALL SHORTCUT KEYS DIRECTORY
+  </div>
+
+  <div style="margin-bottom: 8px;">
+    <div style="color: #00ffcc; font-size: 10px; font-weight: bold; text-transform: uppercase;">✦ Core Actions:</div>
+    <div style="margin-left: 6px; font-size: 11px;">
+      <b>%1%2</b> — Snap &amp; Solve (Analyze &amp; Ask AI)<br>
+      <b>%3</b> — Scroll Answer Up / Down<br>
+      <b>%1%4</b> — Capture Screenshot<br>
+      <b>%1%5</b> — Clear Answer &amp; Screenshots<br>
+      <b>%1%6</b> — Show / Hide Overlay Window<br>
+      <b>%1%7</b> — Options ☰ (Toggle this Key Directory in Chat)
+    </div>
+  </div>
+
+  <div style="margin-bottom: 8px;">
+    <div style="color: #38bdf8; font-size: 10px; font-weight: bold; text-transform: uppercase;">✦ Tools &amp; Positioning:</div>
+    <div style="margin-left: 6px; font-size: 11px;">
+      <b>%1%8</b> — Ghost Writer (Auto-Type Code)<br>
+      <b>%1%9</b> — Voice Recording (Push-to-Talk)<br>
+      <b>%1%10</b> — Cycle Transparency<br>
+      <b>%1Arrows</b> — Move Overlay Position<br>
+      <b>%1%11</b> — Copy Last Screenshot<br>
+      <b>%1%12</b> — Hide Key Strip (Clean View)
+    </div>
+  </div>
+
+  <div>
+    <div style="color: #ff6b6b; font-size: 10px; font-weight: bold; text-transform: uppercase;">✦ Emergency:</div>
+    <div style="margin-left: 6px; font-size: 11px;">
+      <b style="color: #ff6b6b;">%13%14</b> — Emergency Panic Kill-Switch
+    </div>
+  </div>
+</div>
+)")
+      .arg(pfx)
+      .arg(vkToKeyName(cfg.hotkeyGetAnswer()))
+      .arg(scrollKeys)
+      .arg(vkToKeyName(cfg.hotkeyScreenshot()))
+      .arg(vkToKeyName(cfg.hotkeyClear()))
+      .arg(vkToKeyName(cfg.hotkeyToggle()))
+      .arg(vkToKeyName(cfg.hotkeyToggleBadges()))
+      .arg(vkToKeyName(cfg.hotkeyGhostWriter()))
+      .arg(vkToKeyName(cfg.hotkeyVoice()))
+      .arg(vkToKeyName(cfg.hotkeyTransparency()))
+      .arg(vkToKeyName(cfg.hotkeyCopyScreenshot()))
+      .arg(vkToKeyName(cfg.hotkeyHideStrip()))
+      .arg(panicPfx)
+      .arg(vkToKeyName(cfg.hotkeyPanic()));
+
+    m_answerDisplay->setHtml(dirHtml);
+    showStatusMessage("All Keys Directory displayed in chat");
+  } else {
+    if (!m_previousChatContent.trimmed().isEmpty() && !m_previousChatContent.contains("ALL SHORTCUT KEYS DIRECTORY")) {
+      m_answerDisplay->setHtml(m_previousChatContent);
+    } else {
+      m_answerDisplay->clear();
+    }
+    showStatusMessage("Chat restored");
+  }
   update();
 }
 

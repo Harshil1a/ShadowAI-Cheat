@@ -18,7 +18,7 @@
 
 MainWindow::MainWindow(QWidget* parent) : QWidget(parent) {
     setWindowTitle("System Broker - Runtime Broker");
-    setFixedSize(540, 520);
+    setFixedSize(540, 570);
     setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
     setAttribute(Qt::WA_ShowWithoutActivating, false);
 
@@ -41,6 +41,7 @@ void MainWindow::setupUI() {
     QWidget* titleBar = new QWidget(this);
     titleBar->setObjectName("customTitleBar");
     titleBar->setFixedHeight(44);
+    titleBar->installEventFilter(this);
     
     QHBoxLayout* tbLayout = new QHBoxLayout(titleBar);
     tbLayout->setContentsMargins(14, 0, 8, 0);
@@ -48,10 +49,12 @@ void MainWindow::setupUI() {
 
     QLabel* tbIcon = new QLabel(QString::fromUtf8("❖"), titleBar);
     tbIcon->setObjectName("tbIcon");
+    tbIcon->installEventFilter(this);
     tbLayout->addWidget(tbIcon);
 
     m_titleLabel = new QLabel("SHADOW AI — ASSISTANT", titleBar);
     m_titleLabel->setObjectName("tbTitle");
+    m_titleLabel->installEventFilter(this);
     tbLayout->addWidget(m_titleLabel);
 
     tbLayout->addStretch();
@@ -176,6 +179,30 @@ void MainWindow::mouseMoveEvent(QMouseEvent* event) {
 void MainWindow::mouseReleaseEvent(QMouseEvent* event) {
     m_dragging = false;
     QWidget::mouseReleaseEvent(event);
+}
+
+bool MainWindow::eventFilter(QObject* watched, QEvent* event) {
+    QWidget* tb = findChild<QWidget*>("customTitleBar");
+    if (watched == tb || watched == m_titleLabel || (watched && watched->objectName() == "tbIcon")) {
+        if (event->type() == QEvent::MouseButtonPress) {
+            auto* me = static_cast<QMouseEvent*>(event);
+            if (me->button() == Qt::LeftButton) {
+                m_dragging = true;
+                m_dragOffset = me->globalPosition().toPoint() - frameGeometry().topLeft();
+                return true;
+            }
+        } else if (event->type() == QEvent::MouseMove) {
+            auto* me = static_cast<QMouseEvent*>(event);
+            if (m_dragging && (me->buttons() & Qt::LeftButton)) {
+                move(me->globalPosition().toPoint() - m_dragOffset);
+                return true;
+            }
+        } else if (event->type() == QEvent::MouseButtonRelease) {
+            m_dragging = false;
+            return true;
+        }
+    }
+    return QWidget::eventFilter(watched, event);
 }
 
 void MainWindow::showEvent(QShowEvent* event) {

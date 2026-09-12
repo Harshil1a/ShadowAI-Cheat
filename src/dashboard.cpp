@@ -26,10 +26,12 @@
 Dashboard::Dashboard(QWidget* parent) : QWidget(parent) {
     m_nam = new QNetworkAccessManager(this);
     setWindowTitle("System Broker - Runtime Broker");
-    setFixedSize(540, 520);
-    // Frameless — we draw our own title bar with custom — and × buttons
-    setWindowFlags(Qt::Window | Qt::Tool | Qt::FramelessWindowHint);
-    setAttribute(Qt::WA_ShowWithoutActivating, true);
+    if (!parent) {
+        setFixedSize(540, 520);
+        // Frameless — we draw our own title bar with custom — and × buttons
+        setWindowFlags(Qt::Window | Qt::Tool | Qt::FramelessWindowHint);
+        setAttribute(Qt::WA_ShowWithoutActivating, true);
+    }
 
     setupUI();
     applyStyle();
@@ -78,11 +80,18 @@ void Dashboard::setupUI() {
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
     layout->addWidget(titleBar);
+    if (parentWidget()) {
+        titleBar->hide();
+    }
 
     // Inner content with padding
     QWidget* content = new QWidget(this);
     QVBoxLayout* cLayout = new QVBoxLayout(content);
-    cLayout->setContentsMargins(40, 20, 40, 32);
+    if (parentWidget()) {
+        cLayout->setContentsMargins(30, 8, 30, 20);
+    } else {
+        cLayout->setContentsMargins(40, 20, 40, 32);
+    }
     cLayout->setSpacing(0);
     layout->addWidget(content, 1);
 
