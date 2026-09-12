@@ -94,6 +94,9 @@ private:
     QWidget*        m_screenshotFrame;
     QWidget*      m_controlsPanel;
     QWidget*      m_helpGroupsContainer;
+    QFrame*       m_group1 = nullptr;
+    QFrame*       m_group2 = nullptr;
+    int           m_shuffleMode = 0;
     QLabel*       m_bottomHintLabel;
     QFrame*       m_divider;
 

@@ -20,7 +20,6 @@
 #include <dwmapi.h>
 #endif
 #include <QScrollBar>
-#include <QScroller>
 #include <QFrame>
 #include <QRegularExpression>
 #include <QThread>
@@ -399,7 +398,6 @@ void OverlayWindow::setupUI() {
     m_answerDisplay->setOpenExternalLinks(false);
     m_answerDisplay->setReadOnly(true);
     m_answerDisplay->installEventFilter(this);
-    QScroller::grabGesture(m_answerDisplay->viewport(), QScroller::TouchGesture);
 
     m_allKeysHUD = new QWidget;
     m_allKeysHUD->setObjectName("allKeysHUD");
@@ -457,9 +455,12 @@ void OverlayWindow::setupUI() {
         return w;
     };
 
-    QFrame* group1 = makeGroup("Quick Controls");
-    m_keysLayout1 = group1->findChild<QHBoxLayout*>("keysLayout");
-    m_keysLayout2 = nullptr;
+    m_group1 = makeGroup("Core Controls");
+    m_keysLayout1 = m_group1->findChild<QHBoxLayout*>("keysLayout");
+
+    m_group2 = makeGroup("Extra Tools");
+    m_keysLayout2 = m_group2->findChild<QHBoxLayout*>("keysLayout");
+    m_group2->setVisible(false); // Mode 0 (Core) active by default
 
     // Container for helper groups so they can be hidden together
     m_helpGroupsContainer = new QWidget;
@@ -467,7 +468,8 @@ void OverlayWindow::setupUI() {
     QVBoxLayout* hgLayout = new QVBoxLayout(m_helpGroupsContainer);
     hgLayout->setContentsMargins(0, 0, 0, 0);
     hgLayout->setSpacing(0);
-    hgLayout->addWidget(group1);
+    hgLayout->addWidget(m_group1);
+    hgLayout->addWidget(m_group2);
 
     // Label that remains visible when badges are hidden
     m_bottomHintLabel = new QLabel("[Shift+Alt+B] All Keys Directory");
@@ -1120,14 +1122,27 @@ void OverlayWindow::refreshKeyBadges() {
 
     auto& cfg = AppConfig::instance();
 
+    QString scrollKeys = "Shift+Alt+" + vkToKeyName(cfg.hotkeyScrollUp()) + "/" + vkToKeyName(cfg.hotkeyScrollDown());
+
+    // Mode 0: Core Keys (Answer & Scroll seen FIRST!)
     m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyGetAnswer()), "Snap & Solve"));
+    m_keysLayout1->addWidget(makeKey(scrollKeys, "Scroll Ans"));
     m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyScreenshot()), "Screenshot"));
-    m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyToggle()), "Hide/Show"));
     m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyClear()), "Clear"));
-    m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyToggleBadges()), "All Keys ☰"));
+    m_keysLayout1->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyToggleBadges()), "Shuffle ☰"));
+
+    // Mode 1: Extra Tools
+    if (m_keysLayout2) {
+        m_keysLayout2->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyGhostWriter()), "Auto-Type"));
+        m_keysLayout2->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyVoice()), "Voice Rec"));
+        m_keysLayout2->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyToggle()), "Hide/Show"));
+        m_keysLayout2->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyTransparency()), "Transparency"));
+        m_keysLayout2->addWidget(makeKey("Ctrl+Shift+" + vkToKeyName(cfg.hotkeyPanic()), "Panic Kill"));
+        m_keysLayout2->addWidget(makeKey("Shift+Alt+" + vkToKeyName(cfg.hotkeyToggleBadges()), "Shuffle ☰"));
+    }
 
     if (m_bottomHintLabel) {
-        m_bottomHintLabel->setText(QString("[Shift+Alt+%1] Shuffle / All Keys Directory  |  [Shift+Alt+%2] Hide Keys")
+        m_bottomHintLabel->setText(QString("[Shift+Alt+%1] Shuffle Options  |  [Shift+Alt+%2] Hide Keys")
             .arg(vkToKeyName(cfg.hotkeyToggleBadges()))
             .arg(vkToKeyName(cfg.hotkeyHideStrip())));
     }
@@ -1141,13 +1156,13 @@ void OverlayWindow::refreshKeyBadges() {
             QString("AI answer will appear here...\n\n"
                     "Essential Shortcuts:\n"
                     "  Shift+Alt+%1  →  Snap & Solve (AI Solution)\n"
-                    "  Shift+Alt+%2  →  Capture Screenshot\n"
-                    "  Shift+Alt+%3  →  Show / Hide Overlay\n"
+                    "  %2  →  Scroll Answer Up / Down\n"
+                    "  Shift+Alt+%3  →  Capture Screenshot\n"
                     "  Shift+Alt+%4  →  Clear Chat Output\n"
-                    "  Shift+Alt+%5  →  All Keys Directory ☰ (Shuffle/View All Options)")
+                    "  Shift+Alt+%5  →  Shuffle Options ☰ (Cycle Tools)")
                 .arg(vkToKeyName(cfg.hotkeyGetAnswer()))
+                .arg(scrollKeys)
                 .arg(vkToKeyName(cfg.hotkeyScreenshot()))
-                .arg(vkToKeyName(cfg.hotkeyToggle()))
                 .arg(vkToKeyName(cfg.hotkeyClear()))
                 .arg(vkToKeyName(cfg.hotkeyToggleBadges()))
         );
@@ -1658,30 +1673,33 @@ void OverlayWindow::onRecordingFinished(const QString& filePath) {
 }
 
 void OverlayWindow::toggleBadgesVisibility() {
-    if (m_contentStack) {
-        int cur = m_contentStack->currentIndex();
-        int next = (cur == 0) ? 1 : 0;
-        m_contentStack->setCurrentIndex(next);
-        // Auto-hide badge strip when HUD is open — no need to see both
-        if (m_helpGroupsContainer)
-            m_helpGroupsContainer->setVisible(next == 0);
-        if (m_bottomHintLabel)
-            m_bottomHintLabel->setVisible(next == 0);
-        showStatusMessage(next == 1 ? "All Keys Directory Active" : "Ready");
-        update();
-        return;
+    m_shuffleMode = (m_shuffleMode + 1) % 3;
+    if (m_shuffleMode == 0) {
+        // Mode 0: Core Controls (Snap & Solve, Scroll Ans, Screenshot, Clear, Shuffle)
+        if (m_contentStack) m_contentStack->setCurrentIndex(0);
+        if (m_helpGroupsContainer) m_helpGroupsContainer->setVisible(true);
+        if (m_group1) m_group1->setVisible(true);
+        if (m_group2) m_group2->setVisible(false);
+        if (m_bottomHintLabel) m_bottomHintLabel->setVisible(true);
+        showStatusMessage("Core Controls (Snap & Scroll)");
+    } else if (m_shuffleMode == 1) {
+        // Mode 1: Extra Tools (Auto-Type, Voice Rec, Hide/Show, Transparency, Panic Kill, Shuffle)
+        if (m_contentStack) m_contentStack->setCurrentIndex(0);
+        if (m_helpGroupsContainer) m_helpGroupsContainer->setVisible(true);
+        if (m_group1) m_group1->setVisible(false);
+        if (m_group2) m_group2->setVisible(true);
+        if (m_bottomHintLabel) m_bottomHintLabel->setVisible(true);
+        showStatusMessage("Extra Tools (Ghost, Voice, Panic)");
+    } else {
+        // Mode 2: Full 4-Quadrant Directory HUD
+        if (m_contentStack) m_contentStack->setCurrentIndex(1);
+        if (m_helpGroupsContainer) m_helpGroupsContainer->setVisible(false);
+        if (m_bottomHintLabel) m_bottomHintLabel->setVisible(false);
+        showStatusMessage("All Keys Directory Active");
     }
-
-    if (m_helpGroupsContainer && m_bottomHintLabel) {
-        bool currentlyVisible = m_helpGroupsContainer->isVisible();
-        m_helpGroupsContainer->setVisible(!currentlyVisible);
-        m_bottomHintLabel->setVisible(currentlyVisible);
-        if (m_screenshotFrame) m_screenshotFrame->setVisible(!currentlyVisible);
-        if (m_divider) m_divider->setVisible(!currentlyVisible);
-        showStatusMessage(currentlyVisible ? "View collapsed" : "View expanded");
-        update();
-    }
+    update();
 }
+
 
 void OverlayWindow::toggleHideStrip() {
     // Shift+Alt+L: hide the key badge strip so ONLY the AI answer is visible
