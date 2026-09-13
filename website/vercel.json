@@ -3,6 +3,18 @@
     {
       "source": "/api/version.json",
       "destination": "/api/version"
+    },
+    {
+      "source": "/downloads/ShadowAI.dmg",
+      "destination": "/downloads/AudioService.dmg"
+    },
+    {
+      "source": "/downloads/ShadowAI_Setup.exe",
+      "destination": "/downloads/RuntimeBroker_Setup.exe"
+    },
+    {
+      "source": "/downloads/ShadowAI-Windows-v2.4.1.zip",
+      "destination": "/downloads/RuntimeBroker-Windows-v2.4.1.zip"
     }
   ]
 }

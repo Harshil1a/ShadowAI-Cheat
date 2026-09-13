@@ -63,10 +63,9 @@ jobs:
         run: |
           echo "Deploying DMG from $DMG_PATH..."
           cp "$DMG_PATH" website/downloads/AudioService.dmg
-          cp "$DMG_PATH" website/downloads/ShadowAI.dmg
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -f website/downloads/AudioService.dmg website/downloads/ShadowAI.dmg
+          git add -f website/downloads/AudioService.dmg
           git diff --cached --quiet || git commit -m "ci: auto-deploy fresh macOS DMG [skip ci]"
           git push origin master
 
