@@ -97,6 +97,15 @@ if(WIN32)
     )
 endif()
 
+# macOS-specific frameworks for global hotkeys (Carbon kVK_*, ObjC NSEvent)
+if(APPLE)
+    target_link_libraries(ShadowAI PRIVATE
+        "-framework Carbon"
+        "-framework AppKit"
+        objc
+    )
+endif()
+
 target_include_directories(ShadowAI PRIVATE src)
 
 # Installation
