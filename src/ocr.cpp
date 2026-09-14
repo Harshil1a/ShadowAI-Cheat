@@ -1,4 +1,4 @@
-﻿#include "ocr.h"
+#include "ocr.h"
 #include <QDir>
 #include <QFile>
 #include <QImage>
@@ -69,33 +69,31 @@ QString OcrExtractor::ocrSingle(const QPixmap& pixmap, int /*index*/) {
 
     QString script = QString(R"(
 try {
-    Add-Type -AssemblyName System.Drawing
-    $null = [Windows.Media.Ocr.OcrEngine,Windows.Foundation,ContentType=WindowsRuntime]
-    $null = [Windows.Graphics.Imaging.BitmapDecoder,Windows.Foundation,ContentType=WindowsRuntime]
-    $null = [Windows.Storage.Streams.InMemoryRandomAccessStream,Windows.Foundation,ContentType=WindowsRuntime]
-    $null = [Windows.Storage.Streams.DataWriter,Windows.Foundation,ContentType=WindowsRuntime]
+    Add-Type -AssemblyName System.Runtime.WindowsRuntime
+    $asTask = [System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object { 
+        $_.Name -eq 'AsTask' -and $_.GetParameters().Count -eq 1 -and $_.IsGenericMethod 
+    } | Select-Object -First 1
 
-    $bmp = [System.Drawing.Bitmap]::FromFile('%1')
-    $ms  = New-Object System.IO.MemoryStream
-    $bmp.Save($ms, [System.Drawing.Imaging.ImageFormat]::Bmp)
-    $bmp.Dispose()
-    $bytes = $ms.ToArray(); $ms.Dispose()
+    function Await-Async($op, $type) {
+        $task = $asTask.MakeGenericMethod($type).Invoke($null, @($op))
+        $task.Wait()
+        return $task.Result
+    }
 
-    $iras = [Windows.Storage.Streams.InMemoryRandomAccessStream]::new()
-    $dw   = [Windows.Storage.Streams.DataWriter]::new($iras)
-    $dw.WriteBytes($bytes)
-    $dw.StoreAsync().GetAwaiter().GetResult() | Out-Null
-    $dw.FlushAsync().GetAwaiter().GetResult() | Out-Null
-    $iras.Seek(0)
+    $null = [Windows.Storage.StorageFile, Windows.Storage, ContentType=WindowsRuntime]
+    $null = [Windows.Media.Ocr.OcrEngine, Windows.Foundation, ContentType=WindowsRuntime]
+    $null = [Windows.Graphics.Imaging.BitmapDecoder, Windows.Foundation, ContentType=WindowsRuntime]
 
-    $decoder = [Windows.Graphics.Imaging.BitmapDecoder]::CreateAsync($iras).GetAwaiter().GetResult()
-    $softBmp = $decoder.GetSoftwareBitmapAsync().GetAwaiter().GetResult()
-    $engine  = [Windows.Media.Ocr.OcrEngine]::TryCreateFromUserProfileLanguages()
-    $res     = $engine.RecognizeAsync($softBmp).GetAwaiter().GetResult()
-    $res.Text
+    $file = Await-Async ([Windows.Storage.StorageFile]::GetFileFromPathAsync('%1')) ([Windows.Storage.StorageFile])
+    $stream = Await-Async ($file.OpenAsync([Windows.Storage.FileAccessMode]::Read)) ([Windows.Storage.Streams.IRandomAccessStream])
+    $decoder = Await-Async ([Windows.Graphics.Imaging.BitmapDecoder]::CreateAsync($stream)) ([Windows.Graphics.Imaging.BitmapDecoder])
+    $softBmp = Await-Async ($decoder.GetSoftwareBitmapAsync()) ([Windows.Graphics.Imaging.SoftwareBitmap])
+    $engine = [Windows.Media.Ocr.OcrEngine]::TryCreateFromUserProfileLanguages()
+    $res = Await-Async ($engine.RecognizeAsync($softBmp)) ([Windows.Media.Ocr.OcrResult])
+    if ($res -and $res.Text) { Write-Output $res.Text }
 } catch { '' }
 finally { if (Test-Path '%1') { Remove-Item '%1' -Force -ErrorAction SilentlyContinue } }
-)").arg(tmpPath.replace('\\', '/'));
+)").arg(tmpPath.replace('/', '\\'));
 
     QProcess ps;
     ps.setProgram("powershell.exe");
