@@ -1162,12 +1162,12 @@ void SettingsWindow::onProviderChanged(int index) {
         });
     } else if (provider == "groq") {
         m_modelCombo->addItems({
-            "meta-llama/llama-4-scout-17b-16e-instruct",
-            "meta-llama/llama-4-maverick-17b-128e-instruct",
-            "llama-3.3-70b-versatile",
-            "llama-3.1-8b-instant",
+            "openai/gpt-oss-120b",
             "qwen/qwen3.8-27b",
-            "compound-beta"
+            "groq/compound",
+            "qwen/qwen3.6-27b",
+            "openai/gpt-oss-20b",
+            "groq/compound-mini"
         });
     } else if (provider == "openrouter") {
         m_modelCombo->addItems({
@@ -1397,7 +1397,7 @@ void SettingsWindow::onKeyEdited(const QString& text) {
         defaultModel = "meta/llama-3.2-90b-vision-instruct";
     } else if (key.startsWith("gsk_")) {
         detectedProvider = "groq";
-        defaultModel = "meta-llama/llama-4-scout-17b-16e-instruct";
+        defaultModel = "openai/gpt-oss-120b";
     } else if (key.startsWith("sk-or-")) {
         // OpenRouter API keys start with sk-or-
         detectedProvider = "openrouter";

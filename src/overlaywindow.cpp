@@ -413,6 +413,25 @@ void OverlayWindow::setupUI() {
   m_divider->setFrameShape(QFrame::HLine);
   m_divider->setObjectName("divider");
 
+  // ── CHAT BOX TOP MODE BANNER ──────────────────────────────────────────
+  m_chatHeaderBar = new QWidget;
+  m_chatHeaderBar->setObjectName("chatHeaderBar");
+  m_chatHeaderBar->setFixedHeight(26);
+  QHBoxLayout *chatHeaderLayout = new QHBoxLayout(m_chatHeaderBar);
+  chatHeaderLayout->setContentsMargins(4, 2, 4, 2);
+  chatHeaderLayout->setSpacing(8);
+
+  m_chatModeBadge = new QLabel(m_chatHeaderBar);
+  m_chatModeBadge->setObjectName("chatModeBadge");
+
+  m_chatOcrBadge = new QLabel(m_chatHeaderBar);
+  m_chatOcrBadge->setObjectName("chatOcrBadge");
+
+  chatHeaderLayout->addWidget(m_chatModeBadge);
+  chatHeaderLayout->addWidget(m_chatOcrBadge);
+  chatHeaderLayout->addStretch();
+  updateChatModeHeader();
+
   // ── ANSWER DISPLAY ───────────────────────────────────────────────────
   m_answerDisplay = new QTextBrowser;
   m_answerDisplay->setObjectName("answerDisplay");
@@ -497,6 +516,7 @@ void OverlayWindow::setupUI() {
   mainLayout->addWidget(topBar);
   mainLayout->addWidget(m_screenshotFrame);
   mainLayout->addWidget(m_divider);
+  mainLayout->addWidget(m_chatHeaderBar);
   mainLayout->addWidget(m_answerDisplay, 1);
   mainLayout->addWidget(m_controlsPanel);
 }
@@ -814,6 +834,8 @@ void OverlayWindow::doGetAnswer() {
   if (!m_ai)
     return;
 
+  updateChatModeHeader();
+
   // Check if AI is already busy to prevent spamming requests (prevents 429)
   if (m_ai->isBusy()) {
     showStatusMessage("Still thinking... please wait", true);
@@ -1070,6 +1092,7 @@ void OverlayWindow::refreshKeyBadges() {
 
 void OverlayWindow::refreshSettings() {
   refreshKeyBadges();
+  updateChatModeHeader();
   auto &cfg = AppConfig::instance();
   int w = cfg.overlayWidth();
   int h = cfg.overlayHeight();
@@ -1176,7 +1199,7 @@ void OverlayWindow::onAIError(const QString &err) {
   // never wrapping back to the current slot.
   for (int i = 1; i < 10; ++i) {
     int candidate = (currentSlot + i) % 10;
-    if (!cfg.apiKeys()[candidate].isEmpty()) {
+    if (!cfg.apiKeys()[candidate].trimmed().isEmpty()) {
       nextSlot = candidate;
       break;
     }
@@ -1185,6 +1208,7 @@ void OverlayWindow::onAIError(const QString &err) {
   if (nextSlot != -1 && nextSlot != currentSlot) {
     cfg.setActiveSlot(nextSlot);
     cfg.save();
+    updateChatModeHeader();
     m_answerDisplay->setPlainText(
         "⚠ Error: " + err + "\n\n↻ Auto-switched to API Slot " +
         QString::number(nextSlot + 1) +
@@ -1459,6 +1483,7 @@ void OverlayWindow::mousePressEvent(QMouseEvent *event) {
 
 void OverlayWindow::showEvent(QShowEvent *event) {
   QWidget::showEvent(event);
+  updateChatModeHeader();
 #ifdef Q_OS_WIN
   HWND hwnd = (HWND)winId();
 
@@ -1928,5 +1953,49 @@ void OverlayWindow::updateCreditsBadge() {
           "6px;");
     }
     m_creditsBadge->setToolTip("Live AI Solve Credits Remaining");
+  }
+}
+
+void OverlayWindow::updateChatModeHeader() {
+  if (!m_chatModeBadge || !m_chatOcrBadge)
+    return;
+  auto &cfg = AppConfig::instance();
+  bool isProCloud = cfg.isPro() && cfg.useProCloudEngine();
+
+  if (isProCloud) {
+    m_chatModeBadge->setText("⚡ PRO CLOUD MODE (Gemini Master)");
+    m_chatModeBadge->setStyleSheet(
+        "color: #00ffcc; background: rgba(0, 255, 204, 0.15); "
+        "border: 1px solid rgba(0, 255, 204, 0.45); "
+        "font-family: 'Segoe UI', -apple-system, sans-serif; font-size: 10px; font-weight: bold; "
+        "padding: 2px 8px; border-radius: 4px;");
+  } else {
+    int slot = cfg.activeSlot() + 1;
+    QString prov = cfg.currentApiProvider().toUpper();
+    QString model = cfg.currentApiModel();
+    if (model.length() > 24)
+      model = model.left(22) + "..";
+    m_chatModeBadge->setText(QString("🔑 SLOT %1: %2 (%3)").arg(slot).arg(prov, model));
+    m_chatModeBadge->setStyleSheet(
+        "color: #fbbf24; background: rgba(251, 191, 36, 0.15); "
+        "border: 1px solid rgba(251, 191, 36, 0.45); "
+        "font-family: 'Segoe UI', -apple-system, sans-serif; font-size: 10px; font-weight: bold; "
+        "padding: 2px 8px; border-radius: 4px;");
+  }
+
+  if (cfg.ocrMode()) {
+    m_chatOcrBadge->setText("📝 OCR TEXT MODE");
+    m_chatOcrBadge->setStyleSheet(
+        "color: #00ff66; background: rgba(0, 255, 102, 0.15); "
+        "border: 1px solid rgba(0, 255, 102, 0.45); "
+        "font-family: 'Segoe UI', -apple-system, sans-serif; font-size: 10px; font-weight: bold; "
+        "padding: 2px 8px; border-radius: 4px;");
+  } else {
+    m_chatOcrBadge->setText("🖼 VISION MODE");
+    m_chatOcrBadge->setStyleSheet(
+        "color: #94a3b8; background: rgba(148, 163, 184, 0.10); "
+        "border: 1px solid rgba(148, 163, 184, 0.30); "
+        "font-family: 'Segoe UI', -apple-system, sans-serif; font-size: 10px; font-weight: bold; "
+        "padding: 2px 8px; border-radius: 4px;");
   }
 }

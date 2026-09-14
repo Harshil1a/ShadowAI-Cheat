@@ -83,6 +83,10 @@ private:
     // UI elements
     QWidget*        m_container;
     QWidget*        m_thumbGallery; // Container for multiple thumbs
+    QWidget*        m_chatHeaderBar = nullptr;
+    QLabel*         m_chatModeBadge = nullptr;
+    QLabel*         m_chatOcrBadge  = nullptr;
+    void            updateChatModeHeader();
     QTextBrowser*   m_answerDisplay;
     QLabel*         m_statusLabel;
     QLabel*         m_creditsBadge = nullptr;
