@@ -2,4 +2,5 @@ User-agent: *
 Allow: /
 
 # Sitemap location
+Sitemap: https://shadowtool.me/sitemap.xml
 Sitemap: https://shadow-ai-cheat.vercel.app/sitemap.xml
