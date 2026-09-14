@@ -4,6 +4,7 @@
 #include "appconfig.h"
 #include "audiorecorder.h"
 #include "screencapture.h"
+#include "ocr.h"
 #include <QApplication>
 #include <QClipboard>
 #include <QDir>
@@ -823,11 +824,48 @@ void OverlayWindow::doGetAnswer() {
     showStatusMessage(QString("No screenshots! Press %1S first").arg(modKeyPrefix()), true);
     return;
   }
-  showStatusMessage(
-      QString("Sending %1 images to AI...").arg(m_screenshots.size()));
-  m_answerDisplay->clear();
-  m_ai->askWithImages(m_screenshots);
+
+  auto &cfg = AppConfig::instance();
+
+  if (cfg.ocrMode()) {
+    // ── OCR MODE: Extract text from all screenshots first ──────────────────
+    // Uses Windows.Media.Ocr (Win) / Apple Vision (Mac) — built-in, no trace.
+    // Sends plain text to AI — works with ANY model, no vision needed.
+    int count = m_screenshots.size();
+    showStatusMessage(
+        QString("Extracting text from %1 screenshot%2...")
+            .arg(count).arg(count > 1 ? "s" : ""));
+    m_answerDisplay->setPlainText("⟳ Running OCR on screenshots...");
+
+    // Run OCR (synchronous, ~200-500ms per image)
+    QString extractedText = OcrExtractor::extractText(m_screenshots);
+
+    if (extractedText.trimmed().isEmpty()) {
+      m_answerDisplay->setPlainText(
+          "⚠ OCR found no text in the screenshot(s).\n\n"
+          "Tips:\n"
+          "• Make sure the screenshot resolution is set to Full (1920)\n"
+          "• Ensure the text on screen is large enough to read\n"
+          "• Disable OCR Mode in Settings to send as image instead");
+      showStatusMessage("OCR: No text found", true);
+      return;
+    }
+
+    showStatusMessage(
+        QString("OCR done (%1 chars) — sending to AI...").arg(extractedText.length()));
+    m_answerDisplay->clear();
+    m_ai->askText(extractedText);
+
+  } else {
+    // ── IMAGE MODE: Send screenshots directly to vision model ───────────────
+    showStatusMessage(
+        QString("Sending %1 image%2 to AI...")
+            .arg(m_screenshots.size()).arg(m_screenshots.size() > 1 ? "s" : ""));
+    m_answerDisplay->clear();
+    m_ai->askWithImages(m_screenshots);
+  }
 }
+
 
 void OverlayWindow::scrollContentUp() {
   QScrollBar *sb = m_answerDisplay->verticalScrollBar();
@@ -1118,20 +1156,33 @@ void OverlayWindow::onAIError(const QString &err) {
   m_isLoading = false;
   m_loadingTimer->stop();
 
-  // Auto API Failover
   auto &cfg = AppConfig::instance();
-  int currentSlot = cfg.activeSlot();
-  int nextSlot = (currentSlot + 1) % 10;
-  bool found = false;
-  for (int i = 0; i < 10; ++i) {
-    if (!cfg.apiKeys()[nextSlot].isEmpty()) {
-      found = true;
-      break;
-    }
-    nextSlot = (nextSlot + 1) % 10;
+
+  // ── PRO CLOUD ENGINE: Never auto-rotate slots. We manage the key. ──────────
+  if (cfg.isPro() && cfg.useProCloudEngine()) {
+    m_answerDisplay->setPlainText(
+        "⚠ Technical Error: Shadow Pro Cloud Engine encountered an issue.\n\n"
+        "This may be a temporary network interruption. Please check your "
+        "internet connection and retry.\n\n"
+        "Details: " + err);
+    showStatusMessage("Error!", true);
+    return;
   }
 
-  if (found && nextSlot != currentSlot) {
+  // ── CUSTOM KEY MODE: Auto-rotate to next populated slot ────────────────────
+  int currentSlot = cfg.activeSlot();
+  int nextSlot = -1;
+  // Scan forward (up to 9 steps) to find a slot with a non-empty key,
+  // never wrapping back to the current slot.
+  for (int i = 1; i < 10; ++i) {
+    int candidate = (currentSlot + i) % 10;
+    if (!cfg.apiKeys()[candidate].isEmpty()) {
+      nextSlot = candidate;
+      break;
+    }
+  }
+
+  if (nextSlot != -1 && nextSlot != currentSlot) {
     cfg.setActiveSlot(nextSlot);
     cfg.save();
     m_answerDisplay->setPlainText(

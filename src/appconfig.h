@@ -49,6 +49,10 @@ public:
     int screenshotResolution() const;
     void setScreenshotResolution(int res);
 
+    // OCR Mode: extract text from screenshots instead of sending images
+    bool ocrMode() const;
+    void setOcrMode(bool enable);
+
     // Hotkey Settings
     int hotkeyToggle() const;
     void setHotkeyToggle(int vk);
@@ -178,6 +182,7 @@ private:
     QString m_systemPrompt;
     int m_maxTokens;
     int m_screenshotResolution;
+    bool m_ocrMode = false;
 
     int m_hotkeyToggle;
     int m_hotkeyScreenshot;

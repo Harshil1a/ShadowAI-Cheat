@@ -55,6 +55,8 @@ set(SOURCES
     src/audiorecorder.h
     src/accountmanager.cpp
     src/accountmanager.h
+    src/ocr.cpp
+    src/ocr.h
     resources/resources.qrc
 )
 

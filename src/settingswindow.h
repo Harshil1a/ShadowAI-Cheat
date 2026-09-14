@@ -109,6 +109,10 @@ protected:
     QCheckBox*  m_ghostWriterSmartIndentCheck;
     QComboBox*  m_ghostWriterPresetCombo;
 
+    // OCR Mode toggle + status label
+    QCheckBox*  m_ocrModeCheck = nullptr;
+    QLabel*     m_ocrModeNote  = nullptr;
+
     QPushButton* m_saveBtn;
     QPushButton* m_cancelBtn;
     QPushButton* m_testBtn;

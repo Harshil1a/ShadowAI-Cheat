@@ -313,6 +313,8 @@ void SettingsWindow::setupUI() {
     m_providerCombo->addItem("NVIDIA NIM (Llama-3)", "nvidia");
     m_providerCombo->addItem("OpenAI (GPT-4o/mini)", "openai");
     m_providerCombo->addItem("Groq (Llama-3/Mixtral)", "groq");
+    m_providerCombo->addItem("OpenRouter (Multi-Model)", "openrouter");
+    m_providerCombo->addItem("Custom (OpenAI-Compatible)", "custom");
 
     m_modelCombo = new QComboBox(providerGroup);
     m_modelCombo->setFixedHeight(32);
@@ -410,6 +412,49 @@ void SettingsWindow::setupUI() {
     promptLayout->addLayout(presetRow);
 
     apiLayout->addWidget(promptGroup);
+
+    // ── OCR Mode Group ────────────────────────────────────────────────────────
+    QGroupBox* ocrGroup = new QGroupBox("OCR Text Extraction Mode", tabApiPrompt);
+    QVBoxLayout* ocrLayout = new QVBoxLayout(ocrGroup);
+    ocrLayout->setContentsMargins(12, 14, 12, 12);
+    ocrLayout->setSpacing(8);
+
+    m_ocrModeCheck = new QCheckBox(
+        "Extract text from screenshots before sending to AI (OCR Mode)", ocrGroup);
+    m_ocrModeCheck->setStyleSheet(
+        "font-weight: bold; color: #00e5ff; font-size: 12px;");
+    ocrLayout->addWidget(m_ocrModeCheck);
+
+    m_ocrModeNote = new QLabel(
+        "When ON: Windows.Media.Ocr / Apple Vision extracts all text from each screenshot\n"
+        "and sends it as plain text — works with ANY model, no vision required.\n"
+        "⚡ Screenshot capture resolution is automatically forced to Full (1920) for best accuracy.",
+        ocrGroup);
+    m_ocrModeNote->setWordWrap(true);
+    m_ocrModeNote->setStyleSheet(
+        "color: #8b9bb4; font-size: 11px; font-style: italic;");
+    ocrLayout->addWidget(m_ocrModeNote);
+
+    apiLayout->addWidget(ocrGroup);
+
+    // Wire up OCR toggle → auto-lock resolution to 1920
+    connect(m_ocrModeCheck, &QCheckBox::toggled, this, [this](bool checked) {
+        if (checked) {
+            // Force max resolution for OCR accuracy
+            m_screenshotResCombo->setCurrentText("1920");
+            m_screenshotResCombo->setEnabled(false);
+            if (m_ocrModeNote) {
+                m_ocrModeNote->setStyleSheet(
+                    "color: #00ff66; font-size: 11px; font-style: italic;");
+            }
+        } else {
+            m_screenshotResCombo->setEnabled(true);
+            if (m_ocrModeNote) {
+                m_ocrModeNote->setStyleSheet(
+                    "color: #8b9bb4; font-size: 11px; font-style: italic;");
+            }
+        }
+    });
 
     apiScroll->setWidget(tabApiPrompt);
     tabWidget->addTab(apiScroll, "⚙  API Prompt");
@@ -1002,6 +1047,22 @@ void SettingsWindow::loadValues() {
     m_heightCombo->setCurrentText(QString::number(cfg.overlayHeight()));
     m_screenshotResCombo->setCurrentText(QString::number(cfg.screenshotResolution()));
 
+    // OCR Mode
+    if (m_ocrModeCheck) {
+        m_ocrModeCheck->blockSignals(true);
+        m_ocrModeCheck->setChecked(cfg.ocrMode());
+        m_ocrModeCheck->blockSignals(false);
+        // Apply visual state without emitting toggled
+        if (cfg.ocrMode()) {
+            m_screenshotResCombo->setCurrentText("1920");
+            m_screenshotResCombo->setEnabled(false);
+            if (m_ocrModeNote)
+                m_ocrModeNote->setStyleSheet("color: #00ff66; font-size: 11px; font-style: italic;");
+        } else {
+            m_screenshotResCombo->setEnabled(true);
+        }
+    }
+
     refreshAccountTab();
 }
 
@@ -1055,6 +1116,15 @@ void SettingsWindow::onSave() {
     cfg.setOverlaySize(m_widthCombo->currentText().toInt(), m_heightCombo->currentText().toInt());
     cfg.setScreenshotResolution(m_screenshotResCombo->currentText().toInt());
 
+    // OCR Mode: when ON always enforce max resolution
+    if (m_ocrModeCheck) {
+        bool ocrOn = m_ocrModeCheck->isChecked();
+        cfg.setOcrMode(ocrOn);
+        if (ocrOn) {
+            cfg.setScreenshotResolution(1920);
+        }
+    }
+
     cfg.save();
     emit settingsSaved();
     emit closeRequested();
@@ -1093,14 +1163,36 @@ void SettingsWindow::onProviderChanged(int index) {
     } else if (provider == "groq") {
         m_modelCombo->addItems({
             "meta-llama/llama-4-scout-17b-16e-instruct",
-            "llama-3.2-90b-vision-preview"
+            "meta-llama/llama-4-maverick-17b-128e-instruct",
+            "llama-3.3-70b-versatile",
+            "llama-3.1-8b-instant",
+            "qwen/qwen3.8-27b",
+            "compound-beta"
         });
+    } else if (provider == "openrouter") {
+        m_modelCombo->addItems({
+            "google/gemini-2.5-flash",
+            "google/gemini-2.5-pro",
+            "anthropic/claude-3.5-sonnet",
+            "anthropic/claude-3-haiku",
+            "meta-llama/llama-3.2-11b-vision-instruct",
+            "meta-llama/llama-3.3-70b-instruct",
+            "openai/gpt-4o-mini",
+            "openai/gpt-4o"
+        });
+    } else if (provider == "custom") {
+        // No predefined models — user types their own model name
+        m_modelCombo->setPlaceholderText("Type your model name here...");
     }
     
     auto& cfg = AppConfig::instance();
     // Use the model from cache if switching back to same provider as originally loaded
     // otherwise just use the first item in the list
-    if (m_modelCombo->count() > 0) {
+    if (provider == "custom") {
+        // For custom provider, always restore whatever was saved
+        QString savedModel = m_currentModels[m_lastSlotIndex];
+        m_modelCombo->setCurrentText(savedModel);
+    } else if (m_modelCombo->count() > 0) {
         QString savedModel = m_currentModels[m_lastSlotIndex];
         int idx = m_modelCombo->findText(savedModel);
         if (idx != -1) {
@@ -1182,8 +1274,8 @@ void SettingsWindow::onTestAPI() {
     QNetworkRequest req;
     QByteArray body;
 
-    if (prov == "openai" || prov == "groq" || prov == "nvidia") {
-        if (prov == "openai") {
+    if (prov == "openai" || prov == "groq" || prov == "nvidia" || prov == "openrouter" || prov == "custom") {
+        if (prov == "openai" || prov == "custom") {
             QString baseUrl = m_baseUrlEdit->text().trimmed();
             if (baseUrl.isEmpty()) baseUrl = "https://api.openai.com/v1";
             if (baseUrl.endsWith("/")) baseUrl.chop(1);
@@ -1192,6 +1284,10 @@ void SettingsWindow::onTestAPI() {
             req.setUrl(QUrl("https://api.groq.com/openai/v1/chat/completions"));
         } else if (prov == "nvidia") {
             req.setUrl(QUrl("https://integrate.api.nvidia.com/v1/chat/completions"));
+        } else if (prov == "openrouter") {
+            req.setUrl(QUrl("https://openrouter.ai/api/v1/chat/completions"));
+            req.setRawHeader("HTTP-Referer", "https://shadowtool.me");
+            req.setRawHeader("X-Title", "ShadowAI");
         }
         req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
         req.setRawHeader("Authorization", QString("Bearer %1").arg(key).toUtf8());
@@ -1201,8 +1297,10 @@ void SettingsWindow::onTestAPI() {
         QJsonObject b;
         if (prov == "nvidia")
             b["model"] = model.isEmpty() ? "meta/llama-3.2-90b-vision-instruct" : model;
-        else if (prov == "openai")
+        else if (prov == "openai" || prov == "custom")
             b["model"] = model.isEmpty() ? "gpt-4o-mini" : model;
+        else if (prov == "openrouter")
+            b["model"] = model.isEmpty() ? "google/gemini-2.5-flash" : model;
         else // groq
             b["model"] = model.isEmpty() ? "llama-3.3-70b-versatile" : model;
         
@@ -1300,6 +1398,10 @@ void SettingsWindow::onKeyEdited(const QString& text) {
     } else if (key.startsWith("gsk_")) {
         detectedProvider = "groq";
         defaultModel = "meta-llama/llama-4-scout-17b-16e-instruct";
+    } else if (key.startsWith("sk-or-")) {
+        // OpenRouter API keys start with sk-or-
+        detectedProvider = "openrouter";
+        defaultModel = "google/gemini-2.5-flash";
     } else if (key.startsWith("sk-")) {
         detectedProvider = "openai";
         defaultModel = "gpt-5.5-mini";

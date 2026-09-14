@@ -53,6 +53,7 @@ void AppConfig::load() {
     
     m_maxTokens = m_settings.value("api/maxTokens", 4096).toInt();
     m_screenshotResolution = m_settings.value("api/screenshotResolution", 720).toInt();
+    m_ocrMode = m_settings.value("api/ocrMode", false).toBool();
 
     m_hotkeyToggle      = m_settings.value("hotkeys/toggle",      DEFAULT_VK_TOGGLE).toInt();
     m_hotkeyScreenshot  = m_settings.value("hotkeys/screenshot",  DEFAULT_VK_SCREENSHOT).toInt();
@@ -110,6 +111,7 @@ void AppConfig::save() {
     m_settings.setValue("api/systemPrompt", m_systemPrompt);
     m_settings.setValue("api/maxTokens",    m_maxTokens);
     m_settings.setValue("api/screenshotResolution", m_screenshotResolution);
+    m_settings.setValue("api/ocrMode",      m_ocrMode);
 
     m_settings.setValue("hotkeys/toggle",       m_hotkeyToggle);
     m_settings.setValue("hotkeys/screenshot",   m_hotkeyScreenshot);
@@ -179,6 +181,9 @@ int AppConfig::maxTokens() const           { return m_maxTokens; }
 void AppConfig::setMaxTokens(int t)        { m_maxTokens = t; }
 int AppConfig::screenshotResolution() const { return m_screenshotResolution; }
 void AppConfig::setScreenshotResolution(int res) { m_screenshotResolution = res; }
+
+bool AppConfig::ocrMode() const { return m_ocrMode; }
+void AppConfig::setOcrMode(bool enable) { m_ocrMode = enable; }
 
 int AppConfig::hotkeyToggle() const       { return m_hotkeyToggle; }
 void AppConfig::setHotkeyToggle(int v)    { m_hotkeyToggle = v; }
