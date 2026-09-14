@@ -157,22 +157,22 @@ int AppConfig::activeSlot() const { return m_activeSlot; }
 void AppConfig::setActiveSlot(int slot) { m_activeSlot = slot; }
 
 QString AppConfig::currentApiKey() const {
-    if (m_activeSlot >= 0 && m_activeSlot < m_apiKeys.size()) return m_apiKeys[m_activeSlot];
+    if (m_activeSlot >= 0 && m_activeSlot < m_apiKeys.size()) return m_apiKeys[m_activeSlot].trimmed();
     return "";
 }
 
 QString AppConfig::currentApiProvider() const {
-    if (m_activeSlot >= 0 && m_activeSlot < m_apiProviders.size()) return m_apiProviders[m_activeSlot];
+    if (m_activeSlot >= 0 && m_activeSlot < m_apiProviders.size()) return m_apiProviders[m_activeSlot].trimmed();
     return "gemini";
 }
 
 QString AppConfig::currentApiModel() const {
-    if (m_activeSlot >= 0 && m_activeSlot < m_apiModels.size()) return m_apiModels[m_activeSlot];
+    if (m_activeSlot >= 0 && m_activeSlot < m_apiModels.size()) return m_apiModels[m_activeSlot].trimmed();
     return "gemini-2.0-flash";
 }
 
 QString AppConfig::currentApiBaseUrl() const {
-    if (m_activeSlot >= 0 && m_activeSlot < m_apiBaseUrls.size()) return m_apiBaseUrls[m_activeSlot];
+    if (m_activeSlot >= 0 && m_activeSlot < m_apiBaseUrls.size()) return m_apiBaseUrls[m_activeSlot].trimmed();
     return "";
 }
 QString AppConfig::systemPrompt() const    { return m_systemPrompt; }
