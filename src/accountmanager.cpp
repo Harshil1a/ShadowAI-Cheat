@@ -282,7 +282,8 @@ void AccountManager::handleHttpAuthCallback(QTcpSocket* socket, const QString& r
             if (!ckey.isEmpty()) {
                 AppConfig::instance().setProCloudKey(ckey);
             }
-        } else if (isPro) {
+        }
+        if (isPro) {
             fetchCloudConfig();
         }
         AppConfig::instance().save();

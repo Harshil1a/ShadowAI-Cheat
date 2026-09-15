@@ -494,21 +494,149 @@
       </div>
     </div>
 
-    <!-- MASTER PRO CLOUD ENGINE (GEMINI 2.5 FLASH) KEY MANAGER -->
-    <div class="admin-card" style="margin-bottom: 24px; border: 1px solid rgba(0, 229, 255, 0.4); background: rgba(5, 12, 20, 0.9);">
-      <div class="admin-card-title" style="color: #00e5ff; display: flex; justify-content: space-between; align-items: center;">
-        <span>⚡ MASTER PRO CLOUD ENGINE (GEMINI 2.5 FLASH KEY)</span>
+    <!-- MASTER PRO CLOUD ENGINE CONFIGURATOR -->
+    <div class="admin-card" style="margin-bottom: 24px; border: 1px solid rgba(0, 229, 255, 0.4); background: rgba(5, 12, 20, 0.95); box-shadow: 0 0 25px rgba(0,229,255,0.08);">
+      <div class="admin-card-title" style="color: #00e5ff; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span>⚡ MASTER PRO CLOUD ENGINE CONFIGURATOR</span>
+          <span style="font-size: 10px; background: rgba(0,229,255,0.15); border: 1px solid rgba(0,229,255,0.4); color: #00e5ff; padding: 2px 6px; border-radius: 3px;">ZERO-CODE UPDATE</span>
+        </div>
         <span id="gemini-key-status" style="font-size: 11px; color: #7ca88e;">Checking Cloud Status...</span>
       </div>
-      <p style="color: #8b9bb4; font-size: 11px; line-height: 1.6; margin-bottom: 14px;">
-        This Google Gemini API key powers the Zero-Key Pro Cloud Engine for all PRO subscribers. It is stored securely in Supabase and never exposed to GitHub.
+      <p style="color: #8b9bb4; font-size: 11px; line-height: 1.6; margin-bottom: 16px;">
+        Configure the Master AI Engine for all PRO subscribers. You can switch between <strong>Google Gemini</strong>, <strong>Cloudflare Workers AI</strong>, <strong>DeepSeek</strong>, <strong>Groq</strong>, or any <strong>Custom OpenAI-compatible</strong> provider. Any changes saved here update Supabase instantly—clients update automatically with <strong>0ms added latency</strong> and no recompile!
       </p>
-      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-        <input type="password" id="gemini-key-input" placeholder="Paste new Gemini API Key (starts with AIzaSy...)" style="flex: 1; min-width: 280px; background: rgba(0,0,0,0.6); border: 1px solid rgba(0, 229, 255, 0.4); color: #00ff66; padding: 10px 14px; font-family: monospace; border-radius: 4px; font-size: 12px;">
-        <button id="btn-save-gemini" onclick="saveCloudGeminiKey()" class="btn-gen" style="background: linear-gradient(135deg, #00e5ff 0%, #0088cc 100%); color: #020813; box-shadow: 0 0 15px rgba(0,229,255,0.4);">SAVE TO CLOUD ⚡</button>
-        <button id="btn-test-gemini" onclick="testCloudGeminiKey()" class="btn-refresh">TEST KEY 🔬</button>
+
+      <!-- Provider Selector Tabs -->
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-size: 11px; color: #7ca88e; margin-bottom: 6px; font-weight: 700;">CHOOSE AI PROVIDER:</label>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;" id="cloud-provider-tabs">
+          <button type="button" class="filter-tab active" onclick="selectCloudProvider('gemini', this)" data-provider="gemini">⚡ GOOGLE GEMINI</button>
+          <button type="button" class="filter-tab" onclick="selectCloudProvider('cloudflare', this)" data-provider="cloudflare">☁️ CLOUDFLARE WORKERS AI</button>
+          <button type="button" class="filter-tab" onclick="selectCloudProvider('deepseek', this)" data-provider="deepseek">🚀 DEEPSEEK (OFFICIAL)</button>
+          <button type="button" class="filter-tab" onclick="selectCloudProvider('groq', this)" data-provider="groq">⚡ GROQ (ULTRA-FAST)</button>
+          <button type="button" class="filter-tab" onclick="selectCloudProvider('custom', this)" data-provider="custom">🛠️ CUSTOM / OPENAI-COMPATIBLE</button>
+        </div>
       </div>
-      <div id="gemini-key-feedback" style="margin-top: 10px; font-size: 11px;"></div>
+
+      <!-- DYNAMIC FORM SECTIONS -->
+      
+      <!-- 1. Google Gemini Form -->
+      <div id="form-gemini" class="cloud-provider-form">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-bottom: 12px;">
+          <div>
+            <label style="display:block; font-size: 11px; color: #7ca88e; margin-bottom: 4px;">GEMINI API KEY:</label>
+            <input type="password" id="gemini-key-input" placeholder="Starts with AIzaSy..." style="width: 100%; background: rgba(0,0,0,0.6); border: 1px solid rgba(0, 229, 255, 0.4); color: #00ff66; padding: 10px 12px; font-family: monospace; border-radius: 4px; font-size: 12px; box-sizing: border-box;">
+          </div>
+          <div>
+            <label style="display:block; font-size: 11px; color: #7ca88e; margin-bottom: 4px;">MODEL:</label>
+            <select id="gemini-model-select" style="width: 100%; background: #030810; border: 1px solid rgba(0, 229, 255, 0.4); color: #00e5ff; padding: 10px 12px; font-family: monospace; border-radius: 4px; font-size: 12px; box-sizing: border-box;">
+              <option value="gemini-2.5-flash" selected>gemini-2.5-flash (Recommended: Fastest & Smartest)</option>
+              <option value="gemini-2.0-flash">gemini-2.0-flash (High Speed)</option>
+              <option value="gemini-1.5-pro">gemini-1.5-pro (High Reasoning)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Cloudflare Workers AI Form -->
+      <div id="form-cloudflare" class="cloud-provider-form" style="display:none;">
+        <div style="background: rgba(0, 229, 255, 0.05); border: 1px solid rgba(0, 229, 255, 0.25); border-radius: 4px; padding: 10px 14px; margin-bottom: 12px; font-size: 11px; color: #8b9bb4; line-height: 1.5;">
+          💡 <strong>Cloudflare Workers AI:</strong> Paste your Cloudflare <strong>Account ID</strong> and an API Token with <em>Workers AI: Read/Edit</em> permissions. The Base URL is automatically generated!
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 12px;">
+          <div>
+            <label style="display:block; font-size: 11px; color: #7ca88e; margin-bottom: 4px;">CLOUDFLARE ACCOUNT ID:</label>
+            <input type="text" id="cf-account-id" placeholder="e.g. 7f4a8b92c1034e..." oninput="updateCloudflareUrlPreview()" style="width: 100%; background: rgba(0,0,0,0.6); border: 1px solid rgba(0, 229, 255, 0.4); color: #00ff66; padding: 10px 12px; font-family: monospace; border-radius: 4px; font-size: 12px; box-sizing: border-box;">
+          </div>
+          <div>
+            <label style="display:block; font-size: 11px; color: #7ca88e; margin-bottom: 4px;">API TOKEN (BEARER TOKEN):</label>
+            <input type="password" id="cf-api-token" placeholder="Cloudflare API Token..." style="width: 100%; background: rgba(0,0,0,0.6); border: 1px solid rgba(0, 229, 255, 0.4); color: #00ff66; padding: 10px 12px; font-family: monospace; border-radius: 4px; font-size: 12px; box-sizing: border-box;">
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 12px;">
+          <div>
+            <label style="display:block; font-size: 11px; color: #7ca88e; margin-bottom: 4px;">MODEL PRESET / NAME:</label>
+            <input type="text" id="cf-model-name" list="cf-model-presets" value="@cf/meta/llama-3.3-70b-instruct-fp8-fast" placeholder="@cf/meta/llama-3.3-70b-instruct-fp8-fast" style="width: 100%; background: rgba(0,0,0,0.6); border: 1px solid rgba(0, 229, 255, 0.4); color: #00e5ff; padding: 10px 12px; font-family: monospace; border-radius: 4px; font-size: 12px; box-sizing: border-box;">
+            <datalist id="cf-model-presets">
+              <option value="@cf/meta/llama-3.3-70b-instruct-fp8-fast">Llama 3.3 70B (Fast & High Intelligence)</option>
+              <option value="@cf/meta/llama-3.2-11b-vision-instruct">Llama 3.2 11B Vision (Direct Image Understanding)</option>
+              <option value="@cf/deepseek-ai/deepseek-r1-distill-qwen-32b">DeepSeek R1 Distill Qwen 32B (Reasoning)</option>
+              <option value="@cf/meta/llama-3.1-8b-instruct">Llama 3.1 8B Instruct (Ultra Fast)</option>
+              <option value="@cf/qwen/qwen2.5-72b-instruct">Qwen 2.5 72B Instruct</option>
+            </datalist>
+          </div>
+          <div>
+            <label style="display:block; font-size: 11px; color: #7ca88e; margin-bottom: 4px;">GENERATED BASE URL (OPENAI-COMPATIBLE):</label>
+            <input type="text" id="cf-url-preview" readonly value="https://api.cloudflare.com/client/v4/accounts/<AccountID>/ai/v1" style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(124, 168, 142, 0.3); color: #7ca88e; padding: 10px 12px; font-family: monospace; border-radius: 4px; font-size: 11px; box-sizing: border-box;">
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. DeepSeek Form -->
+      <div id="form-deepseek" class="cloud-provider-form" style="display:none;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 12px;">
+          <div>
+            <label style="display:block; font-size: 11px; color: #7ca88e; margin-bottom: 4px;">DEEPSEEK API KEY:</label>
+            <input type="password" id="deepseek-api-key" placeholder="Starts with sk-..." style="width: 100%; background: rgba(0,0,0,0.6); border: 1px solid rgba(0, 229, 255, 0.4); color: #00ff66; padding: 10px 12px; font-family: monospace; border-radius: 4px; font-size: 12px; box-sizing: border-box;">
+          </div>
+          <div>
+            <label style="display:block; font-size: 11px; color: #7ca88e; margin-bottom: 4px;">MODEL:</label>
+            <select id="deepseek-model-select" style="width: 100%; background: #030810; border: 1px solid rgba(0, 229, 255, 0.4); color: #00e5ff; padding: 10px 12px; font-family: monospace; border-radius: 4px; font-size: 12px; box-sizing: border-box;">
+              <option value="deepseek-chat" selected>deepseek-chat (DeepSeek-V3)</option>
+              <option value="deepseek-reasoner">deepseek-reasoner (DeepSeek-R1)</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block; font-size: 11px; color: #7ca88e; margin-bottom: 4px;">BASE URL:</label>
+            <input type="text" id="deepseek-base-url" value="https://api.deepseek.com/v1" style="width: 100%; background: rgba(0,0,0,0.6); border: 1px solid rgba(0, 229, 255, 0.4); color: #7ca88e; padding: 10px 12px; font-family: monospace; border-radius: 4px; font-size: 12px; box-sizing: border-box;">
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Groq Form -->
+      <div id="form-groq" class="cloud-provider-form" style="display:none;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 12px;">
+          <div>
+            <label style="display:block; font-size: 11px; color: #7ca88e; margin-bottom: 4px;">GROQ API KEY:</label>
+            <input type="password" id="groq-api-key" placeholder="Starts with gsk_..." style="width: 100%; background: rgba(0,0,0,0.6); border: 1px solid rgba(0, 229, 255, 0.4); color: #00ff66; padding: 10px 12px; font-family: monospace; border-radius: 4px; font-size: 12px; box-sizing: border-box;">
+          </div>
+          <div>
+            <label style="display:block; font-size: 11px; color: #7ca88e; margin-bottom: 4px;">MODEL:</label>
+            <input type="text" id="groq-model-name" value="qwen/qwen3.8-27b" style="width: 100%; background: rgba(0,0,0,0.6); border: 1px solid rgba(0, 229, 255, 0.4); color: #00e5ff; padding: 10px 12px; font-family: monospace; border-radius: 4px; font-size: 12px; box-sizing: border-box;">
+          </div>
+          <div>
+            <label style="display:block; font-size: 11px; color: #7ca88e; margin-bottom: 4px;">BASE URL:</label>
+            <input type="text" id="groq-base-url" value="https://api.groq.com/openai/v1" style="width: 100%; background: rgba(0,0,0,0.6); border: 1px solid rgba(0, 229, 255, 0.4); color: #7ca88e; padding: 10px 12px; font-family: monospace; border-radius: 4px; font-size: 12px; box-sizing: border-box;">
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. Custom Form -->
+      <div id="form-custom" class="cloud-provider-form" style="display:none;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 12px;">
+          <div>
+            <label style="display:block; font-size: 11px; color: #7ca88e; margin-bottom: 4px;">BASE URL (ENDPOINT):</label>
+            <input type="text" id="custom-base-url" placeholder="https://api.example.com/v1" style="width: 100%; background: rgba(0,0,0,0.6); border: 1px solid rgba(0, 229, 255, 0.4); color: #00ff66; padding: 10px 12px; font-family: monospace; border-radius: 4px; font-size: 12px; box-sizing: border-box;">
+          </div>
+          <div>
+            <label style="display:block; font-size: 11px; color: #7ca88e; margin-bottom: 4px;">MODEL NAME:</label>
+            <input type="text" id="custom-model-name" placeholder="e.g. gpt-4o, llama-3, mistral-large" style="width: 100%; background: rgba(0,0,0,0.6); border: 1px solid rgba(0, 229, 255, 0.4); color: #00e5ff; padding: 10px 12px; font-family: monospace; border-radius: 4px; font-size: 12px; box-sizing: border-box;">
+          </div>
+          <div>
+            <label style="display:block; font-size: 11px; color: #7ca88e; margin-bottom: 4px;">API KEY:</label>
+            <input type="password" id="custom-api-key" placeholder="API Key / Token..." style="width: 100%; background: rgba(0,0,0,0.6); border: 1px solid rgba(0, 229, 255, 0.4); color: #00ff66; padding: 10px 12px; font-family: monospace; border-radius: 4px; font-size: 12px; box-sizing: border-box;">
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons & Status Feedback -->
+      <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; align-items: center;">
+        <button id="btn-save-gemini" onclick="saveCloudEngineConfig()" class="btn-gen" style="background: linear-gradient(135deg, #00e5ff 0%, #0088cc 100%); color: #020813; box-shadow: 0 0 15px rgba(0,229,255,0.4); font-weight: 700; padding: 10px 20px;">SAVE TO CLOUD ⚡</button>
+        <button id="btn-test-gemini" onclick="testCloudEngineConfig()" class="btn-refresh" style="padding: 10px 18px;">TEST CONNECTION 🔬</button>
+        <span id="cloud-engine-active-summary" style="font-size: 11px; color: #7ca88e; font-family: monospace; margin-left: auto;"></span>
+      </div>
+      <div id="gemini-key-feedback" style="margin-top: 12px; font-size: 11px; line-height: 1.5;"></div>
     </div>
 
     <!-- PENDING APPROVALS QUEUE (AMAZON PAY / CRYPTO QUEUE) -->
@@ -674,40 +802,242 @@
       loadCloudGeminiKey();
     }
 
-    async function loadCloudGeminiKey() {
+    let currentCloudProvider = 'gemini';
+    let savedCloudConfig = null;
+
+    window.selectCloudProvider = function(prov, btnEl) {
+      currentCloudProvider = prov;
+      const tabs = document.querySelectorAll('#cloud-provider-tabs .filter-tab');
+      tabs.forEach(t => t.classList.remove('active'));
+      if (btnEl) {
+        btnEl.classList.add('active');
+      } else {
+        const matchingBtn = document.querySelector(`#cloud-provider-tabs button[data-provider="${prov}"]`);
+        if (matchingBtn) matchingBtn.classList.add('active');
+      }
+
+      document.querySelectorAll('.cloud-provider-form').forEach(f => f.style.display = 'none');
+      const targetForm = document.getElementById(`form-${prov}`);
+      if (targetForm) targetForm.style.display = 'block';
+
+      if (prov === 'cloudflare') updateCloudflareUrlPreview();
+    };
+
+    window.updateCloudflareUrlPreview = function() {
+      const acctInput = document.getElementById('cf-account-id');
+      const previewInput = document.getElementById('cf-url-preview');
+      const acctId = (acctInput ? acctInput.value.trim() : '') || '<AccountID>';
+      if (previewInput) {
+        previewInput.value = `https://api.cloudflare.com/client/v4/accounts/${acctId}/ai/v1`;
+      }
+    };
+
+    window.loadCloudEngineConfig = async function() {
       const statusEl = document.getElementById('gemini-key-status');
-      const inputEl = document.getElementById('gemini-key-input');
       const feedbackEl = document.getElementById('gemini-key-feedback');
+      const summaryEl = document.getElementById('cloud-engine-active-summary');
+
       try {
         const res = await fetch(`${SUPABASE_URL}/rest/v1/licenses?customer_email=eq.system@shadowai.local&select=*`, {
           headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
         });
         const rows = await res.json();
         if (Array.isArray(rows) && rows.length > 0) {
-          const rawKey = (rows[0].bound_hwid || '').trim();
-          if (rawKey) {
-            const masked = rawKey.substring(0, 8) + '...' + rawKey.substring(rawKey.length - 4);
-            statusEl.innerHTML = `<span style="color:#00ff66;">✓ ACTIVE KEY: <code>${masked}</code></span>`;
-            inputEl.placeholder = `Current Key: ${masked} (paste new key here to replace)`;
-          } else {
-            statusEl.innerHTML = '<span style="color:#ff4757;">❌ NO CLOUD KEY CONFIGURED</span>';
+          const raw = (rows[0].bound_hwid || '').trim();
+          if (raw) {
+            let cfg = { provider: 'gemini', model: 'gemini-2.5-flash', key: '', base_url: '' };
+            if (raw.startsWith('{') && raw.endsWith('}')) {
+              try {
+                const parsed = JSON.parse(raw);
+                cfg.provider = parsed.provider || 'gemini';
+                cfg.model = parsed.model || '';
+                cfg.key = parsed.key || parsed.api_key || '';
+                cfg.base_url = parsed.base_url || parsed.baseUrl || '';
+              } catch(e) {
+                console.warn('JSON parse error on cloud engine config:', e);
+              }
+            } else if (raw.includes('|')) {
+              const parts = raw.split('|');
+              cfg.provider = parts[0] || 'gemini';
+              cfg.model = parts[1] || '';
+              cfg.key = parts[2] || '';
+              cfg.base_url = parts[3] || '';
+            } else {
+              cfg.key = raw;
+              if (raw.startsWith('AIzaSy')) {
+                cfg.provider = 'gemini';
+                cfg.model = 'gemini-2.5-flash';
+              } else if (raw.startsWith('gsk_')) {
+                cfg.provider = 'groq';
+                cfg.model = 'qwen/qwen3.8-27b';
+                cfg.base_url = 'https://api.groq.com/openai/v1';
+              } else if (raw.startsWith('sk-')) {
+                cfg.provider = 'deepseek';
+                cfg.model = 'deepseek-chat';
+                cfg.base_url = 'https://api.deepseek.com/v1';
+              }
+            }
+
+            savedCloudConfig = cfg;
+
+            // Detect provider type from base_url or model
+            let detectedProvider = cfg.provider;
+            if (cfg.base_url.includes('api.cloudflare.com') || (cfg.model && cfg.model.startsWith('@cf/'))) {
+              detectedProvider = 'cloudflare';
+            } else if (cfg.base_url.includes('deepseek.com') || (cfg.model && cfg.model.includes('deepseek'))) {
+              detectedProvider = 'deepseek';
+            } else if (cfg.base_url.includes('groq.com') || (cfg.key && cfg.key.startsWith('gsk_'))) {
+              detectedProvider = 'groq';
+            } else if (cfg.provider === 'gemini' || (cfg.key && cfg.key.startsWith('AIzaSy'))) {
+              detectedProvider = 'gemini';
+            }
+
+            // Populate Form Fields
+            if (detectedProvider === 'cloudflare') {
+              const matchAcct = cfg.base_url.match(/accounts\/([^\/]+)\/ai/);
+              if (matchAcct && document.getElementById('cf-account-id')) {
+                document.getElementById('cf-account-id').value = matchAcct[1];
+              }
+              if (document.getElementById('cf-model-name') && cfg.model) {
+                document.getElementById('cf-model-name').value = cfg.model;
+              }
+              if (document.getElementById('cf-api-token') && cfg.key) {
+                document.getElementById('cf-api-token').placeholder = `Saved: ${cfg.key.substring(0, 6)}...${cfg.key.slice(-4)} (paste new to change)`;
+              }
+            } else if (detectedProvider === 'gemini') {
+              if (document.getElementById('gemini-model-select') && cfg.model) {
+                document.getElementById('gemini-model-select').value = cfg.model;
+              }
+              if (document.getElementById('gemini-key-input') && cfg.key) {
+                document.getElementById('gemini-key-input').placeholder = `Saved: ${cfg.key.substring(0, 8)}...${cfg.key.slice(-4)} (paste new to change)`;
+              }
+            } else if (detectedProvider === 'deepseek') {
+              if (document.getElementById('deepseek-model-select') && cfg.model) {
+                document.getElementById('deepseek-model-select').value = cfg.model;
+              }
+              if (document.getElementById('deepseek-base-url') && cfg.base_url) {
+                document.getElementById('deepseek-base-url').value = cfg.base_url;
+              }
+              if (document.getElementById('deepseek-api-key') && cfg.key) {
+                document.getElementById('deepseek-api-key').placeholder = `Saved: ${cfg.key.substring(0, 6)}...${cfg.key.slice(-4)} (paste new to change)`;
+              }
+            } else if (detectedProvider === 'groq') {
+              if (document.getElementById('groq-model-name') && cfg.model) {
+                document.getElementById('groq-model-name').value = cfg.model;
+              }
+              if (document.getElementById('groq-base-url') && cfg.base_url) {
+                document.getElementById('groq-base-url').value = cfg.base_url;
+              }
+              if (document.getElementById('groq-api-key') && cfg.key) {
+                document.getElementById('groq-api-key').placeholder = `Saved: ${cfg.key.substring(0, 6)}...${cfg.key.slice(-4)} (paste new to change)`;
+              }
+            } else {
+              if (document.getElementById('custom-base-url') && cfg.base_url) document.getElementById('custom-base-url').value = cfg.base_url;
+              if (document.getElementById('custom-model-name') && cfg.model) document.getElementById('custom-model-name').value = cfg.model;
+              if (document.getElementById('custom-api-key') && cfg.key) {
+                document.getElementById('custom-api-key').placeholder = `Saved: ${cfg.key.substring(0, 6)}...${cfg.key.slice(-4)} (paste new to change)`;
+              }
+            }
+
+            selectCloudProvider(detectedProvider);
+
+            const maskedKey = cfg.key ? (cfg.key.substring(0, 6) + '...' + cfg.key.slice(-4)) : 'None';
+            statusEl.innerHTML = `<span style="color:#00ff66;">✓ ACTIVE: <strong>${detectedProvider.toUpperCase()}</strong> (${cfg.model || 'default'})</span>`;
+            if (summaryEl) {
+              summaryEl.innerHTML = `Key: <code>${maskedKey}</code>`;
+            }
+            return;
           }
         }
+        statusEl.innerHTML = '<span style="color:#ff4757;">❌ NO CLOUD ENGINE CONFIGURED</span>';
       } catch (err) {
-        if (statusEl) statusEl.innerText = 'Error loading key: ' + err.message;
+        if (statusEl) statusEl.innerText = 'Error loading engine: ' + err.message;
       }
-    }
+    };
 
-    window.saveCloudGeminiKey = async function() {
-      const inputEl = document.getElementById('gemini-key-input');
+    window.saveCloudEngineConfig = async function() {
       const feedbackEl = document.getElementById('gemini-key-feedback');
-      const newKey = inputEl.value.trim();
-      if (!newKey || !newKey.startsWith('AIzaSy')) {
-        feedbackEl.innerHTML = '<span style="color:#ff4757;">❌ Invalid Key: Google Gemini API keys must start with "AIzaSy..."</span>';
-        return;
+      let provider = currentCloudProvider;
+      let model = '';
+      let key = '';
+      let baseUrl = '';
+
+      if (provider === 'gemini') {
+        const inputKey = document.getElementById('gemini-key-input').value.trim();
+        key = inputKey || (savedCloudConfig && savedCloudConfig.provider === 'gemini' ? savedCloudConfig.key : '');
+        model = document.getElementById('gemini-model-select').value.trim() || 'gemini-2.5-flash';
+        baseUrl = '';
+
+        if (!key || !key.startsWith('AIzaSy')) {
+          feedbackEl.innerHTML = '<span style="color:#ff4757;">❌ Invalid Key: Google Gemini API keys must start with "AIzaSy..."</span>';
+          return;
+        }
+      } else if (provider === 'cloudflare') {
+        const acctId = document.getElementById('cf-account-id').value.trim();
+        const inputToken = document.getElementById('cf-api-token').value.trim();
+        key = inputToken || (savedCloudConfig && savedCloudConfig.base_url?.includes('cloudflare') ? savedCloudConfig.key : '');
+        model = document.getElementById('cf-model-name').value.trim() || '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+
+        if (!acctId) {
+          feedbackEl.innerHTML = '<span style="color:#ff4757;">❌ Missing Account ID: Please enter your Cloudflare Account ID.</span>';
+          return;
+        }
+        if (!key) {
+          feedbackEl.innerHTML = '<span style="color:#ff4757;">❌ Missing API Token: Please enter your Cloudflare API Token.</span>';
+          return;
+        }
+        baseUrl = `https://api.cloudflare.com/client/v4/accounts/${acctId}/ai/v1`;
+        // Use 'openai' protocol dispatch for desktop client
+        provider = 'openai';
+      } else if (provider === 'deepseek') {
+        const inputKey = document.getElementById('deepseek-api-key').value.trim();
+        key = inputKey || (savedCloudConfig && savedCloudConfig.key?.startsWith('sk-') ? savedCloudConfig.key : '');
+        model = document.getElementById('deepseek-model-select').value.trim() || 'deepseek-chat';
+        baseUrl = document.getElementById('deepseek-base-url').value.trim() || 'https://api.deepseek.com/v1';
+
+        if (!key) {
+          feedbackEl.innerHTML = '<span style="color:#ff4757;">❌ Missing Key: Please enter your DeepSeek API key.</span>';
+          return;
+        }
+        provider = 'openai';
+      } else if (provider === 'groq') {
+        const inputKey = document.getElementById('groq-api-key').value.trim();
+        key = inputKey || (savedCloudConfig && savedCloudConfig.key?.startsWith('gsk_') ? savedCloudConfig.key : '');
+        model = document.getElementById('groq-model-name').value.trim() || 'qwen/qwen3.8-27b';
+        baseUrl = document.getElementById('groq-base-url').value.trim() || 'https://api.groq.com/openai/v1';
+
+        if (!key) {
+          feedbackEl.innerHTML = '<span style="color:#ff4757;">❌ Missing Key: Please enter your Groq API key.</span>';
+          return;
+        }
+        provider = 'groq';
+      } else {
+        // Custom
+        baseUrl = document.getElementById('custom-base-url').value.trim();
+        model = document.getElementById('custom-model-name').value.trim();
+        const inputKey = document.getElementById('custom-api-key').value.trim();
+        key = inputKey || (savedCloudConfig ? savedCloudConfig.key : '');
+
+        if (!baseUrl) {
+          feedbackEl.innerHTML = '<span style="color:#ff4757;">❌ Missing Base URL: Please enter your endpoint URL.</span>';
+          return;
+        }
+        if (!model) {
+          feedbackEl.innerHTML = '<span style="color:#ff4757;">❌ Missing Model Name: Please specify the model name.</span>';
+          return;
+        }
+        provider = 'openai';
       }
 
-      feedbackEl.innerHTML = '<span style="color:#00e5ff;">⏳ Saving key to Supabase database...</span>';
+      feedbackEl.innerHTML = '<span style="color:#00e5ff;">⏳ Saving Master Cloud Engine to Supabase...</span>';
+
+      const configJson = JSON.stringify({
+        provider: provider,
+        model: model,
+        key: key,
+        base_url: baseUrl
+      });
+
       try {
         const res = await fetch(`${SUPABASE_URL}/rest/v1/licenses?customer_email=eq.system@shadowai.local`, {
           method: 'PATCH',
@@ -717,54 +1047,134 @@
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            bound_hwid: newKey,
+            bound_hwid: configJson,
             last_used_at: new Date().toISOString()
           })
         });
-        feedbackEl.innerHTML = '<span style="color:#00ff66;">✓ SUCCESS: Master Cloud Key updated in Supabase! All desktop clients will now use this key.</span>';
-        inputEl.value = '';
-        await loadCloudGeminiKey();
+
+        feedbackEl.innerHTML = `<span style="color:#00ff66;">✓ SUCCESS: Cloud Engine updated to <strong>${currentCloudProvider.toUpperCase()} (${model})</strong>! All desktop clients will use this instantly.</span>`;
+        await loadCloudEngineConfig();
       } catch (err) {
         feedbackEl.innerHTML = `<span style="color:#ff4757;">❌ Save failed: ${err.message}</span>`;
       }
     };
 
-    window.testCloudGeminiKey = async function() {
+    window.testCloudEngineConfig = async function() {
       const feedbackEl = document.getElementById('gemini-key-feedback');
-      feedbackEl.innerHTML = '<span style="color:#00e5ff;">🔬 Pinging Google Gemini 2.5 Flash API directly...</span>';
+      feedbackEl.innerHTML = '<span style="color:#00e5ff;">🔬 Testing AI Engine connection...</span>';
+
       try {
-        let testKey = document.getElementById('gemini-key-input').value.trim();
-        if (!testKey) {
-          const res = await fetch(`${SUPABASE_URL}/rest/v1/licenses?customer_email=eq.system@shadowai.local&select=bound_hwid`, {
-            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+        const provider = currentCloudProvider;
+        let key = '';
+        let model = '';
+        let baseUrl = '';
+
+        if (provider === 'gemini') {
+          key = document.getElementById('gemini-key-input').value.trim() || (savedCloudConfig?.key || '');
+          model = document.getElementById('gemini-model-select').value.trim() || 'gemini-2.5-flash';
+          if (!key) {
+            feedbackEl.innerHTML = '<span style="color:#ff4757;">❌ No Gemini API key provided.</span>';
+            return;
+          }
+
+          const t0 = performance.now();
+          const testRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: 'Respond with OK' }] }] })
           });
-          const rows = await res.json();
-          if (rows && rows[0]) testKey = rows[0].bound_hwid;
-        }
+          const elapsed = Math.round(performance.now() - t0);
 
-        if (!testKey) {
-          feedbackEl.innerHTML = '<span style="color:#ff4757;">❌ No API key available to test.</span>';
-          return;
-        }
+          if (testRes.ok) {
+            feedbackEl.innerHTML = `<span style="color:#00ff66;">✓ VERIFIED ONLINE: Google Gemini (${model}) responded in ${elapsed}ms! 100% active.</span>`;
+          } else {
+            const errData = await testRes.json();
+            feedbackEl.innerHTML = `<span style="color:#ff4757;">❌ GOOGLE ERROR (HTTP ${testRes.status}): ${errData.error?.message || 'Unknown error'}</span>`;
+          }
+        } else if (provider === 'cloudflare') {
+          const acctId = document.getElementById('cf-account-id').value.trim();
+          key = document.getElementById('cf-api-token').value.trim() || (savedCloudConfig?.key || '');
+          model = document.getElementById('cf-model-name').value.trim() || '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+          baseUrl = `https://api.cloudflare.com/client/v4/accounts/${acctId}/ai/v1`;
 
-        const t0 = performance.now();
-        const testRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${testKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: 'Respond with OK' }] }] })
-        });
-        const elapsed = Math.round(performance.now() - t0);
+          if (!acctId || !key) {
+            feedbackEl.innerHTML = '<span style="color:#ff4757;">❌ Please provide both Cloudflare Account ID and API Token to test.</span>';
+            return;
+          }
 
-        if (testRes.ok) {
-          feedbackEl.innerHTML = `<span style="color:#00ff66;">✓ VERIFIED ONLINE: Gemini 2.5 Flash responded in ${elapsed}ms! Key is 100% active and working.</span>`;
+          const t0 = performance.now();
+          const testRes = await fetch(`${baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${key}`
+            },
+            body: JSON.stringify({
+              model: model,
+              messages: [{ role: 'user', content: 'Say OK' }],
+              max_tokens: 5
+            })
+          });
+          const elapsed = Math.round(performance.now() - t0);
+
+          if (testRes.ok) {
+            feedbackEl.innerHTML = `<span style="color:#00ff66;">✓ VERIFIED ONLINE: Cloudflare Workers AI (${model}) responded in ${elapsed}ms! Key is 100% working.</span>`;
+          } else {
+            const errText = await testRes.text();
+            feedbackEl.innerHTML = `<span style="color:#ff4757;">❌ CLOUDFLARE ERROR (HTTP ${testRes.status}): ${errText.substring(0, 180)}</span>`;
+          }
         } else {
-          const errData = await testRes.json();
-          feedbackEl.innerHTML = `<span style="color:#ff4757;">❌ GOOGLE ERROR (HTTP ${testRes.status}): ${errData.error?.message || 'Unknown error'}</span>`;
+          // DeepSeek, Groq, or Custom
+          if (provider === 'deepseek') {
+            key = document.getElementById('deepseek-api-key').value.trim() || (savedCloudConfig?.key || '');
+            model = document.getElementById('deepseek-model-select').value.trim() || 'deepseek-chat';
+            baseUrl = document.getElementById('deepseek-base-url').value.trim() || 'https://api.deepseek.com/v1';
+          } else if (provider === 'groq') {
+            key = document.getElementById('groq-api-key').value.trim() || (savedCloudConfig?.key || '');
+            model = document.getElementById('groq-model-name').value.trim() || 'qwen/qwen3.8-27b';
+            baseUrl = document.getElementById('groq-base-url').value.trim() || 'https://api.groq.com/openai/v1';
+          } else {
+            key = document.getElementById('custom-api-key').value.trim() || (savedCloudConfig?.key || '');
+            model = document.getElementById('custom-model-name').value.trim();
+            baseUrl = document.getElementById('custom-base-url').value.trim();
+          }
+
+          if (!key || !baseUrl) {
+            feedbackEl.innerHTML = '<span style="color:#ff4757;">❌ Missing API key or Base URL.</span>';
+            return;
+          }
+
+          const t0 = performance.now();
+          const testRes = await fetch(`${baseUrl.replace(/\/+$/, '')}/chat/completions`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${key}`
+            },
+            body: JSON.stringify({
+              model: model,
+              messages: [{ role: 'user', content: 'Say OK' }],
+              max_tokens: 5
+            })
+          });
+          const elapsed = Math.round(performance.now() - t0);
+
+          if (testRes.ok) {
+            feedbackEl.innerHTML = `<span style="color:#00ff66;">✓ VERIFIED ONLINE: ${provider.toUpperCase()} (${model}) responded in ${elapsed}ms! 100% active.</span>`;
+          } else {
+            const errText = await testRes.text();
+            feedbackEl.innerHTML = `<span style="color:#ff4757;">❌ PROVIDER ERROR (HTTP ${testRes.status}): ${errText.substring(0, 180)}</span>`;
+          }
         }
       } catch (err) {
-        feedbackEl.innerHTML = `<span style="color:#ff4757;">❌ Connection error: ${err.message}</span>`;
+        feedbackEl.innerHTML = `<span style="color:#ff4757;">❌ Test connection error: ${err.message}</span>`;
       }
     };
+
+    // Backward compatibility aliases
+    window.loadCloudGeminiKey = window.loadCloudEngineConfig;
+    window.saveCloudGeminiKey = window.saveCloudEngineConfig;
+    window.testCloudGeminiKey = window.testCloudEngineConfig;
 
     // 1. Google OAuth Session Verification: STRICT SINGLE USER CHECK
     async function checkGoogleSession() {

@@ -366,6 +366,7 @@ void AIManager::performRequest(const QList<QPixmap>& screenshots, const QString&
         // Detect Cloudflare Workers AI by base URL or model name prefix
         bool isCloudflare = baseUrl.contains("workers.dev") ||
                             baseUrl.contains("cf.ai") ||
+                            baseUrl.contains("cloudflare.com") ||
                             m.startsWith("@cf/");
 
         QJsonDocument body;
@@ -386,6 +387,8 @@ void AIManager::performRequest(const QList<QPixmap>& screenshots, const QString&
     bool isCloudflareImage = !screenshots.isEmpty() &&
         (cfg.currentApiBaseUrl().contains("workers.dev") ||
          cfg.currentApiBaseUrl().contains("cf.ai") ||
+         cfg.currentApiBaseUrl().contains("cloudflare.com") ||
+         customBaseUrl.contains("cloudflare.com") ||
          model.startsWith("@cf/"));
     int timeoutMs = isCloudflareImage ? 20000 : 45000;
     m_timeoutTimer->start(timeoutMs);
