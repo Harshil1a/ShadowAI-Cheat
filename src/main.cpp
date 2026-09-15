@@ -196,12 +196,11 @@ int main(int argc, char* argv[]) {
     QObject::connect(dashboard, &Dashboard::toggleOverlay, overlay, [overlay, hotkeyMgr, dashboard, requireLogin]() {
         if (!requireLogin()) return;
         if (dashboard->isOverlayRunning()) {
-            // Stop Assistant completely (hide and unregister hotkeys)
+            // Stop Assistant (hide overlay)
             overlay->hide();
-            hotkeyMgr->unregisterAll();
             dashboard->updateStatus(false, false);
         } else {
-            // Start Assistant (show overlay and register hotkeys)
+            // Start Assistant (show overlay and ensure hotkeys are active)
             overlay->toggleVisibility(); // show overlay
             hotkeyMgr->registerAll();
             dashboard->updateStatus(true, overlay->isVisible());
@@ -226,6 +225,9 @@ int main(int argc, char* argv[]) {
 
     // Initialize Dashboard to Stopped state on startup
     dashboard->updateStatus(false);
+
+    // Register global shortcuts immediately so Shift+Option+H (Mac) and Shift+Alt+H (Windows) work
+    hotkeyMgr->registerAll();
 
     // ── Show Tray (Dashboard stays hidden until tray icon is clicked) ────────
     tray->show();

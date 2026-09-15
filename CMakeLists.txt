@@ -73,6 +73,7 @@ if(APPLE)
         MACOSX_BUNDLE TRUE
         MACOSX_BUNDLE_BUNDLE_NAME "AudioService"
         MACOSX_BUNDLE_GUI_IDENTIFIER "com.apple.audio.service"
+        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/resources/Info.plist.in"
         OUTPUT_NAME "AudioService"
     )
 endif()

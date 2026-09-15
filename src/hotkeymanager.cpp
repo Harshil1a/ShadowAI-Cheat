@@ -1,4 +1,4 @@
-﻿#include "hotkeymanager.h"
+#include "hotkeymanager.h"
 #include "appconfig.h"
 #include <QSettings>
 
@@ -43,16 +43,21 @@ LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
 }
 #endif // Q_OS_WIN
 
-// macOS: NSEvent Global Monitor (Shift+Option+Key)
+// macOS: Carbon Event HotKeys (Shift+Option+Key)
 // App name on Mac = "AudioService" (set in CMakeLists) - looks innocent
 #if defined(Q_OS_MAC) || defined(Q_OS_MACOS)
-#include <objc/objc.h>
-#include <objc/runtime.h>
-#include <objc/message.h>
 #include <Carbon/Carbon.h>
+#include <vector>
+#include <set>
 
 static HotkeyManager* s_macInstance = nullptr;
-static id s_macMonitor = nullptr;
+static EventHandlerRef s_macEventHandler = nullptr;
+
+struct MacRegisteredHotKey {
+    int vk;
+    EventHotKeyRef ref;
+};
+static std::vector<MacRegisteredHotKey> s_macHotkeys;
 
 // Map Qt VK code to macOS Carbon key code
 static int qtVkToMacKeyCode(int vk) {
@@ -84,58 +89,40 @@ static int qtVkToMacKeyCode(int vk) {
         case 0x25: return kVK_LeftArrow;  case 0x27: return kVK_RightArrow;
         case 0x26: return kVK_UpArrow;    case 0x28: return kVK_DownArrow;
         case 0x2E: return kVK_ForwardDelete;
+        case 0x20: return kVK_Space;
+        case 0x0D: return kVK_Return;
+        case 0x09: return kVK_Tab;
+        case 0x1B: return kVK_Escape;
+        case 0x24: return kVK_Home;
+        case 0x23: return kVK_End;
+        case 0x21: return kVK_PageUp;
+        case 0x22: return kVK_PageDown;
         default:   return -1;
     }
 }
 
-static void macKeyEventCallback(id event) {
-    if (!s_macInstance) return;
-    typedef unsigned long NSUInteger;
-    typedef NSUInteger (*flags_func)(id, SEL);
-    typedef unsigned short (*keyCode_func)(id, SEL);
-    NSUInteger flags  = ((flags_func)  objc_msgSend)(event, sel_registerName("modifierFlags"));
-    unsigned short kc = ((keyCode_func)objc_msgSend)(event, sel_registerName("keyCode"));
-    NSUInteger evType = ((flags_func)  objc_msgSend)(event, sel_registerName("type"));
+static OSStatus macHotKeyHandler(EventHandlerCallRef nextHandler, EventRef theEvent, void* userData) {
+    Q_UNUSED(nextHandler);
+    Q_UNUSED(userData);
+    if (!s_macInstance) return noErr;
 
-    // NSEventModifierFlagShift=0x20000, Option=0x80000, Cmd=0x100000
-    bool shiftDown  = (flags & 0x20000) != 0;
-    bool optionDown = (flags & 0x80000) != 0;
-    bool cmdDown    = (flags & 0x100000) != 0;
-    bool isDown     = (evType == 10); // NSEventTypeKeyDown
+    EventHotKeyID hkId;
+    OSStatus status = GetEventParameter(theEvent, kEventParamDirectObject, typeEventHotKeyID, NULL, sizeof(hkId), NULL, &hkId);
+    if (status != noErr) return noErr;
 
-    auto& cfg = AppConfig::instance();
-
-    // Shift + Option + Key -> main hotkeys
-    if (shiftDown && optionDown) {
-        auto check = [&](int qtVk) { return qtVkToMacKeyCode(qtVk) == (int)kc; };
-        if (isDown) {
-            if      (check(cfg.hotkeyToggle()))        emit s_macInstance->toggleOverlay();
-            else if (check(cfg.hotkeyScreenshot()))    emit s_macInstance->takeScreenshot();
-            else if (check(cfg.hotkeyGetAnswer()))     emit s_macInstance->getAnswer();
-            else if (check(cfg.hotkeyScrollUp()))      emit s_macInstance->scrollUp();
-            else if (check(cfg.hotkeyScrollDown()))    emit s_macInstance->scrollDown();
-            else if (check(cfg.hotkeyTransparency()))  emit s_macInstance->cycleTransparency();
-            else if (check(cfg.hotkeyClear()))         emit s_macInstance->clearAnswer();
-            else if (check(cfg.hotkeyMoveLeft()))      emit s_macInstance->moveLeft();
-            else if (check(cfg.hotkeyMoveRight()))     emit s_macInstance->moveRight();
-            else if (check(cfg.hotkeyMoveUp()))        emit s_macInstance->moveUp();
-            else if (check(cfg.hotkeyMoveDown()))      emit s_macInstance->moveDown();
-            else if (check(cfg.hotkeyVoice()))         emit s_macInstance->voiceRecordDown();
-            else if (check(cfg.hotkeyToggleBadges()))  emit s_macInstance->toggleBadges();
-            else if (check(cfg.hotkeyCopyScreenshot()))emit s_macInstance->copyScreenshot();
-            else if (check(cfg.hotkeyGhostWriter()))   emit s_macInstance->ghostWriter();
-            else if (check(cfg.hotkeyHideStrip()))     emit s_macInstance->hideStrip();
-        } else {
-            auto check2 = [&](int qtVk) { return qtVkToMacKeyCode(qtVk) == (int)kc; };
-            if (check2(cfg.hotkeyVoice())) emit s_macInstance->voiceRecordUp();
+    UInt32 eventKind = GetEventKind(theEvent);
+    if (eventKind == kEventHotKeyPressed) {
+        if (hkId.id == 99999) {
+            emit s_macInstance->panicTriggered();
+            return noErr;
+        }
+        s_macInstance->handleHookKey((int)hkId.id, true);
+    } else if (eventKind == kEventHotKeyReleased) {
+        if (hkId.id != 99999) {
+            s_macInstance->handleHookKey((int)hkId.id, false);
         }
     }
-
-    // Cmd + Shift + Key -> panic
-    if (cmdDown && shiftDown && isDown) {
-        if (qtVkToMacKeyCode(cfg.hotkeyPanic()) == (int)kc)
-            emit s_macInstance->panicTriggered();
-    }
+    return noErr;
 }
 #endif // Q_OS_MAC
 
@@ -153,16 +140,77 @@ void HotkeyManager::registerAll() {
 #endif
 #if defined(Q_OS_MAC) || defined(Q_OS_MACOS)
     s_macInstance = this;
-    if (!s_macMonitor) {
-        unsigned long long mask = (1ULL << 10) | (1ULL << 11); // keyDown | keyUp
-        Class NSEventClass = objc_getClass("NSEvent");
-        SEL addSel = sel_registerName("addGlobalMonitorForEventsMatchingMask:handler:");
-        typedef void (^EvBlock)(id);
-        EvBlock blk = ^(id ev) { macKeyEventCallback(ev); };
-        typedef id (*addFn)(Class, SEL, unsigned long long, EvBlock);
-        s_macMonitor = ((addFn)objc_msgSend)(NSEventClass, addSel, mask, blk);
-        if (s_macMonitor)
-            ((id(*)(id,SEL))objc_msgSend)(s_macMonitor, sel_registerName("retain"));
+
+    // 1. Install Carbon event handler if not already installed
+    if (!s_macEventHandler) {
+        EventTypeSpec eventSpecs[2];
+        eventSpecs[0].eventClass = kEventClassKeyboard;
+        eventSpecs[0].eventKind = kEventHotKeyPressed;
+        eventSpecs[1].eventClass = kEventClassKeyboard;
+        eventSpecs[1].eventKind = kEventHotKeyReleased;
+        InstallApplicationEventHandler(NewEventHandlerUPP(macHotKeyHandler), 2, eventSpecs, NULL, &s_macEventHandler);
+    }
+
+    // 2. Unregister any existing hotkeys first to avoid duplicates
+    for (const auto& hk : s_macHotkeys) {
+        if (hk.ref) {
+            UnregisterEventHotKey(hk.ref);
+        }
+    }
+    s_macHotkeys.clear();
+
+    auto& cfg = AppConfig::instance();
+    std::set<int> registeredVks;
+
+    auto regKey = [&](int vk) {
+        if (vk <= 0 || registeredVks.count(vk)) return;
+        int macKc = qtVkToMacKeyCode(vk);
+        if (macKc < 0) return;
+
+        EventHotKeyID hkId;
+        hkId.signature = 'SHAD';
+        hkId.id = (UInt32)vk;
+        EventHotKeyRef ref = nullptr;
+        UInt32 mods = (UInt32)(shiftKey | optionKey);
+        OSStatus err = RegisterEventHotKey((UInt32)macKc, mods, hkId, GetApplicationEventTarget(), 0, &ref);
+        if (err == noErr && ref) {
+            s_macHotkeys.push_back({vk, ref});
+            registeredVks.insert(vk);
+        }
+    };
+
+    regKey(cfg.hotkeyToggle());
+    regKey(cfg.hotkeyScreenshot());
+    regKey(cfg.hotkeyGetAnswer());
+    regKey(cfg.hotkeyScrollUp());
+    regKey(cfg.hotkeyScrollDown());
+    regKey(cfg.hotkeyTransparency());
+    regKey(cfg.hotkeyClear());
+    regKey(cfg.hotkeyMoveLeft());
+    regKey(cfg.hotkeyMoveRight());
+    regKey(cfg.hotkeyMoveUp());
+    regKey(cfg.hotkeyMoveDown());
+    regKey(cfg.hotkeyVoice());
+    regKey(cfg.hotkeyToggleBadges());
+    regKey(cfg.hotkeyCopyScreenshot());
+    regKey(cfg.hotkeyGhostWriter());
+    regKey(cfg.hotkeyHideStrip());
+
+    // Register Panic Hotkey (Cmd + Shift + Key)
+    int panicVk = cfg.hotkeyPanic();
+    if (panicVk > 0) {
+        int panicMacKc = qtVkToMacKeyCode(panicVk);
+        if (panicMacKc >= 0) {
+            EventHotKeyID hkId;
+            hkId.signature = 'SHAD';
+            hkId.id = 99999;
+            EventHotKeyRef ref = nullptr;
+            UInt32 panicMods = (UInt32)(cmdKey | shiftKey);
+            OSStatus err = RegisterEventHotKey((UInt32)panicMacKc, panicMods, hkId, GetApplicationEventTarget(), 0, &ref);
+            if (err == noErr && ref) {
+                s_macHotkeys.push_back({panicVk, ref});
+            }
+        }
     }
 #endif
 }
@@ -173,11 +221,15 @@ void HotkeyManager::unregisterAll() {
     s_instance = nullptr;
 #endif
 #if defined(Q_OS_MAC) || defined(Q_OS_MACOS)
-    if (s_macMonitor) {
-        Class NSEventClass = objc_getClass("NSEvent");
-        ((void(*)(Class,SEL,id))objc_msgSend)(NSEventClass, sel_registerName("removeMonitor:"), s_macMonitor);
-        ((void(*)(id,SEL))objc_msgSend)(s_macMonitor, sel_registerName("release"));
-        s_macMonitor = nullptr;
+    for (const auto& hk : s_macHotkeys) {
+        if (hk.ref) {
+            UnregisterEventHotKey(hk.ref);
+        }
+    }
+    s_macHotkeys.clear();
+    if (s_macEventHandler) {
+        RemoveEventHandler(s_macEventHandler);
+        s_macEventHandler = nullptr;
     }
     s_macInstance = nullptr;
 #endif
