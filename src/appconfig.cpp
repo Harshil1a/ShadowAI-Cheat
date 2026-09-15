@@ -88,20 +88,25 @@ void AppConfig::load() {
     m_proPlanTier    = m_settings.value("account/proPlanTier", "PRO_MONTHLY").toString();
     m_useProCloudEngine = m_settings.value("api/useProCloudEngine", true).toBool();
     m_userEmail      = m_settings.value("account/email", "").toString();
-    m_licenseKey     = m_settings.value("account/licenseKey", "").toString();
-    m_proCloudKey    = m_settings.value("account/proCloudKey", "").toString();
-    m_freeCredits    = m_settings.value("account/freeCredits", 0).toInt();
+    m_proCloudKey       = m_settings.value("account/proCloudKey", "").toString();
+    m_proCloudProvider  = m_settings.value("account/proCloudProvider", "gemini").toString();
+    m_proCloudModel     = m_settings.value("account/proCloudModel", "gemini-2.5-flash").toString();
+    m_proCloudBaseUrl   = m_settings.value("account/proCloudBaseUrl", "").toString();
+    m_freeCredits       = m_settings.value("account/freeCredits", 0).toInt();
 }
 
 void AppConfig::save() {
-    m_settings.setValue("account/isPro",      m_isPro);
-    m_settings.setValue("account/proDaysLeft", m_proDaysLeft);
-    m_settings.setValue("account/proPlanTier", m_proPlanTier);
-    m_settings.setValue("account/proCloudKey", m_proCloudKey);
-    m_settings.setValue("account/freeCredits", m_freeCredits);
-    m_settings.setValue("api/useProCloudEngine", m_useProCloudEngine);
-    m_settings.setValue("account/email",      m_userEmail);
-    m_settings.setValue("account/licenseKey", m_licenseKey);
+    m_settings.setValue("account/isPro",              m_isPro);
+    m_settings.setValue("account/proDaysLeft",        m_proDaysLeft);
+    m_settings.setValue("account/proPlanTier",        m_proPlanTier);
+    m_settings.setValue("account/proCloudKey",        m_proCloudKey);
+    m_settings.setValue("account/proCloudProvider",    m_proCloudProvider);
+    m_settings.setValue("account/proCloudModel",       m_proCloudModel);
+    m_settings.setValue("account/proCloudBaseUrl",     m_proCloudBaseUrl);
+    m_settings.setValue("account/freeCredits",        m_freeCredits);
+    m_settings.setValue("api/useProCloudEngine",      m_useProCloudEngine);
+    m_settings.setValue("account/email",              m_userEmail);
+    m_settings.setValue("account/licenseKey",         m_licenseKey);
 
     m_settings.setValue("api/keys",         m_apiKeys);
     m_settings.setValue("api/providers",    m_apiProviders);
@@ -256,6 +261,15 @@ void AppConfig::setUseProCloudEngine(bool enable) { m_useProCloudEngine = enable
 
 QString AppConfig::proCloudKey() const { return m_proCloudKey; }
 void AppConfig::setProCloudKey(const QString& key) { m_proCloudKey = key; }
+
+QString AppConfig::proCloudProvider() const { return m_proCloudProvider.isEmpty() ? "gemini" : m_proCloudProvider; }
+void AppConfig::setProCloudProvider(const QString& provider) { m_proCloudProvider = provider; }
+
+QString AppConfig::proCloudModel() const { return m_proCloudModel.isEmpty() ? "gemini-2.5-flash" : m_proCloudModel; }
+void AppConfig::setProCloudModel(const QString& model) { m_proCloudModel = model; }
+
+QString AppConfig::proCloudBaseUrl() const { return m_proCloudBaseUrl; }
+void AppConfig::setProCloudBaseUrl(const QString& url) { m_proCloudBaseUrl = url; }
 
 int AppConfig::hotkeyPanic() const { return m_hotkeyPanic; }
 void AppConfig::setHotkeyPanic(int vk) { m_hotkeyPanic = vk; }

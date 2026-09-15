@@ -218,11 +218,13 @@ void AIManager::performRequest(const QList<QPixmap>& screenshots, const QString&
     bool isProUser = cfg.isPro();
     bool useProCloud = isProUser && cfg.useProCloudEngine();
 
+    QString customBaseUrl;
     if (useProCloud) {
-        // PRO CLOUD ENGINE: Dedicated high-speed Gemini 2.5 Flash Vision Engine
-        provider = "gemini";
-        model = "gemini-2.5-flash";
-        apiKey = cfg.proCloudKey();
+        // PRO CLOUD ENGINE: 100% Dynamic from Cloud/Supabase (supports ANY provider & ANY model)
+        provider = cfg.proCloudProvider();
+        model    = cfg.proCloudModel();
+        apiKey   = cfg.proCloudKey();
+        customBaseUrl = cfg.proCloudBaseUrl();
     } else {
         // CUSTOM / BYOK MODE or FREE REWARDED TIER
         if (!isProUser) {
@@ -242,10 +244,13 @@ void AIManager::performRequest(const QList<QPixmap>& screenshots, const QString&
         }
 
         if (apiKey.trimmed().isEmpty()) {
-            // Fallback to high-speed Gemini engine if user hasn't set their own key yet
-            provider = "gemini";
-            model = "gemini-2.5-flash";
-            apiKey = cfg.proCloudKey();
+            // Fallback to dynamic cloud engine if user hasn't set their own key yet
+            provider = cfg.proCloudProvider();
+            model    = cfg.proCloudModel();
+            apiKey   = cfg.proCloudKey();
+            customBaseUrl = cfg.proCloudBaseUrl();
+        } else {
+            customBaseUrl = cfg.currentApiBaseUrl().trimmed();
         }
     }
 
@@ -347,7 +352,10 @@ void AIManager::performRequest(const QList<QPixmap>& screenshots, const QString&
         QString m = model.isEmpty() ? "gpt-5.5-mini" : model;
         QString firstImg = base64Images.isEmpty() ? "" : base64Images.first();
 
-        QString baseUrl = cfg.currentApiBaseUrl().trimmed();
+        QString baseUrl = customBaseUrl.trimmed();
+        if (baseUrl.isEmpty()) {
+            baseUrl = cfg.currentApiBaseUrl().trimmed();
+        }
         if (baseUrl.isEmpty()) {
             baseUrl = "https://api.openai.com/v1";
         }
@@ -731,7 +739,7 @@ void AIManager::transcribeAudio(const QString& filePath, const QList<QPixmap>& s
     
     if (apiKey.trimmed().isEmpty()) {
         if (cfg.isPro() || cfg.canUseFreeQuery()) {
-            provider = "gemini";
+            provider = cfg.proCloudProvider();
             apiKey = cfg.proCloudKey();
             if (apiKey.isEmpty()) {
                 AccountManager::instance().fetchCloudConfig();
@@ -861,7 +869,7 @@ void AIManager::transcribeAudioOnly(const QString& filePath) {
     
     if (apiKey.isEmpty()) {
         if (cfg.isPro() || cfg.canUseFreeQuery()) {
-            provider = "gemini";
+            provider = cfg.proCloudProvider();
             apiKey = cfg.proCloudKey();
             if (apiKey.isEmpty()) {
                 AccountManager::instance().fetchCloudConfig();

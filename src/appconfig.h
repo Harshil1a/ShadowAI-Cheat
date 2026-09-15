@@ -157,6 +157,15 @@ public:
     QString proCloudKey() const;
     void setProCloudKey(const QString& key);
 
+    QString proCloudProvider() const;
+    void setProCloudProvider(const QString& provider);
+
+    QString proCloudModel() const;
+    void setProCloudModel(const QString& model);
+
+    QString proCloudBaseUrl() const;
+    void setProCloudBaseUrl(const QString& url);
+
     void save();
     void load();
 
@@ -171,6 +180,9 @@ private:
     QString     m_userEmail;
     QString     m_licenseKey;
     QString     m_proCloudKey;
+    QString     m_proCloudProvider = "gemini";
+    QString     m_proCloudModel    = "gemini-2.5-flash";
+    QString     m_proCloudBaseUrl;
     int         m_freeCredits = 0;
 
     QStringList m_apiKeys;

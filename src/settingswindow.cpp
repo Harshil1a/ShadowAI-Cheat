@@ -1220,31 +1220,58 @@ void SettingsWindow::onTestProCloud() {
         return;
     }
 
-    m_testProStatus->setText("⟳ Testing Google Gemini 2.5 Flash Cloud...");
+    auto& cfg = AppConfig::instance();
+    QString provider = cfg.proCloudProvider();
+    QString model = cfg.proCloudModel();
+    QString baseUrl = cfg.proCloudBaseUrl();
+
+    m_testProStatus->setText(QString("⟳ Testing %1 (%2)...").arg(provider.toUpper(), model));
     m_testProStatus->setStyleSheet("color: #00e5ff; font-weight: bold;");
     if (m_testProBtn) m_testProBtn->setEnabled(false);
 
     auto* nam = new QNetworkAccessManager(this);
     QNetworkRequest req;
-    req.setUrl(QUrl(QString("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=%1").arg(key)));
-    req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    QByteArray body;
 
-    QJsonObject part; part["text"] = "Respond with 'OK'";
-    QJsonArray parts; parts.append(part);
-    QJsonObject content; content["parts"] = parts;
-    QJsonArray contents; contents.append(content);
-    QJsonObject b; b["contents"] = contents;
-    QByteArray body = QJsonDocument(b).toJson();
+    if (provider == "gemini") {
+        req.setUrl(QUrl(QString("https://generativelanguage.googleapis.com/v1beta/models/%1:generateContent?key=%2").arg(model, key)));
+        req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+        QJsonObject part; part["text"] = "Respond with 'OK'";
+        QJsonArray parts; parts.append(part);
+        QJsonObject content; content["parts"] = parts;
+        QJsonArray contents; contents.append(content);
+        QJsonObject b; b["contents"] = contents;
+        body = QJsonDocument(b).toJson();
+    } else {
+        // Universal OpenAI-compatible test (DeepSeek, Groq, OpenAI, Cloudflare, etc.)
+        if (baseUrl.isEmpty()) {
+            baseUrl = (provider == "groq") ? "https://api.groq.com/openai/v1" : "https://api.deepseek.com/v1";
+        }
+        if (baseUrl.endsWith("/")) baseUrl.chop(1);
+
+        req.setUrl(QUrl(baseUrl + "/chat/completions"));
+        req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+        req.setRawHeader("Authorization", ("Bearer " + key).toUtf8());
+
+        QJsonObject msg; msg["role"] = "user"; msg["content"] = "Hi";
+        QJsonArray messages; messages.append(msg);
+        QJsonObject b;
+        b["model"] = model.isEmpty() ? "default" : model;
+        b["messages"] = messages;
+        b["max_tokens"] = 5;
+        body = QJsonDocument(b).toJson();
+    }
 
     qint64 startTime = QDateTime::currentMSecsSinceEpoch();
 
     auto* reply = nam->post(req, body);
-    connect(reply, &QNetworkReply::finished, this, [this, reply, nam, startTime]() {
+    connect(reply, &QNetworkReply::finished, this, [this, reply, nam, startTime, model]() {
         if (m_testProBtn) m_testProBtn->setEnabled(true);
         qint64 elapsed = QDateTime::currentMSecsSinceEpoch() - startTime;
         int code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
         if (code == 200) {
-            m_testProStatus->setText(QString("✓ Pro Cloud Online: Gemini 2.5 Flash Verified (~%1ms)").arg(elapsed));
+            m_testProStatus->setText(QString("✓ Pro Cloud Online: %1 Verified (~%2ms)").arg(model).arg(elapsed));
             m_testProStatus->setStyleSheet("color: #00ff66; font-weight: bold;");
         } else {
             m_testProStatus->setText(QString("❌ Cloud Test Error (HTTP %1)").arg(code));

@@ -450,10 +450,73 @@ void AccountManager::fetchCloudConfig() {
             QJsonDocument doc = QJsonDocument::fromJson(data);
             if (doc.isArray() && !doc.array().isEmpty()) {
                 QJsonObject row = doc.array().first().toObject();
-                QString masterKey = row.value("bound_hwid").toString().trimmed();
-                if (!masterKey.isEmpty() && masterKey.startsWith("AIzaSy")) {
-                    qDebug() << "[CloudEngine] Master Google Gemini Key fetched from cloud. Cloud-Pro Engine active.";
-                    AppConfig::instance().setProCloudKey(masterKey);
+                QString raw = row.value("bound_hwid").toString().trimmed();
+                if (!raw.isEmpty()) {
+                    auto& cfg = AppConfig::instance();
+
+                    // 1. Check if raw contains a JSON object
+                    if (raw.startsWith("{") && raw.endsWith("}")) {
+                        QJsonDocument jsonDoc = QJsonDocument::fromJson(raw.toUtf8());
+                        if (jsonDoc.isObject()) {
+                            QJsonObject obj = jsonDoc.object();
+                            QString key = obj.contains("key") ? obj.value("key").toString() : obj.value("api_key").toString();
+                            QString provider = obj.value("provider").toString();
+                            QString model = obj.value("model").toString();
+                            QString baseUrl = obj.contains("base_url") ? obj.value("base_url").toString() : obj.value("baseUrl").toString();
+
+                            if (!key.isEmpty()) cfg.setProCloudKey(key.trimmed());
+                            if (!provider.isEmpty()) cfg.setProCloudProvider(provider.trimmed());
+                            if (!model.isEmpty()) cfg.setProCloudModel(model.trimmed());
+                            if (!baseUrl.isEmpty()) cfg.setProCloudBaseUrl(baseUrl.trimmed());
+                            cfg.save();
+                            qDebug() << "[CloudEngine] Dynamic JSON configuration loaded:" << cfg.proCloudProvider() << cfg.proCloudModel();
+                            reply->deleteLater();
+                            return;
+                        }
+                    }
+
+                    // 2. Check if pipe format: provider|model|key|base_url
+                    if (raw.contains("|")) {
+                        QStringList parts = raw.split("|");
+                        if (parts.size() >= 3) {
+                            cfg.setProCloudProvider(parts[0].trimmed());
+                            cfg.setProCloudModel(parts[1].trimmed());
+                            cfg.setProCloudKey(parts[2].trimmed());
+                            if (parts.size() >= 4) cfg.setProCloudBaseUrl(parts[3].trimmed());
+                            cfg.save();
+                            qDebug() << "[CloudEngine] Dynamic pipe configuration loaded:" << cfg.proCloudProvider() << cfg.proCloudModel();
+                            reply->deleteLater();
+                            return;
+                        }
+                    }
+
+                    // 3. Raw API key with intelligent provider & endpoint detection
+                    cfg.setProCloudKey(raw);
+                    if (raw.startsWith("AIzaSy")) {
+                        cfg.setProCloudProvider("gemini");
+                        cfg.setProCloudModel("gemini-2.5-flash");
+                        cfg.setProCloudBaseUrl("");
+                    } else if (raw.startsWith("gsk_")) {
+                        cfg.setProCloudProvider("groq");
+                        cfg.setProCloudModel("qwen/qwen3.8-27b");
+                        cfg.setProCloudBaseUrl("https://api.groq.com/openai/v1");
+                    } else if (raw.startsWith("sk-")) {
+                        // OpenAI or DeepSeek
+                        cfg.setProCloudProvider("openai");
+                        QString tier = row.value("plan_tier").toString().trimmed();
+                        if (!tier.isEmpty() && !tier.contains("PRO_")) {
+                            cfg.setProCloudModel(tier);
+                        } else {
+                            cfg.setProCloudModel("deepseek-chat");
+                        }
+                        cfg.setProCloudBaseUrl("https://api.deepseek.com/v1");
+                    } else {
+                        // Universal fallback for any custom or new provider
+                        cfg.setProCloudProvider("openai");
+                        cfg.setProCloudModel("default");
+                    }
+                    cfg.save();
+                    qDebug() << "[CloudEngine] Master Key loaded from cloud:" << cfg.proCloudProvider() << cfg.proCloudModel();
                 }
             }
         }
