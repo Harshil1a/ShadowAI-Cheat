@@ -826,9 +826,11 @@
     window.updateCloudflareUrlPreview = function() {
       const acctInput = document.getElementById('cf-account-id');
       const previewInput = document.getElementById('cf-url-preview');
-      const acctId = (acctInput ? acctInput.value.trim() : '') || '<AccountID>';
+      let acctId = acctInput ? acctInput.value.trim() : '';
+      acctId = acctId.replace(/^\/+|\/+$/g, '').trim();
+      const displayId = acctId || '<AccountID>';
       if (previewInput) {
-        previewInput.value = `https://api.cloudflare.com/client/v4/accounts/${acctId}/ai/v1`;
+        previewInput.value = `https://api.cloudflare.com/client/v4/accounts/${displayId}/ai/v1`;
       }
     };
 
@@ -904,6 +906,7 @@
               if (document.getElementById('cf-api-token') && cfg.key) {
                 document.getElementById('cf-api-token').placeholder = `Saved: ${cfg.key.substring(0, 6)}...${cfg.key.slice(-4)} (paste new to change)`;
               }
+              updateCloudflareUrlPreview();
             } else if (detectedProvider === 'gemini') {
               if (document.getElementById('gemini-model-select') && cfg.model) {
                 document.getElementById('gemini-model-select').value = cfg.model;
@@ -973,7 +976,8 @@
           return;
         }
       } else if (provider === 'cloudflare') {
-        const acctId = document.getElementById('cf-account-id').value.trim();
+        let acctId = document.getElementById('cf-account-id').value.trim();
+        acctId = acctId.replace(/^\/+|\/+$/g, '').trim();
         const inputToken = document.getElementById('cf-api-token').value.trim();
         key = inputToken || (savedCloudConfig && savedCloudConfig.base_url?.includes('cloudflare') ? savedCloudConfig.key : '');
         model = document.getElementById('cf-model-name').value.trim() || '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
@@ -1072,99 +1076,71 @@
         if (provider === 'gemini') {
           key = document.getElementById('gemini-key-input').value.trim() || (savedCloudConfig?.key || '');
           model = document.getElementById('gemini-model-select').value.trim() || 'gemini-2.5-flash';
-          if (!key) {
-            feedbackEl.innerHTML = '<span style="color:#ff4757;">❌ No Gemini API key provided.</span>';
-            return;
-          }
-
-          const t0 = performance.now();
-          const testRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: 'Respond with OK' }] }] })
-          });
-          const elapsed = Math.round(performance.now() - t0);
-
-          if (testRes.ok) {
-            feedbackEl.innerHTML = `<span style="color:#00ff66;">✓ VERIFIED ONLINE: Google Gemini (${model}) responded in ${elapsed}ms! 100% active.</span>`;
-          } else {
-            const errData = await testRes.json();
-            feedbackEl.innerHTML = `<span style="color:#ff4757;">❌ GOOGLE ERROR (HTTP ${testRes.status}): ${errData.error?.message || 'Unknown error'}</span>`;
-          }
+          baseUrl = '';
         } else if (provider === 'cloudflare') {
-          const acctId = document.getElementById('cf-account-id').value.trim();
+          let acctId = document.getElementById('cf-account-id').value.trim();
+          acctId = acctId.replace(/^\/+|\/+$/g, '').trim();
           key = document.getElementById('cf-api-token').value.trim() || (savedCloudConfig?.key || '');
           model = document.getElementById('cf-model-name').value.trim() || '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
           baseUrl = `https://api.cloudflare.com/client/v4/accounts/${acctId}/ai/v1`;
 
-          if (!acctId || !key) {
-            feedbackEl.innerHTML = '<span style="color:#ff4757;">❌ Please provide both Cloudflare Account ID and API Token to test.</span>';
+          if (!acctId) {
+            feedbackEl.innerHTML = '<span style="color:#ff4757;">❌ Please enter your Cloudflare Account ID to test.</span>';
             return;
           }
-
-          const t0 = performance.now();
-          const testRes = await fetch(`${baseUrl}/chat/completions`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${key}`
-            },
-            body: JSON.stringify({
-              model: model,
-              messages: [{ role: 'user', content: 'Say OK' }],
-              max_tokens: 5
-            })
-          });
-          const elapsed = Math.round(performance.now() - t0);
-
-          if (testRes.ok) {
-            feedbackEl.innerHTML = `<span style="color:#00ff66;">✓ VERIFIED ONLINE: Cloudflare Workers AI (${model}) responded in ${elapsed}ms! Key is 100% working.</span>`;
-          } else {
-            const errText = await testRes.text();
-            feedbackEl.innerHTML = `<span style="color:#ff4757;">❌ CLOUDFLARE ERROR (HTTP ${testRes.status}): ${errText.substring(0, 180)}</span>`;
-          }
+        } else if (provider === 'deepseek') {
+          key = document.getElementById('deepseek-api-key').value.trim() || (savedCloudConfig?.key || '');
+          model = document.getElementById('deepseek-model-select').value.trim() || 'deepseek-chat';
+          baseUrl = document.getElementById('deepseek-base-url').value.trim() || 'https://api.deepseek.com/v1';
+        } else if (provider === 'groq') {
+          key = document.getElementById('groq-api-key').value.trim() || (savedCloudConfig?.key || '');
+          model = document.getElementById('groq-model-name').value.trim() || 'qwen/qwen3.8-27b';
+          baseUrl = document.getElementById('groq-base-url').value.trim() || 'https://api.groq.com/openai/v1';
         } else {
-          // DeepSeek, Groq, or Custom
-          if (provider === 'deepseek') {
-            key = document.getElementById('deepseek-api-key').value.trim() || (savedCloudConfig?.key || '');
-            model = document.getElementById('deepseek-model-select').value.trim() || 'deepseek-chat';
-            baseUrl = document.getElementById('deepseek-base-url').value.trim() || 'https://api.deepseek.com/v1';
-          } else if (provider === 'groq') {
-            key = document.getElementById('groq-api-key').value.trim() || (savedCloudConfig?.key || '');
-            model = document.getElementById('groq-model-name').value.trim() || 'qwen/qwen3.8-27b';
-            baseUrl = document.getElementById('groq-base-url').value.trim() || 'https://api.groq.com/openai/v1';
-          } else {
-            key = document.getElementById('custom-api-key').value.trim() || (savedCloudConfig?.key || '');
-            model = document.getElementById('custom-model-name').value.trim();
-            baseUrl = document.getElementById('custom-base-url').value.trim();
-          }
+          key = document.getElementById('custom-api-key').value.trim() || (savedCloudConfig?.key || '');
+          model = document.getElementById('custom-model-name').value.trim();
+          baseUrl = document.getElementById('custom-base-url').value.trim();
+        }
 
-          if (!key || !baseUrl) {
-            feedbackEl.innerHTML = '<span style="color:#ff4757;">❌ Missing API key or Base URL.</span>';
-            return;
-          }
+        if (!key) {
+          feedbackEl.innerHTML = '<span style="color:#ff4757;">❌ Please provide an API key / token to test.</span>';
+          return;
+        }
 
-          const t0 = performance.now();
-          const testRes = await fetch(`${baseUrl.replace(/\/+$/, '')}/chat/completions`, {
+        // Test via serverless proxy endpoint to bypass browser CORS restrictions
+        const t0 = performance.now();
+        let testRes;
+        try {
+          testRes = await fetch('/api/test-cloud-engine', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${key}`
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+              provider: provider,
+              key: key,
               model: model,
-              messages: [{ role: 'user', content: 'Say OK' }],
-              max_tokens: 5
+              base_url: baseUrl
             })
           });
-          const elapsed = Math.round(performance.now() - t0);
-
-          if (testRes.ok) {
-            feedbackEl.innerHTML = `<span style="color:#00ff66;">✓ VERIFIED ONLINE: ${provider.toUpperCase()} (${model}) responded in ${elapsed}ms! 100% active.</span>`;
+        } catch(netErr) {
+          // Fallback direct probe if /api/ not reachable locally
+          if (provider === 'gemini') {
+            testRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ contents: [{ parts: [{ text: 'Respond with OK' }] }] })
+            });
           } else {
-            const errText = await testRes.text();
-            feedbackEl.innerHTML = `<span style="color:#ff4757;">❌ PROVIDER ERROR (HTTP ${testRes.status}): ${errText.substring(0, 180)}</span>`;
+            throw netErr;
           }
+        }
+
+        const data = await testRes.json();
+        const elapsed = Math.round(performance.now() - t0);
+
+        if (data.ok) {
+          feedbackEl.innerHTML = `<span style="color:#00ff66;">✓ VERIFIED ONLINE: ${provider.toUpperCase()} (${data.model}) responded in ${data.elapsedMs || elapsed}ms! Status: Working 100%</span>`;
+        } else {
+          feedbackEl.innerHTML = `<span style="color:#ff4757;">❌ ${provider.toUpperCase()} ERROR (HTTP ${data.status || testRes.status}): ${data.error || 'Check credentials'}</span>`;
         }
       } catch (err) {
         feedbackEl.innerHTML = `<span style="color:#ff4757;">❌ Test connection error: ${err.message}</span>`;
