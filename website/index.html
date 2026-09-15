@@ -519,64 +519,47 @@
                 <li>✓ Global CGEventTap Shortcut Listener</li>
                 <li>✓ M1 / M2 / M3 Apple Silicon Native</li>
               </ul>
+              <!-- Compatibility Warning -->
+              <div style="background: rgba(255, 170, 0, 0.08); border: 1px solid rgba(255, 170, 0, 0.4); border-radius: 6px; padding: 10px 12px; margin-bottom: 12px; text-align: left; font-size: 11px; line-height: 1.45;">
+                <div style="font-weight: 700; color: #ffaa00; margin-bottom: 3px; font-family: 'Orbitron', monospace; font-size: 10px;">⚠️ DEVICE COMPATIBILITY:</div>
+                <div style="color: #e2fced;"><strong>macOS Computers Only</strong> (MacBook Air/Pro, iMac, Mac mini, Mac Studio).</div>
+                <div style="color: #ffaa66; font-size: 10px; margin-top: 3px;">❌ <strong>Cannot run on iPad or iPhone:</strong> iPadOS/iOS cannot execute Mac .dmg installer packages. Please open this link on your Mac computer.</div>
+              </div>
+
               <a href="downloads/AudioService.dmg" download="AudioService.dmg" class="btn-download secondary"
                 id="btn-dl-mac">
                 <span>DOWNLOAD .DMG (UNIVERSAL)</span>
                 <span class="arrow">↓</span>
               </a>
-              <span class="sub-download-note">Drag & Drop to /Applications or Desktop</span>
+              <span class="sub-download-note">Drag & Drop AudioService to /Applications</span>
               <div
                 style="font-size:11px;color:#e2fced;margin-top:12px;background:rgba(0,229,255,0.06);border:1px solid rgba(0,229,255,0.25);padding:14px;border-radius:6px;text-align:left;line-height:1.5;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                  <span style="color:#00e5ff;font-weight:700;font-family:'Orbitron';font-size:11px;">🍏 HOW TO INSTALL
-                    ON MAC:</span>
+                  <span style="color:#00e5ff;font-weight:700;font-family:'Orbitron';font-size:11px;">🍏 HOW TO INSTALL ON MAC:</span>
                   <span
-                    style="color:#00ff66;font-size:9px;font-family:'Orbitron';background:rgba(0,255,102,0.1);padding:2px 6px;border-radius:3px;">TESTED
-                    OK</span>
+                    style="color:#00ff66;font-size:9px;font-family:'Orbitron';background:rgba(0,255,102,0.1);padding:2px 6px;border-radius:3px;">APP: AUDIOSERVICE</span>
                 </div>
-                <div style="color:#7ca88e;font-size:10px;margin-bottom:8px;">If macOS shows <em>"damaged app"</em>,
-                  click <strong>Cancel</strong> on the pop-up, then follow these 4 quick steps:</div>
+                <div style="color:#7ca88e;font-size:10px;margin-bottom:8px;">App name on Mac is disguised as <strong>AudioService</strong> for 100% exam &amp; proctor stealth.</div>
 
-                <div style="color:#e2fced;font-size:10px;margin-bottom:4px;"><strong>Step 1:</strong> In the open DMG
-                  window, <strong>drag AudioService (or ShadowAI) onto your Desktop</strong>.</div>
+                <div style="color:#e2fced;font-size:10px;margin-bottom:4px;"><strong>Step 1:</strong> Double-click the downloaded <strong>AudioService.dmg</strong>, then <strong>drag AudioService into Applications</strong> (or onto Desktop).</div>
 
-                <div style="color:#e2fced;font-size:10px;margin-bottom:2px;"><strong>Step 2:</strong> Open
-                  <strong>Terminal</strong> and unmount the stuck disk:
-                </div>
+                <div style="color:#e2fced;font-size:10px;margin-bottom:2px;"><strong>Step 2 (Instant Bypass):</strong> If macOS says <em>"app is damaged"</em> or blocked by Gatekeeper, paste this one command into <strong>Terminal</strong> and press Enter:</div>
                 <div
-                  style="display:flex;align-items:center;background:#030805;border:1px solid rgba(0,255,102,0.3);border-radius:4px;margin-bottom:6px;overflow:hidden;">
+                  style="display:flex;align-items:center;background:#030805;border:1px solid rgba(0,255,102,0.4);border-radius:4px;margin-bottom:6px;overflow:hidden;">
                   <code
-                    style="flex:1;padding:5px 8px;font-family:'JetBrains Mono',monospace;color:#00ff66;font-size:10px;overflow-x:auto;">hdiutil detach /Volumes/*Service* 2>/dev/null || hdiutil detach /Volumes/*Shadow* -force</code>
+                    style="flex:1;padding:6px 8px;font-family:'JetBrains Mono',monospace;color:#00ff66;font-size:10px;overflow-x:auto;">xattr -cr /Applications/AudioService.app ~/Desktop/AudioService.app 2>/dev/null; open /Applications/AudioService.app 2>/dev/null || open ~/Desktop/AudioService.app</code>
                   <button
-                    onclick="navigator.clipboard.writeText('hdiutil detach /Volumes/*Service* 2>/dev/null || hdiutil detach /Volumes/*Shadow* -force');this.innerText='COPIED!';setTimeout(()=>this.innerText='COPY',1500)"
-                    style="background:rgba(0,255,102,0.15);color:#00ff66;border:none;border-left:1px solid rgba(0,255,102,0.3);padding:5px 8px;font-size:9px;font-family:'Orbitron';cursor:pointer;font-weight:700;">COPY</button>
+                    onclick="navigator.clipboard.writeText('xattr -cr /Applications/AudioService.app ~/Desktop/AudioService.app 2>/dev/null; open /Applications/AudioService.app 2>/dev/null || open ~/Desktop/AudioService.app');this.innerText='COPIED!';setTimeout(()=>this.innerText='COPY',1500)"
+                    style="background:rgba(0,255,102,0.15);color:#00ff66;border:none;border-left:1px solid rgba(0,255,102,0.3);padding:6px 10px;font-size:9px;font-family:'Orbitron';cursor:pointer;font-weight:700;">COPY</button>
                 </div>
 
-                <div style="color:#e2fced;font-size:10px;margin-bottom:2px;"><strong>Step 3:</strong> Remove Apple's
-                  quarantine lock from Desktop app:</div>
-                <div
-                  style="display:flex;align-items:center;background:#030805;border:1px solid rgba(0,255,102,0.3);border-radius:4px;margin-bottom:6px;overflow:hidden;">
-                  <code
-                    style="flex:1;padding:5px 8px;font-family:'JetBrains Mono',monospace;color:#00ff66;font-size:10px;overflow-x:auto;">sudo xattr -rd com.apple.quarantine ~/Desktop/*Service*.app ~/Desktop/*Shadow*.app 2>/dev/null || true</code>
-                  <button
-                    onclick="navigator.clipboard.writeText('sudo xattr -rd com.apple.quarantine ~/Desktop/*Service*.app ~/Desktop/*Shadow*.app 2>/dev/null || true');this.innerText='COPIED!';setTimeout(()=>this.innerText='COPY',1500)"
-                    style="background:rgba(0,255,102,0.15);color:#00ff66;border:none;border-left:1px solid rgba(0,255,102,0.3);padding:5px 8px;font-size:9px;font-family:'Orbitron';cursor:pointer;font-weight:700;">COPY</button>
-                </div>
-
-                <div style="color:#e2fced;font-size:10px;margin-bottom:2px;"><strong>Step 4:</strong> Enable unsigned
-                  apps to run:</div>
-                <div
-                  style="display:flex;align-items:center;background:#030805;border:1px solid rgba(0,255,102,0.3);border-radius:4px;margin-bottom:6px;overflow:hidden;">
-                  <code
-                    style="flex:1;padding:5px 8px;font-family:'JetBrains Mono',monospace;color:#00ff66;font-size:10px;overflow-x:auto;">sudo spctl --master-disable</code>
-                  <button
-                    onclick="navigator.clipboard.writeText('sudo spctl --master-disable');this.innerText='COPIED!';setTimeout(()=>this.innerText='COPY',1500)"
-                    style="background:rgba(0,255,102,0.15);color:#00ff66;border:none;border-left:1px solid rgba(0,255,102,0.3);padding:5px 8px;font-size:9px;font-family:'Orbitron';cursor:pointer;font-weight:700;">COPY</button>
+                <div style="color:#7ca88e;font-size:9.5px;margin-bottom:6px;">
+                  <em>Alternative: Right-click <strong>AudioService.app</strong> ➔ Click <strong>Open</strong> ➔ Click <strong>Open</strong> again.</em>
                 </div>
 
                 <div
                   style="color:#00ff66;font-size:10px;font-weight:700;margin-top:6px;padding-top:6px;border-top:1px dashed rgba(0,255,102,0.2);">
-                  ✓ Now double-click the app icon on your Desktop — it will open right up!
+                  ✓ The app will launch silently and dock in your top menu bar!
                 </div>
                 <div style="margin-top:8px;border-radius:6px;overflow:hidden;border:1px solid rgba(0,229,255,0.4);box-shadow:0 0 15px rgba(0,229,255,0.1);">
                   <div style="background:rgba(3,5,8,0.9);padding:4px 8px;font-size:9px;color:#00e5ff;font-family:'Orbitron';">📍 DOCKS IN TOP-RIGHT MENU BAR (NEAR CLOCK):</div>

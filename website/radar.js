@@ -1081,7 +1081,36 @@
     if (dlMac) {
       dlMac.addEventListener('click', (e) => {
         e.preventDefault();
-        window.location.href = 'downloads/AudioService.dmg';
+
+        // Check if user is on iPad or iPhone
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        if (isIOS) {
+          let iosToast = document.getElementById('dl-ios-warning-toast');
+          if (!iosToast) {
+            iosToast = document.createElement('div');
+            iosToast.id = 'dl-ios-warning-toast';
+            iosToast.style.cssText = 'position:fixed;bottom:24px;right:24px;max-width:420px;background:rgba(25,12,0,0.96);border:1px solid #ffaa00;border-radius:8px;padding:16px 20px;box-shadow:0 0 30px rgba(255,170,0,0.3);z-index:999999;font-family:"Rajdhani",sans-serif;backdrop-filter:blur(10px);';
+            iosToast.innerHTML = `
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                <span style="font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;color:#ffaa00;letter-spacing:1px;">⚠️ IPAD / IPHONE DETECTED</span>
+                <button id="close-ios-toast" style="background:transparent;border:none;color:#ffaa66;font-size:16px;cursor:pointer;line-height:1;">&times;</button>
+              </div>
+              <p style="font-size:13px;color:#ffdd99;margin:0 0 10px 0;line-height:1.4;">
+                This .dmg file is for <strong>macOS computers only</strong> (MacBook, iMac, Mac mini).<br/>
+                It <strong>cannot run on iPadOS or iOS</strong>.
+              </p>
+              <div style="font-size:11px;color:#e2fced;border-top:1px solid rgba(255,170,0,0.2);padding-top:8px;">
+                💡 Please visit this website on your <strong>Mac computer</strong> or transfer the file to your Mac via AirDrop.
+              </div>
+            `;
+            document.body.appendChild(iosToast);
+            document.getElementById('close-ios-toast').onclick = () => iosToast.remove();
+          }
+        }
+
+        setTimeout(() => {
+          window.location.href = 'downloads/AudioService.dmg';
+        }, 400);
       });
     }
   }
