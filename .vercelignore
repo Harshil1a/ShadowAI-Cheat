@@ -1,0 +1,21 @@
+# Ignore C++ Source, build artifacts, and scripts to keep Vercel lightweight
+build/
+build-*/
+dist/
+src/
+resources/
+hacking-lab/
+scratch/
+node_modules/
+.git/
+.github/
+.qtcreator/
+*.log
+*.iss
+*.bat
+*.bak
+CMakeLists.txt
+ShadowAI_Installer.iss
+README.md
+LICENSE_QT.txt
+supabase_schema.sql

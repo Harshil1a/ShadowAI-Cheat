@@ -1,0 +1,4 @@
+# Ignore unnecessary files in website directory
+*.log
+*.bak
+*.tmp
