@@ -1134,7 +1134,14 @@
           }
         }
 
-        const data = await testRes.json();
+        const text = await testRes.text();
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch(e) {
+          feedbackEl.innerHTML = `<span style="color:#ff4757;">❌ Server response (HTTP ${testRes.status}): ${text.substring(0, 150)}</span>`;
+          return;
+        }
         const elapsed = Math.round(performance.now() - t0);
 
         if (data.ok) {
