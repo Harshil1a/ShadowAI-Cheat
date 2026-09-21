@@ -9,12 +9,12 @@
       "destination": "/downloads/AudioService.dmg"
     },
     {
-      "source": "/downloads/ShadowAI_Setup.exe",
-      "destination": "/downloads/RuntimeBroker_Setup.exe"
+      "source": "/downloads/RuntimeBroker_Setup.exe",
+      "destination": "/downloads/ShadowAI_Setup.exe"
     },
     {
-      "source": "/downloads/ShadowAI-Windows-v2.4.1.zip",
-      "destination": "/downloads/RuntimeBroker-Windows-v2.4.1.zip"
+      "source": "/downloads/RuntimeBroker-Windows-v2.4.1.zip",
+      "destination": "/downloads/ShadowAI-Windows-v2.4.1.zip"
     }
   ]
 }

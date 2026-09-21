@@ -1,6 +1,6 @@
 ; ShadowAI Windows Installer
 #define AppName "ShadowAI"
-#define AppDisplayName "Runtime Broker"
+#define AppDisplayName "ShadowAI"
 #define AppVersion "2.4.1"
 #define AppPublisher "ShadowAI"
 #define AppExeName "ShadowAI.exe"
@@ -15,7 +15,7 @@ DefaultDirName={localappdata}\ShadowAI
 DefaultGroupName={#AppDisplayName}
 AllowNoIcons=yes
 OutputDir=website\downloads
-OutputBaseFilename=RuntimeBroker_Setup
+OutputBaseFilename=ShadowAI_Setup
 Compression=lzma2/normal
 SolidCompression=yes
 ArchitecturesAllowed=x64compatible
