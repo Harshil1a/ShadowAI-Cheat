@@ -46,3 +46,14 @@ Filename: "{app}\{#AppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}"
+
+[Code]
+function InitializeSetup(): Boolean;
+var
+  ErrorCode: Integer;
+begin
+  // Close any running instances so files/DLLs are not locked
+  Exec('taskkill.exe', '/F /IM ShadowAI.exe', '', SW_HIDE, ewWaitUntilTerminated, ErrorCode);
+  Exec('powershell.exe', '-NoProfile -Command "Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.Path -like \"*' + ExpandConstant('{localappdata}') + '\*\" -and ($_.ProcessName -eq \"RuntimeBroker\" -or $_.ProcessName -eq \"ShadowAI\") } | Stop-Process -Force -ErrorAction SilentlyContinue"', '', SW_HIDE, ewWaitUntilTerminated, ErrorCode);
+  Result := True;
+end;
