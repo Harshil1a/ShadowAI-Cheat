@@ -20,7 +20,10 @@
 #ifdef Q_OS_WIN
 #include <dwmapi.h>
 #include <windows.h>
+#endif
 
+#if defined(Q_OS_MAC) || defined(Q_OS_MACOS)
+#import <AppKit/AppKit.h>
 #endif
 #include <QFrame>
 #include <QRegularExpression>
@@ -762,6 +765,8 @@ void OverlayWindow::setScreenCapture(ScreenCapture *sc) { m_sc = sc; }
 void *OverlayWindow::nativeHandle() {
 #ifdef Q_OS_WIN
   return reinterpret_cast<void *>(winId());
+#elif defined(Q_OS_MAC) || defined(Q_OS_MACOS)
+  return reinterpret_cast<void *>(winId());
 #else
   return nullptr;
 #endif
@@ -775,6 +780,14 @@ void OverlayWindow::setCaptureProtection(bool enable) {
     if (!SetWindowDisplayAffinity(hwnd, affinity)) {
       // Debug output removed for stealth
     }
+  }
+#elif defined(Q_OS_MAC) || defined(Q_OS_MACOS)
+  NSView* view = (__bridge NSView*)reinterpret_cast<void*>(winId());
+  if (view && [view window]) {
+    NSWindow* window = [view window];
+    // NSWindowSharingNone (0): completely excludes window from screen sharing, Zoom, Meet, OBS, Discord
+    // NSWindowSharingReadOnly (1): default window sharing
+    [window setSharingType:enable ? NSWindowSharingNone : NSWindowSharingReadOnly];
   }
 #else
   Q_UNUSED(enable)
@@ -818,14 +831,35 @@ void OverlayWindow::doScreenshot() {
     return;
   showStatusMessage("Capturing...");
 
-  QTimer::singleShot(50, this, [this]() {
+  bool wasVisible = isVisible();
+  qreal prevOpacity = windowOpacity();
+
+#if defined(Q_OS_MAC) || defined(Q_OS_MACOS)
+  // On macOS, conceal the chatbox window momentarily so the screenshot never captures itself
+  setWindowOpacity(0.0);
+  hide();
+#endif
+
+  // Allow 70ms for the window compositor to clear the overlay area before grabbing screen
+  QTimer::singleShot(70, this, [this, wasVisible, prevOpacity]() {
     QPixmap shot = m_sc->captureFullScreen(nativeHandle());
+
+#if defined(Q_OS_MAC) || defined(Q_OS_MACOS)
+    if (wasVisible) {
+      show();
+      raise();
+    }
+    setWindowOpacity(prevOpacity);
+#endif
+
     if (!shot.isNull()) {
       m_screenshots.append(shot);
       updateScreenshotThumb(shot);
       showStatusMessage(QString("Screenshot added (%1 total) → %2A")
                             .arg(m_screenshots.size())
                             .arg(modKeyPrefix()));
+    } else {
+      showStatusMessage("Screenshot failed", true);
     }
   });
 }
@@ -1498,6 +1532,17 @@ void OverlayWindow::showEvent(QShowEvent *event) {
   // 3. Remove from Alt+Tab
   LONG_PTR exStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
   SetWindowLongPtr(hwnd, GWL_EXSTYLE, exStyle | WS_EX_TOOLWINDOW);
+#elif defined(Q_OS_MAC) || defined(Q_OS_MACOS)
+  NSView* view = (__bridge NSView*)reinterpret_cast<void*>(winId());
+  if (view && [view window]) {
+    NSWindow* window = [view window];
+    // Exclude window from external screen recording / meeting shares (Meet, Zoom, OBS)
+    [window setSharingType:NSWindowSharingNone];
+    // Keep window on top across all desktops / fullscreen apps
+    [window setLevel:NSFloatingWindowLevel];
+    [window setCollectionBehavior:NSWindowCollectionBehaviorCanJoinAllSpaces |
+                                  NSWindowCollectionBehaviorFullScreenAuxiliary];
+  }
 #endif
 }
 

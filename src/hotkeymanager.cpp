@@ -59,9 +59,13 @@ struct MacRegisteredHotKey {
 };
 static std::vector<MacRegisteredHotKey> s_macHotkeys;
 
-// Map Qt VK code to macOS Carbon key code
+// Map Qt / Windows VK code to macOS Carbon key code
 static int qtVkToMacKeyCode(int vk) {
+    // Normalize lowercase ASCII to uppercase
+    if (vk >= 'a' && vk <= 'z') vk -= 32;
+
     switch (vk) {
+        // Letters A-Z
         case 0x41: return kVK_ANSI_A; case 0x42: return kVK_ANSI_B;
         case 0x43: return kVK_ANSI_C; case 0x44: return kVK_ANSI_D;
         case 0x45: return kVK_ANSI_E; case 0x46: return kVK_ANSI_F;
@@ -75,28 +79,54 @@ static int qtVkToMacKeyCode(int vk) {
         case 0x55: return kVK_ANSI_U; case 0x56: return kVK_ANSI_V;
         case 0x57: return kVK_ANSI_W; case 0x58: return kVK_ANSI_X;
         case 0x59: return kVK_ANSI_Y; case 0x5A: return kVK_ANSI_Z;
+
+        // Numbers 0-9
         case 0x30: return kVK_ANSI_0; case 0x31: return kVK_ANSI_1;
         case 0x32: return kVK_ANSI_2; case 0x33: return kVK_ANSI_3;
         case 0x34: return kVK_ANSI_4; case 0x35: return kVK_ANSI_5;
         case 0x36: return kVK_ANSI_6; case 0x37: return kVK_ANSI_7;
         case 0x38: return kVK_ANSI_8; case 0x39: return kVK_ANSI_9;
+
+        // Function keys F1-F12
         case 0x70: return kVK_F1;  case 0x71: return kVK_F2;
         case 0x72: return kVK_F3;  case 0x73: return kVK_F4;
         case 0x74: return kVK_F5;  case 0x75: return kVK_F6;
         case 0x76: return kVK_F7;  case 0x77: return kVK_F8;
         case 0x78: return kVK_F9;  case 0x79: return kVK_F10;
         case 0x7A: return kVK_F11; case 0x7B: return kVK_F12;
-        case 0x25: return kVK_LeftArrow;  case 0x27: return kVK_RightArrow;
-        case 0x26: return kVK_UpArrow;    case 0x28: return kVK_DownArrow;
-        case 0x2E: return kVK_ForwardDelete;
+
+        // Arrow keys (handles both Windows VKs 0x25-0x28 and Qt Key raw offsets)
+        case 0x25: case 0x12: return kVK_LeftArrow;
+        case 0x26: case 0x13: return kVK_UpArrow;
+        case 0x27: case 0x14: return kVK_RightArrow;
+        case 0x28: case 0x15: return kVK_DownArrow;
+
+        // Delete & Backspace:
+        // On MacBook built-in keyboards, the delete key is kVK_Delete (0x33).
+        case 0x2E: case 0x07: return kVK_Delete;
+        case 0x08: case 0x03: return kVK_Delete;
+
+        // Common navigation & control keys
         case 0x20: return kVK_Space;
-        case 0x0D: return kVK_Return;
-        case 0x09: return kVK_Tab;
-        case 0x1B: return kVK_Escape;
-        case 0x24: return kVK_Home;
-        case 0x23: return kVK_End;
-        case 0x21: return kVK_PageUp;
-        case 0x22: return kVK_PageDown;
+        case 0x0D: case 0x04: case 0x05: return kVK_Return;
+        case 0x09: case 0x01: return kVK_Tab;
+        case 0x1B: case 0x00: return kVK_Escape;
+        case 0x24: case 0x10: return kVK_Home;
+        case 0x23: case 0x11: return kVK_End;
+        case 0x21: case 0x16: return kVK_PageUp;
+        case 0x22: case 0x17: return kVK_PageDown;
+
+        // Symbols & punctuation
+        case 0xBC: return kVK_ANSI_Comma;
+        case 0xBE: return kVK_ANSI_Period;
+        case 0xBF: return kVK_ANSI_Slash;
+        case 0xBA: return kVK_ANSI_Semicolon;
+        case 0xDE: return kVK_ANSI_Quote;
+        case 0xDB: return kVK_ANSI_LeftBracket;
+        case 0xDD: return kVK_ANSI_RightBracket;
+        case 0xBB: return kVK_ANSI_Equal;
+        case 0xBD: return kVK_ANSI_Minus;
+
         default:   return -1;
     }
 }
@@ -141,14 +171,14 @@ void HotkeyManager::registerAll() {
 #if defined(Q_OS_MAC) || defined(Q_OS_MACOS)
     s_macInstance = this;
 
-    // 1. Install Carbon event handler if not already installed
+    // 1. Install Carbon event handler on the event dispatcher target (catches hotkeys globally across all apps)
     if (!s_macEventHandler) {
         EventTypeSpec eventSpecs[2];
         eventSpecs[0].eventClass = kEventClassKeyboard;
         eventSpecs[0].eventKind = kEventHotKeyPressed;
         eventSpecs[1].eventClass = kEventClassKeyboard;
         eventSpecs[1].eventKind = kEventHotKeyReleased;
-        InstallApplicationEventHandler(NewEventHandlerUPP(macHotKeyHandler), 2, eventSpecs, NULL, &s_macEventHandler);
+        InstallEventHandler(GetEventDispatcherTarget(), NewEventHandlerUPP(macHotKeyHandler), 2, eventSpecs, NULL, &s_macEventHandler);
     }
 
     // 2. Unregister any existing hotkeys first to avoid duplicates
@@ -172,7 +202,7 @@ void HotkeyManager::registerAll() {
         hkId.id = (UInt32)vk;
         EventHotKeyRef ref = nullptr;
         UInt32 mods = (UInt32)(shiftKey | optionKey);
-        OSStatus err = RegisterEventHotKey((UInt32)macKc, mods, hkId, GetApplicationEventTarget(), 0, &ref);
+        OSStatus err = RegisterEventHotKey((UInt32)macKc, mods, hkId, GetEventDispatcherTarget(), 0, &ref);
         if (err == noErr && ref) {
             s_macHotkeys.push_back({vk, ref});
             registeredVks.insert(vk);
@@ -206,9 +236,19 @@ void HotkeyManager::registerAll() {
             hkId.id = 99999;
             EventHotKeyRef ref = nullptr;
             UInt32 panicMods = (UInt32)(cmdKey | shiftKey);
-            OSStatus err = RegisterEventHotKey((UInt32)panicMacKc, panicMods, hkId, GetApplicationEventTarget(), 0, &ref);
+            OSStatus err = RegisterEventHotKey((UInt32)panicMacKc, panicMods, hkId, GetEventDispatcherTarget(), 0, &ref);
             if (err == noErr && ref) {
                 s_macHotkeys.push_back({panicVk, ref});
+            }
+
+            // If panic key is Delete, also register kVK_ForwardDelete so both MacBook built-in Delete
+            // and external keyboard Delete keys trigger panic kill-switch reliably!
+            if (panicVk == 0x2E || panicVk == 0x08) {
+                EventHotKeyRef fwdRef = nullptr;
+                OSStatus fwdErr = RegisterEventHotKey((UInt32)kVK_ForwardDelete, panicMods, hkId, GetEventDispatcherTarget(), 0, &fwdRef);
+                if (fwdErr == noErr && fwdRef) {
+                    s_macHotkeys.push_back({panicVk, fwdRef});
+                }
             }
         }
     }

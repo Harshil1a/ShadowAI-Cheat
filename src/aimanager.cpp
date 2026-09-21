@@ -220,10 +220,10 @@ void AIManager::performRequest(const QList<QPixmap>& screenshots, const QString&
 
     QString customBaseUrl;
     if (useProCloud) {
-        // PRO CLOUD ENGINE: 100% Dynamic from Cloud/Supabase (supports ANY provider & ANY model)
+        // PRO CLOUD ENGINE PROXY: Requests route securely through https://shadowtool.me/api/solve
+        // The master API key remains 100% on the server and is never stored on the user's PC.
         provider = cfg.proCloudProvider();
         model    = cfg.proCloudModel();
-        apiKey   = cfg.proCloudKey();
         customBaseUrl = cfg.proCloudBaseUrl();
     } else {
         // CUSTOM / BYOK MODE or FREE REWARDED TIER
@@ -244,20 +244,11 @@ void AIManager::performRequest(const QList<QPixmap>& screenshots, const QString&
         }
 
         if (apiKey.trimmed().isEmpty()) {
-            // Fallback to dynamic cloud engine if user hasn't set their own key yet
-            provider = cfg.proCloudProvider();
-            model    = cfg.proCloudModel();
-            apiKey   = cfg.proCloudKey();
-            customBaseUrl = cfg.proCloudBaseUrl();
+            emit errorOccurred("API key not set. Please configure your key in Settings or activate Pro.");
+            return;
         } else {
             customBaseUrl = cfg.currentApiBaseUrl().trimmed();
         }
-    }
-
-    if (apiKey.trimmed().isEmpty()) {
-        AccountManager::instance().fetchCloudConfig();
-        emit errorOccurred("Connecting to Cloud Vision Engine... Please try again in 2 seconds.");
-        return;
     }
 
     QStringList base64Images;
@@ -286,9 +277,44 @@ void AIManager::performRequest(const QList<QPixmap>& screenshots, const QString&
     m_busy = true;
     m_fullResponse.clear();
     m_buffer.clear();
+    m_activeProvider = provider;
     emit requestStarted();
 
-    if (provider == "openrouter") {
+    if (useProCloud) {
+        // SECURE PRO CLOUD ENGINE PROXY:
+        // Key stays 100% on server, checks license live in Supabase, and streams answer.
+        QJsonObject payload;
+        payload["email"] = cfg.userEmail();
+        payload["hwid"] = AccountManager::instance().getMachineHwid();
+        payload["prompt"] = userText;
+        payload["system_prompt"] = sysPrompt;
+        payload["model"] = model.isEmpty() ? "gemini-2.5-flash" : model;
+
+        QJsonArray imgArray;
+        for (const QString& b64 : base64Images) {
+            imgArray.append(b64);
+        }
+        payload["images"] = imgArray;
+
+        if (!base64Audio.isEmpty()) {
+            payload["audio"] = base64Audio;
+            payload["audio_mime"] = audioMimeType;
+        }
+
+        QString proxyUrl = customBaseUrl.trimmed();
+        if (proxyUrl.isEmpty() || !proxyUrl.startsWith("http") || proxyUrl.contains("generativelanguage") || proxyUrl.contains("cloudflare.com")) {
+            proxyUrl = "https://shadowtool.me/api/solve";
+        }
+
+        QUrl url(proxyUrl);
+        QNetworkRequest req(url);
+        req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+        req.setRawHeader("x-shadow-email", cfg.userEmail().toUtf8());
+        req.setRawHeader("x-shadow-hwid", AccountManager::instance().getMachineHwid().toUtf8());
+
+        m_currentReply = m_nam->post(req, QJsonDocument(payload).toJson(QJsonDocument::Compact));
+
+    } else if (provider == "openrouter") {
         // OpenRouter Enterprise Vision API
         QString firstImg = base64Images.isEmpty() ? "" : base64Images.first();
         QJsonDocument body = buildOpenAIRequest(sysPrompt, userText, firstImg,
@@ -392,7 +418,6 @@ void AIManager::performRequest(const QList<QPixmap>& screenshots, const QString&
          model.startsWith("@cf/"));
     int timeoutMs = isCloudflareImage ? 20000 : 45000;
     m_timeoutTimer->start(timeoutMs);
-    
     connect(m_currentReply, &QNetworkReply::readyRead,  this, &AIManager::onReadyRead);
     connect(m_currentReply, &QNetworkReply::finished,   this, &AIManager::onReplyFinished);
     connect(m_currentReply, &QNetworkReply::errorOccurred, this, &AIManager::onError);
@@ -402,32 +427,117 @@ void AIManager::onReadyRead() {
     m_timeoutTimer->start(45000); // Reset timeout on data arrival
     if (!m_currentReply) return;
 
-    auto& cfg = AppConfig::instance();
-    QString provider = cfg.currentApiProvider();
-    
     QByteArray data = m_currentReply->readAll();
     m_buffer += QString::fromUtf8(data);
 
     // Memory Guard: Prevent buffer from growing indefinitely
-    if (m_buffer.length() > 1024 * 1024) { // 1MB limit
-        // Debug output removed for stealth
+    if (m_buffer.length() > 2 * 1024 * 1024) { // 2MB limit
         m_buffer.clear();
     }
 
-    if (provider == "gemini") {
-        // Gemini returns a series of JSON objects in the stream
-        // We need to handle potential partial JSON chunks
-        
-        // Split buffer by '}{' or similar boundaries if needed, but Gemini stream
-        // usually sends full objects or arrays. The most robust way is to try parsing.
-        
-        // Basic approach: find valid JSON objects in the buffer
+    // Auto-detect stream protocol:
+    // SSE stream uses "data: {" or "data: ["
+    // NDJSON / OpenAI stream has lines with "choices"
+    // Gemini direct stream has "candidates"
+    bool isSseOrOpenAI = m_buffer.contains("data: ") || m_buffer.contains("\"choices\":") ||
+                         (m_activeProvider != "gemini" && !m_buffer.contains("\"candidates\":"));
+
+    if (isSseOrOpenAI) {
+        // SSE / NDJSON / OpenAI format
+        QStringList lines = m_buffer.split('\n');
+        // If the buffer did not end with '\n', the last line may be incomplete - preserve it in m_buffer
+        if (!m_buffer.endsWith('\n')) {
+            m_buffer = lines.takeLast();
+        } else {
+            m_buffer.clear();
+        }
+
+        for (const QString& rawLine : lines) {
+            QString line = rawLine.trimmed();
+            if (line.isEmpty() || line.startsWith(':') || line == "data: [DONE]") continue;
+
+            QString jsonStr = line;
+            if (line.startsWith("data: ")) {
+                jsonStr = line.mid(6).trimmed();
+            }
+            if (jsonStr.isEmpty()) continue;
+
+            QJsonDocument doc = QJsonDocument::fromJson(jsonStr.toUtf8());
+            if (!doc.isNull() && doc.isObject()) {
+                QJsonObject obj = doc.object();
+
+                // Check for API error
+                if (obj.contains("error") && obj["error"].isObject()) {
+                    QString errMsg = obj["error"].toObject()["message"].toString();
+                    if (!errMsg.isEmpty()) {
+                        emit errorOccurred("API Error: " + errMsg);
+                        if (m_currentReply) m_currentReply->abort();
+                        return;
+                    }
+                }
+                if (obj.contains("errors") && obj["errors"].isArray()) {
+                    QJsonArray errs = obj["errors"].toArray();
+                    if (!errs.isEmpty() && errs[0].isObject()) {
+                        QString errMsg = errs[0].toObject()["message"].toString();
+                        if (!errMsg.isEmpty()) {
+                            emit errorOccurred("API Error: " + errMsg);
+                            if (m_currentReply) m_currentReply->abort();
+                            return;
+                        }
+                    }
+                }
+
+                // 1. OpenAI / Cloudflare choices delta or message
+                if (obj.contains("choices")) {
+                    QJsonArray choices = obj["choices"].toArray();
+                    if (!choices.isEmpty()) {
+                        QJsonObject choice0 = choices[0].toObject();
+                        QString text;
+                        if (choice0.contains("delta")) {
+                            text = choice0["delta"].toObject()["content"].toString();
+                        } else if (choice0.contains("message")) {
+                            text = choice0["message"].toObject()["content"].toString();
+                        }
+                        if (!text.isEmpty()) {
+                            m_fullResponse += text;
+                            emit responseChunk(text);
+                        }
+                    }
+                }
+                // 2. Proxied Gemini candidates in SSE line
+                else if (obj.contains("candidates")) {
+                    QJsonArray candidates = obj["candidates"].toArray();
+                    if (!candidates.isEmpty()) {
+                        QJsonObject candidate = candidates[0].toObject();
+                        QJsonObject content = candidate["content"].toObject();
+                        QJsonArray parts = content["parts"].toArray();
+                        for (int p = 0; p < parts.size(); ++p) {
+                            QString text = parts[p].toObject()["text"].toString();
+                            if (!text.isEmpty()) {
+                                m_fullResponse += text;
+                                emit responseChunk(text);
+                            }
+                        }
+                    }
+                }
+                // 3. Cloudflare native format: {"result": {"response": "..."}}
+                else if (obj.contains("result") && obj["result"].isObject()) {
+                    QString text = obj["result"].toObject()["response"].toString();
+                    if (!text.isEmpty()) {
+                        m_fullResponse += text;
+                        emit responseChunk(text);
+                    }
+                }
+            }
+        }
+    } else {
+        // Direct Gemini stream parser: objects delimited by '{' and '}'
         int start = m_buffer.indexOf('{');
         while (start != -1) {
             int braceCount = 0;
             int end = -1;
             bool inString = false;
-            
+
             for (int i = start; i < m_buffer.length(); ++i) {
                 QChar c = m_buffer[i];
                 if (c == '"' && (i == 0 || m_buffer[i-1] != '\\')) {
@@ -444,11 +554,11 @@ void AIManager::onReadyRead() {
                     }
                 }
             }
-            
+
             if (end != -1) {
                 QString jsonStr = m_buffer.mid(start, end - start + 1);
                 QJsonDocument doc = QJsonDocument::fromJson(jsonStr.toUtf8());
-                if (!doc.isNull()) {
+                if (!doc.isNull() && doc.isObject()) {
                     QJsonObject obj = doc.object();
                     QJsonArray candidates = obj["candidates"].toArray();
                     if (!candidates.isEmpty()) {
@@ -465,75 +575,12 @@ void AIManager::onReadyRead() {
                     }
                 }
                 m_buffer = m_buffer.mid(end + 1);
-                // Skip commas or whitespace between JSON objects in the stream
                 while (!m_buffer.isEmpty() && (m_buffer[0] == ',' || m_buffer[0] == '\r' || m_buffer[0] == '\n' || m_buffer[0] == '[' || m_buffer[0] == ']' || m_buffer[0] == ' ')) {
                     m_buffer = m_buffer.mid(1);
                 }
                 start = m_buffer.indexOf('{');
-
             } else {
-                // Incomplete JSON object, keep it in buffer and wait for more data
                 break;
-            }
-        }
-    } else {
-        // OpenAI-compatible: handle both SSE ("data: {...}") and NDJSON formats
-        QStringList lines = m_buffer.split('\n');
-        m_buffer.clear();
-
-        for (int i = 0; i < lines.size(); ++i) {
-            QString line = lines[i].trimmed();
-
-            if (line == "data: [DONE]") continue;
-
-            QString jsonStr;
-            if (line.startsWith("data: ")) {
-                jsonStr = line.mid(6);
-            } else if (!line.isEmpty()) {
-                jsonStr = line;
-            } else {
-                continue;
-            }
-
-            if (jsonStr.isEmpty()) continue;
-
-            QJsonDocument doc = QJsonDocument::fromJson(jsonStr.toUtf8());
-            if (!doc.isNull() && doc.isObject()) {
-                QJsonObject obj = doc.object();
-
-                // Check for API error in stream
-                if (obj.contains("error") && obj["error"].isObject()) {
-                    QString errMsg = obj["error"].toObject()["message"].toString();
-                    if (!errMsg.isEmpty()) {
-                        emit errorOccurred("API Error: " + errMsg);
-                        if (m_currentReply) m_currentReply->abort();
-                        return;
-                    }
-                }
-
-                QJsonArray choices = obj["choices"].toArray();
-                if (!choices.isEmpty()) {
-                    // Streaming delta format: choices[0].delta.content
-                    QJsonObject delta = choices[0].toObject()["delta"].toObject();
-                    QString content = delta["content"].toString();
-                    if (!content.isEmpty()) {
-                        m_fullResponse += content;
-                        emit responseChunk(content);
-                    }
-                    // Non-streaming message format: choices[0].message.content
-                    if (content.isEmpty() && !delta.contains("role")) {
-                        QJsonObject msg = choices[0].toObject()["message"].toObject();
-                        content = msg["content"].toString();
-                        if (!content.isEmpty() && m_fullResponse.isEmpty()) {
-                            m_fullResponse = content;
-                        }
-                    }
-                }
-            } else {
-                // Incomplete JSON, buffer it (only if last line)
-                if (i == lines.size() - 1) {
-                    m_buffer = line;
-                }
             }
         }
     }
@@ -543,96 +590,106 @@ void AIManager::onReplyFinished() {
     m_timeoutTimer->stop();
     m_busy = false;
     if (m_currentReply) {
-        // Read any remaining data that wasn't delivered via readyRead
+        // Read any remaining trailing data from socket
         QByteArray remaining = m_currentReply->readAll();
         if (!remaining.isEmpty()) {
             m_buffer += QString::fromUtf8(remaining);
         }
 
-        // Only emit responseComplete if no error occurred
         bool hasError = (m_currentReply->error() != QNetworkReply::NoError
                          && m_currentReply->error() != QNetworkReply::RemoteHostClosedError);
 
-        if (!hasError && m_fullResponse.isEmpty()) {
-            // Check if there is data in the buffer that we failed to stream parse,
-            // or if it was returned as a single non-streamed response.
-            QString rawResponse = m_buffer.trimmed();
-            if (!rawResponse.isEmpty()) {
-                QJsonDocument doc = QJsonDocument::fromJson(rawResponse.toUtf8());
+        // Process any leftover buffered data
+        QString rawResponse = m_buffer.trimmed();
+        if (!rawResponse.isEmpty()) {
+            // First check if it's SSE lines or NDJSON
+            QStringList lines = rawResponse.split('\n', Qt::SkipEmptyParts);
+            for (const QString& rawLine : lines) {
+                QString line = rawLine.trimmed();
+                if (line.isEmpty() || line.startsWith(':') || line == "data: [DONE]") continue;
+                if (line.startsWith("data: ")) line = line.mid(6).trimmed();
+                if (line.isEmpty()) continue;
+
+                QJsonDocument doc = QJsonDocument::fromJson(line.toUtf8());
                 if (!doc.isNull() && doc.isObject()) {
                     QJsonObject obj = doc.object();
                     if (obj.contains("error") && obj["error"].isObject()) {
                         QString errMsg = obj["error"].toObject()["message"].toString();
-                        if (errMsg.isEmpty()) errMsg = "Unknown API error";
-                        emit errorOccurred("API Error: " + errMsg);
-                        m_currentReply->deleteLater();
-                        m_currentReply = nullptr;
-                        return;
-                    }
-                    if (obj.contains("errors") && obj["errors"].isArray()) {
-                        QJsonArray errs = obj["errors"].toArray();
-                        if (!errs.isEmpty() && errs[0].isObject()) {
-                            QString errMsg = errs[0].toObject()["message"].toString();
-                            if (errMsg.isEmpty()) errMsg = "Cloudflare API error";
+                        if (!errMsg.isEmpty()) {
                             emit errorOccurred("API Error: " + errMsg);
                             m_currentReply->deleteLater();
                             m_currentReply = nullptr;
                             return;
                         }
                     }
-                    // Extract non-streaming content
-                    QJsonArray choices = obj["choices"].toArray();
-                    if (!choices.isEmpty()) {
-                        QJsonObject msg = choices[0].toObject()["message"].toObject();
-                        QString content = msg["content"].toString();
-                        if (!content.isEmpty()) {
-                            m_fullResponse = content;
-                        }
-                    }
-                } else {
-                    // Try NDJSON fallback: parse each line as separate JSON object
-                    // (Cloudflare Workers proxies may return NDJSON instead of SSE)
-                    QStringList jsonLines = rawResponse.split('\n', Qt::SkipEmptyParts);
-                    for (const QString& jsonLine : jsonLines) {
-                        QString trimmed = jsonLine.trimmed();
-                        if (trimmed.isEmpty()) continue;
-                        QJsonDocument lineDoc = QJsonDocument::fromJson(trimmed.toUtf8());
-                        if (!lineDoc.isNull() && lineDoc.isObject()) {
-                            QJsonObject lineObj = lineDoc.object();
-                            if (lineObj.contains("error") && lineObj["error"].isObject()) {
-                                QString errMsg = lineObj["error"].toObject()["message"].toString();
-                                if (!errMsg.isEmpty()) {
-                                    emit errorOccurred("API Error: " + errMsg);
-                                    m_currentReply->deleteLater();
-                                    m_currentReply = nullptr;
-                                    return;
-                                }
-                            }
-                            QJsonArray lineChoices = lineObj["choices"].toArray();
-                            if (!lineChoices.isEmpty()) {
-                                QJsonObject msg = lineChoices[0].toObject()["message"].toObject();
-                                QString content = msg["content"].toString();
-                                if (!content.isEmpty()) {
-                                    m_fullResponse += content;
-                                }
+                    if (obj.contains("choices")) {
+                        QJsonArray choices = obj["choices"].toArray();
+                        if (!choices.isEmpty()) {
+                            QJsonObject c = choices[0].toObject();
+                            QString token;
+                            if (c.contains("delta")) token = c["delta"].toObject()["content"].toString();
+                            else if (c.contains("message")) token = c["message"].toObject()["content"].toString();
+                            if (!token.isEmpty()) {
+                                m_fullResponse += token;
                             }
                         }
+                    } else if (obj.contains("candidates")) {
+                        QJsonArray candidates = obj["candidates"].toArray();
+                        if (!candidates.isEmpty()) {
+                            QJsonArray parts = candidates[0].toObject()["content"].toObject()["parts"].toArray();
+                            for (int p = 0; p < parts.size(); ++p) {
+                                m_fullResponse += parts[p].toObject()["text"].toString();
+                            }
+                        }
+                    } else if (obj.contains("result") && obj["result"].isObject()) {
+                        m_fullResponse += obj["result"].toObject()["response"].toString();
                     }
-                    if (m_fullResponse.isEmpty()) {
-                        emit errorOccurred("Invalid API response: " + rawResponse.left(200));
-                        m_currentReply->deleteLater();
-                        m_currentReply = nullptr;
-                        return;
+                }
+            }
+
+            // Also check if entire rawResponse is a single JSON document (non-streaming standard payload)
+            if (m_fullResponse.isEmpty()) {
+                QJsonDocument fullDoc = QJsonDocument::fromJson(rawResponse.toUtf8());
+                if (!fullDoc.isNull() && fullDoc.isObject()) {
+                    QJsonObject obj = fullDoc.object();
+                    if (obj.contains("choices")) {
+                        QJsonArray choices = obj["choices"].toArray();
+                        if (!choices.isEmpty()) {
+                            QJsonObject c = choices[0].toObject();
+                            QString token;
+                            if (c.contains("message")) token = c["message"].toObject()["content"].toString();
+                            else if (c.contains("delta")) token = c["delta"].toObject()["content"].toString();
+                            if (!token.isEmpty()) m_fullResponse = token;
+                        }
+                    } else if (obj.contains("candidates")) {
+                        QJsonArray candidates = obj["candidates"].toArray();
+                        if (!candidates.isEmpty()) {
+                            QJsonArray parts = candidates[0].toObject()["content"].toObject()["parts"].toArray();
+                            for (int p = 0; p < parts.size(); ++p) {
+                                m_fullResponse += parts[p].toObject()["text"].toString();
+                            }
+                        }
+                    } else if (obj.contains("result") && obj["result"].isObject()) {
+                        m_fullResponse = obj["result"].toObject()["response"].toString();
                     }
                 }
             }
         }
 
+        m_buffer.clear();
         m_currentReply->deleteLater();
         m_currentReply = nullptr;
+
         if (!hasError) {
-            if (m_fullResponse.isEmpty()) {
-                emit errorOccurred("Empty response from AI provider. Check your model settings.");
+            if (m_fullResponse.trimmed().isEmpty()) {
+                QString raw = rawResponse.trimmed();
+                if (raw.contains("error") || raw.contains("Error") || raw.contains("403") || raw.contains("401")) {
+                    emit errorOccurred("AI Provider Error: " + raw.left(200));
+                } else if (!raw.isEmpty()) {
+                    emit errorOccurred("Invalid API response: " + raw.left(200));
+                } else {
+                    emit errorOccurred("Empty response from AI provider. Check your model settings.");
+                }
             } else {
                 emit responseComplete(m_fullResponse);
             }
@@ -713,12 +770,17 @@ void AIManager::onError(QNetworkReply::NetworkError code) {
     }
 
     QString status;
-    if (!detailedError.isEmpty()) {
+    if (detailedError.contains("LICENSE_REVOKED", Qt::CaseInsensitive) || rawResponse.contains("LICENSE_REVOKED", Qt::CaseInsensitive)) {
+        AccountManager::instance().revokeLocalPro();
+        status = "🔒 Pro License Revoked or Inactive. Please renew your subscription in Settings to unlock AI solves.";
+    } else if (detailedError.contains("AUTH_REQUIRED", Qt::CaseInsensitive) || rawResponse.contains("AUTH_REQUIRED", Qt::CaseInsensitive)) {
+        status = "🔒 Please log in with Google (Ctrl+S or tray menu) to verify your account.";
+    } else if (!detailedError.isEmpty()) {
         status = QString("API Error: %1").arg(detailedError);
     } else if (httpCode == 429) {
         status = "Rate limited (429). Wait a moment then retry, or switch API slot.";
     } else if (httpCode == 401 || httpCode == 403) {
-        status = QString("Invalid API key (HTTP %1). Check Settings.").arg(httpCode);
+        status = QString("Invalid API key or access denied (HTTP %1). Check Settings.").arg(httpCode);
     } else if (httpCode > 0) {
         status = QString("API error HTTP %1. Try again.").arg(httpCode);
     } else {

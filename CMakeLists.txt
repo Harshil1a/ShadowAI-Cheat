@@ -98,13 +98,17 @@ if(WIN32)
     )
 endif()
 
-# macOS-specific frameworks for global hotkeys (Carbon kVK_*, ObjC NSEvent)
+# macOS-specific frameworks for global hotkeys, Apple Vision OCR, and Cocoa window management
 if(APPLE)
     target_link_libraries(ShadowAI PRIVATE
         "-framework Carbon"
         "-framework AppKit"
+        "-framework Vision"
+        "-framework CoreGraphics"
+        "-framework Foundation"
         objc
     )
+    set_source_files_properties(src/ocr.cpp src/overlaywindow.cpp PROPERTIES COMPILE_FLAGS "-x objective-c++")
 endif()
 
 target_include_directories(ShadowAI PRIVATE src)

@@ -54,18 +54,40 @@ void KeyCaptureEdit::keyPressEvent(QKeyEvent* event) {
         return;
     }
 
-    // Convert Qt key to Windows VK
-    // Simple mapping for letters and digits
+    // Convert Qt key to standard Virtual Key code
     if (key >= Qt::Key_A && key <= Qt::Key_Z) {
-        m_vk = key; // Qt letters match ASCII / VK
+        m_vk = key;
     } else if (key >= Qt::Key_0 && key <= Qt::Key_9) {
         m_vk = key;
+    } else if (key >= Qt::Key_F1 && key <= Qt::Key_F12) {
+        m_vk = 0x70 + (key - Qt::Key_F1);
     } else {
-        // Function keys
-        if (key >= Qt::Key_F1 && key <= Qt::Key_F12) {
-            m_vk = 0x70 + (key - Qt::Key_F1);
-        } else {
-            m_vk = key & 0xFF;
+        switch (key) {
+            case Qt::Key_Left:        m_vk = 0x25; break; // VK_LEFT
+            case Qt::Key_Up:          m_vk = 0x26; break; // VK_UP
+            case Qt::Key_Right:       m_vk = 0x27; break; // VK_RIGHT
+            case Qt::Key_Down:        m_vk = 0x28; break; // VK_DOWN
+            case Qt::Key_Space:       m_vk = 0x20; break;
+            case Qt::Key_Return:
+            case Qt::Key_Enter:       m_vk = 0x0D; break;
+            case Qt::Key_Escape:      m_vk = 0x1B; break;
+            case Qt::Key_Backspace:   m_vk = 0x08; break;
+            case Qt::Key_Delete:      m_vk = 0x2E; break; // VK_DELETE
+            case Qt::Key_Tab:         m_vk = 0x09; break;
+            case Qt::Key_Home:        m_vk = 0x24; break;
+            case Qt::Key_End:         m_vk = 0x23; break;
+            case Qt::Key_PageUp:      m_vk = 0x21; break;
+            case Qt::Key_PageDown:    m_vk = 0x22; break;
+            case Qt::Key_Comma:       m_vk = 0xBC; break;
+            case Qt::Key_Period:      m_vk = 0xBE; break;
+            case Qt::Key_Slash:       m_vk = 0xBF; break;
+            case Qt::Key_Semicolon:   m_vk = 0xBA; break;
+            case Qt::Key_Apostrophe:  m_vk = 0xDE; break;
+            case Qt::Key_BracketLeft: m_vk = 0xDB; break;
+            case Qt::Key_BracketRight:m_vk = 0xDD; break;
+            case Qt::Key_Equal:       m_vk = 0xBB; break;
+            case Qt::Key_Minus:       m_vk = 0xBD; break;
+            default:                  m_vk = key & 0xFF; break;
         }
     }
 
@@ -78,11 +100,20 @@ QString KeyCaptureEdit::vkToName(int vk) {
     if (vk >= 0x30 && vk <= 0x39) return QString(QChar(vk));
     if (vk >= 0x70 && vk <= 0x7B) return QString("F%1").arg(vk - 0x6F);
     switch (vk) {
+        case 0x25: return "Left";
+        case 0x26: return "Up";
+        case 0x27: return "Right";
+        case 0x28: return "Down";
+        case 0x2E: return "Del";
         case 0x20: return "Space";
         case 0x0D: return "Enter";
         case 0x1B: return "Esc";
         case 0x08: return "Backspace";
         case 0x09: return "Tab";
+        case 0x24: return "Home";
+        case 0x23: return "End";
+        case 0x21: return "PageUp";
+        case 0x22: return "PageDown";
         case 0xBC: return ",";
         case 0xBE: return ".";
         case 0xBF: return "/";

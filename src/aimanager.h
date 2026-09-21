@@ -48,6 +48,7 @@ private:
     bool m_transcribing = false;               // for intermediate transcriptions
     QString m_buffer;           // for streaming SSE buffer
     QString m_fullResponse;
+    QString m_activeProvider;   // provider of the currently active in-flight request
 
     // --- Key Rotation State ---
     QStringList m_apiKeys;

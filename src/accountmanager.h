@@ -24,6 +24,7 @@ public:
     void activateLicenseKey(const QString& key);
     void syncAccountStatus();
     void fetchCloudConfig();
+    void revokeLocalPro();
     QString getMachineHwid() const;
 
     // Rewarded Free Solve Credits (LootLabs)

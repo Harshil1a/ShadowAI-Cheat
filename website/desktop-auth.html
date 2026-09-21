@@ -382,21 +382,8 @@
         }
       }
 
-      let cloudKey = '';
-      try {
-        const sysRes = await fetch(`${SUPABASE_URL}/rest/v1/licenses?customer_email=eq.system@shadowai.local&select=*`, {
-          headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-        });
-        const sysRows = await sysRes.json();
-        if (Array.isArray(sysRows) && sysRows.length > 0) {
-          cloudKey = sysRows[0].bound_hwid || '';
-        }
-      } catch(e) {
-        console.warn('Could not fetch cloud key from Supabase:', e);
-      }
-
-      // Relay session to desktop app
-      const callbackUrl = `http://127.0.0.1:${port}/callback?email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&avatar=${encodeURIComponent(avatar)}&is_pro=${isPro ? '1' : '0'}&license_key=${encodeURIComponent(licenseKey)}&cloud_key=${encodeURIComponent(cloudKey)}`;
+      // Relay session to desktop app (Master Cloud Key remains protected on server proxy)
+      const callbackUrl = `http://127.0.0.1:${port}/callback?email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&avatar=${encodeURIComponent(avatar)}&is_pro=${isPro ? '1' : '0'}&license_key=${encodeURIComponent(licenseKey)}`;
 
       statusMsg.innerHTML = '<span class="spinner"></span> Connecting to running ShadowAI Desktop...';
 
