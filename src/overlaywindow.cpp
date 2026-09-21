@@ -1096,7 +1096,7 @@ void OverlayWindow::refreshKeyBadges() {
   m_keysLayout2->addWidget(makeKey(
       panicPfx + vkToKeyName(cfg.hotkeyPanic()), "Panic Kill", true));
 
-  if (m_bottomHintLabel) {
+  if (m_bottomHintLabel && !m_cleanViewActive) {
     m_bottomHintLabel->setText(QString("[%1%2] All Keys in Chat  |  [%1%3] Clean View")
                                    .arg(pfx)
                                    .arg(vkToKeyName(cfg.hotkeyToggleBadges()))
@@ -1844,14 +1844,41 @@ void OverlayWindow::toggleBadgesVisibility() {
 }
 
 void OverlayWindow::toggleHideStrip() {
-  if (!m_helpGroupsContainer)
-    return;
-  bool currentlyVisible = m_helpGroupsContainer->isVisible();
-  m_helpGroupsContainer->setVisible(!currentlyVisible);
-  if (m_bottomHintLabel)
-    m_bottomHintLabel->setVisible(!currentlyVisible);
-  showStatusMessage(currentlyVisible ? "Key strip hidden — clean view"
-                                     : "Key strip restored");
+  m_cleanViewActive = !m_cleanViewActive;
+
+  // Hide or restore screenshot area and divider
+  if (m_screenshotFrame)
+    m_screenshotFrame->setVisible(!m_cleanViewActive);
+  if (m_divider)
+    m_divider->setVisible(!m_cleanViewActive);
+
+  // Hide or restore full key badges
+  if (m_helpGroupsContainer)
+    m_helpGroupsContainer->setVisible(!m_cleanViewActive);
+
+  // When clean view is active, show compact key bar at the bottom so user sees answer and key to use again
+  if (m_bottomHintLabel) {
+    if (m_cleanViewActive) {
+      auto &cfg = AppConfig::instance();
+      QString pfx = modKeyPrefix();
+      m_bottomHintLabel->setText(
+          QString("<span style='color:#00e5ff; font-weight:bold;'>⚡ [%1%2]</span> Snap &nbsp;|&nbsp; "
+                  "<span style='color:#00e5ff; font-weight:bold;'>[%1%3]</span> Solve &nbsp;|&nbsp; "
+                  "<span style='color:#00e5ff; font-weight:bold;'>[%1%4]</span> Hide &nbsp;|&nbsp; "
+                  "<span style='color:#ffaa00; font-weight:bold;'>[%1%5]</span> Restore View")
+              .arg(pfx)
+              .arg(vkToKeyName(cfg.hotkeyScreenshot()))
+              .arg(vkToKeyName(cfg.hotkeyGetAnswer()))
+              .arg(vkToKeyName(cfg.hotkeyToggle()))
+              .arg(vkToKeyName(cfg.hotkeyHideStrip())));
+      m_bottomHintLabel->setVisible(true);
+    } else {
+      m_bottomHintLabel->setVisible(false);
+    }
+  }
+
+  showStatusMessage(m_cleanViewActive ? "Clean view: screenshots & key strip hidden"
+                                     : "Full view restored");
   update();
 }
 

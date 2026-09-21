@@ -2,6 +2,7 @@
 #include "appconfig.h"
 #include "accountmanager.h"
 #include "screencapture.h"
+#include "ocr.h"
 #include <QNetworkRequest>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -270,9 +271,20 @@ void AIManager::performRequest(const QList<QPixmap>& screenshots, const QString&
     // Use the user's custom system prompt from settings.
     // If no extra prompt is given, just pass a neutral message so the AI
     // follows the system prompt (set in Settings) instead of a hardcoded fallback.
-    QString userText = extraPrompt.isEmpty()
-        ? "Analyze the screenshot and respond according to your instructions."
-        : extraPrompt;
+    QString userText = extraPrompt;
+    if (!screenshots.isEmpty()) {
+        QString ocrText = OcrExtractor::extractText(screenshots).trimmed();
+        if (!ocrText.isEmpty()) {
+            if (userText.isEmpty()) {
+                userText = "Here is the exact question and text extracted from the screen:\n\n" + ocrText + "\n\nProvide the complete, optimal answer and solution according to your instructions.";
+            } else {
+                userText += "\n\n[Captured Screen Text]:\n" + ocrText;
+            }
+        }
+    }
+    if (userText.isEmpty()) {
+        userText = "Analyze the screenshot and respond according to your instructions.";
+    }
 
     m_busy = true;
     m_fullResponse.clear();
@@ -288,7 +300,9 @@ void AIManager::performRequest(const QList<QPixmap>& screenshots, const QString&
         payload["hwid"] = AccountManager::instance().getMachineHwid();
         payload["prompt"] = userText;
         payload["system_prompt"] = sysPrompt;
-        payload["model"] = model.isEmpty() ? "gemini-2.5-flash" : model;
+        if (!model.isEmpty() && model != "gemini-2.5-flash") {
+            payload["model"] = model;
+        }
 
         QJsonArray imgArray;
         for (const QString& b64 : base64Images) {
@@ -683,10 +697,24 @@ void AIManager::onReplyFinished() {
         if (!hasError) {
             if (m_fullResponse.trimmed().isEmpty()) {
                 QString raw = rawResponse.trimmed();
-                if (raw.contains("error") || raw.contains("Error") || raw.contains("403") || raw.contains("401")) {
+                QString cleanErr;
+                QJsonDocument doc = QJsonDocument::fromJson(raw.toUtf8());
+                if (!doc.isNull() && doc.isObject()) {
+                    QJsonObject obj = doc.object();
+                    if (obj.contains("message") && obj["message"].isString()) {
+                        cleanErr = obj["message"].toString();
+                    } else if (obj.contains("error") && obj["error"].isObject()) {
+                        cleanErr = obj["error"].toObject()["message"].toString();
+                    } else if (obj.contains("error") && obj["error"].isString()) {
+                        cleanErr = obj["error"].toString();
+                    }
+                }
+                if (!cleanErr.isEmpty()) {
+                    emit errorOccurred("AI Provider Error: " + cleanErr.left(200));
+                } else if (raw.contains("error") || raw.contains("Error") || raw.contains("403") || raw.contains("401")) {
                     emit errorOccurred("AI Provider Error: " + raw.left(200));
                 } else if (!raw.isEmpty()) {
-                    emit errorOccurred("Invalid API response: " + raw.left(200));
+                    emit errorOccurred("AI Provider Error: " + raw.left(200));
                 } else {
                     emit errorOccurred("Empty response from AI provider. Check your model settings.");
                 }
@@ -759,7 +787,22 @@ void AIManager::onError(QNetworkReply::NetworkError code) {
                     detailedError = errs[0].toObject()["message"].toString();
                 }
             } else if (obj.contains("message") && obj["message"].isString()) {
-                detailedError = obj["message"].toString();
+                QString m = obj["message"].toString();
+                QJsonDocument nestedDoc = QJsonDocument::fromJson(m.toUtf8());
+                if (!nestedDoc.isNull() && nestedDoc.isObject()) {
+                    QJsonObject nestedObj = nestedDoc.object();
+                    if (nestedObj.contains("errors") && nestedObj["errors"].isArray()) {
+                        QJsonArray nestedErrs = nestedObj["errors"].toArray();
+                        if (!nestedErrs.isEmpty() && nestedErrs[0].isObject()) {
+                            detailedError = nestedErrs[0].toObject()["message"].toString();
+                        }
+                    } else if (nestedObj.contains("error") && nestedObj["error"].isObject()) {
+                        detailedError = nestedObj["error"].toObject()["message"].toString();
+                    }
+                }
+                if (detailedError.isEmpty()) {
+                    detailedError = m;
+                }
             }
         }
     }

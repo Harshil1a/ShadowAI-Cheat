@@ -101,6 +101,7 @@ private:
     QFrame*       m_divider;
 
     // State
+    bool     m_cleanViewActive = false;
     bool     m_visible      = false;
     bool     m_dragging     = false;
     QPoint   m_dragOffset;

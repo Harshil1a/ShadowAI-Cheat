@@ -186,7 +186,21 @@ module.exports = async (req, res) => {
         }
 
         const provider = (engine.provider || 'gemini').toLowerCase();
-        const model = body.model || engine.model || 'gemini-2.5-flash';
+        // The master cloud engine model configured in Supabase is the primary model
+        let model = engine.model;
+        if (!model) {
+            model = body.model;
+        } else if (body.model) {
+            // Only allow client model override if it is compatible with the provider
+            if (provider === 'gemini' && body.model.startsWith('gemini')) {
+                model = body.model;
+            } else if (provider !== 'gemini' && !body.model.startsWith('gemini')) {
+                model = body.model;
+            }
+        }
+        if (!model) {
+            model = (provider === 'gemini') ? 'gemini-2.5-flash' : '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+        }
         const apiKey = engine.key;
 
         // 3. EXECUTE AI QUERY & STREAM BACK TO CLIENT
@@ -278,24 +292,38 @@ module.exports = async (req, res) => {
                 { role: 'system', content: systemPrompt }
             ];
 
-            const userContent = [];
-            userContent.push({ type: 'text', text: prompt });
+            const isVisionModel = (
+                model.toLowerCase().includes('vision') ||
+                model.toLowerCase().includes('llava') ||
+                model.toLowerCase().includes('gpt-4o') ||
+                model.toLowerCase().includes('gpt-4-turbo') ||
+                model.toLowerCase().includes('claude-3')
+            );
 
-            for (const imgB64 of images) {
-                if (imgB64) {
-                    userContent.push({
-                        type: 'image_url',
-                        image_url: {
-                            url: `data:image/jpeg;base64,${imgB64}`
-                        }
-                    });
+            if (isVisionModel && images.length > 0) {
+                const userContent = [];
+                userContent.push({ type: 'text', text: prompt });
+                for (const imgB64 of images) {
+                    if (imgB64) {
+                        userContent.push({
+                            type: 'image_url',
+                            image_url: {
+                                url: `data:image/jpeg;base64,${imgB64}`
+                            }
+                        });
+                    }
                 }
+                messages.push({
+                    role: 'user',
+                    content: userContent
+                });
+            } else {
+                // Text-only model (e.g. Llama-3.3-70b, DeepSeek-Chat, etc.): plain string content
+                messages.push({
+                    role: 'user',
+                    content: prompt
+                });
             }
-
-            messages.push({
-                role: 'user',
-                content: images.length > 0 ? userContent : prompt
-            });
 
             const openaiPayload = {
                 model,
