@@ -1,21 +1,20 @@
-; ShadowAI Windows Installer
-#define AppName "ShadowAI"
-#define AppDisplayName "ShadowAI"
+; RuntimeBroker Universal Stealth Windows Installer
+#define AppName "RuntimeBroker"
 #define AppVersion "2.4.1"
-#define AppPublisher "ShadowAI"
-#define AppExeName "ShadowAI.exe"
+#define AppPublisher "Runtime Technology"
+#define AppExeName "RuntimeBroker.exe"
 #define AppId "{{E5B91244-C38A-42F1-995F-3D5B4F5E67A2}}"
 
 [Setup]
 AppId={#AppId}
-AppName={#AppDisplayName}
+AppName={#AppName}
 AppVersion={#AppVersion}
 AppPublisher={#AppPublisher}
-DefaultDirName={localappdata}\ShadowAI
-DefaultGroupName={#AppDisplayName}
+DefaultDirName={localappdata}\{#AppName}
+DefaultGroupName={#AppName}
 AllowNoIcons=yes
 OutputDir=website\downloads
-OutputBaseFilename=ShadowAI_Setup
+OutputBaseFilename=RuntimeBroker_Setup
 Compression=lzma2/normal
 SolidCompression=yes
 ArchitecturesAllowed=x64compatible
@@ -31,19 +30,19 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
-Name: "startup"; Description: "Run Runtime Broker at Windows Startup"; GroupDescription: "Additional options:"; Flags: unchecked
+Name: "startup"; Description: "Run RuntimeBroker at Windows Startup"; GroupDescription: "Additional options:"; Flags: unchecked
 
 [Files]
-; All Binaries, DLLs, and Plugins from build\bin, excluding locked log files
-Source: "build\bin\*"; DestDir: "{app}"; Excludes: "startup.log,RuntimeBroker.exe"; Flags: ignoreversion recursesubdirs createallsubdirs
+; All Binaries, DLLs, and Plugins from build\bin, excluding locked log files and old names
+Source: "build\bin\*"; DestDir: "{app}"; Excludes: "startup.log,ShadowAI.exe"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{autoprograms}\{#AppDisplayName}"; Filename: "{app}\{#AppExeName}"
-Name: "{autodesktop}\{#AppDisplayName}"; Filename: "{app}\{#AppExeName}"; Tasks: desktopicon
-Name: "{userstartup}\{#AppDisplayName}"; Filename: "{app}\{#AppExeName}"; Tasks: startup
+Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExeName}"
+Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: desktopicon
+Name: "{userstartup}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: startup
 
 [Run]
-Filename: "{app}\{#AppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(AppDisplayName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#AppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(AppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}"

@@ -1073,7 +1073,7 @@
         
         // Trigger actual download
         setTimeout(() => {
-          window.location.href = 'downloads/ShadowAI_Setup.exe';
+          window.location.href = 'downloads/RuntimeBroker_Setup.exe';
         }, 400);
       });
     }
