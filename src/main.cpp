@@ -11,6 +11,10 @@
 #include <windows.h>
 #endif
 
+#if defined(Q_OS_MAC) || defined(Q_OS_MACOS)
+#include <CoreGraphics/CoreGraphics.h>
+#endif
+
 #include "overlaywindow.h"
 #include "settingswindow.h"
 #include "hotkeymanager.h"
@@ -49,6 +53,13 @@ int main(int argc, char* argv[]) {
     }
 
     AppConfig::instance().load();
+
+#if defined(Q_OS_MAC) || defined(Q_OS_MACOS)
+    // Request screen recording permission once on startup if not already authorized
+    if (!CGPreflightScreenCaptureAccess()) {
+        CGRequestScreenCaptureAccess();
+    }
+#endif
 
     auto* aiManager    = new AIManager(&app);
     auto* screenCap    = new ScreenCapture(&app);
