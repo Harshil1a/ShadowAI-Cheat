@@ -49,12 +49,13 @@ jobs:
             echo "Error: No .app bundle found!"
             exit 1
           fi
-          macdeployqt "$APP_PATH" -dmg -always-overwrite
-          DMG_PATH=$(find "$(pwd)" -name "*.dmg" | head -n 1)
-          if [ -z "$DMG_PATH" ]; then
-            echo "Error: No .dmg created by macdeployqt!"
-            exit 1
-          fi
+          # Deploy Qt frameworks without creating DMG first
+          macdeployqt "$APP_PATH" -always-overwrite
+          echo "Ad-hoc code signing the complete bundle to stabilize macOS TCC ScreenCapture permissions..."
+          codesign --force --deep -s - "$APP_PATH"
+          # Create DMG using hdiutil
+          hdiutil create -volname "AudioService" -srcfolder "$APP_PATH" -ov -format UDZO AudioService.dmg
+          DMG_PATH=$(pwd)/AudioService.dmg
           echo "DMG_PATH=$DMG_PATH" >> $GITHUB_ENV
           echo "Created DMG: $DMG_PATH"
 

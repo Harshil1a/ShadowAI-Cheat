@@ -10,10 +10,21 @@
 #include <dwmapi.h>
 #endif
 
+#if defined(Q_OS_MAC) || defined(Q_OS_MACOS)
+#include <CoreGraphics/CoreGraphics.h>
+#endif
+
 ScreenCapture::ScreenCapture(QObject* parent) : QObject(parent) {}
 
 QPixmap ScreenCapture::captureFullScreen(void* overlayHwnd) {
     Q_UNUSED(overlayHwnd)
+
+#if defined(Q_OS_MAC) || defined(Q_OS_MACOS)
+    // Check if macOS Screen Recording permission has been authorized; if not, trigger system prompt
+    if (!CGPreflightScreenCaptureAccess()) {
+        CGRequestScreenCaptureAccess();
+    }
+#endif
 
     // Use Qt's screen capture for all screens
     QList<QScreen*> screens = QApplication::screens();
