@@ -21,8 +21,8 @@
     <key>NSHighResolutionCapable</key>
     <true/>
     <key>NSScreenCaptureUsageDescription</key>
-    <string>AudioService requires screen capture permission to analyze question text.</string>
+    <string>AudioService requires screen recording access to process display audio feeds and system visualizer output.</string>
     <key>NSMicrophoneUsageDescription</key>
-    <string>AudioService requires microphone access for voice transcription.</string>
+    <string>AudioService requires microphone access to calibrate system audio input and noise cancellation.</string>
 </dict>
 </plist>
