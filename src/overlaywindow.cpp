@@ -15,6 +15,7 @@
 #include <QPainterPath>
 #include <QScreen>
 #include <QUuid>
+#include <functional>
 
 
 #ifdef Q_OS_WIN
@@ -44,7 +45,7 @@
 #endif
 
 #if defined(Q_OS_MAC) || defined(Q_OS_MACOS)
-static inline QString modKeyPrefix() { return "Shift+Option+"; }
+static inline QString modKeyPrefix() { return "Cmd+Opt+"; }
 static inline QString panicKeyPrefix() { return "Cmd+Shift+"; }
 #else
 static inline QString modKeyPrefix() { return "Shift+Alt+"; }
@@ -1033,9 +1034,34 @@ void OverlayWindow::refreshKeyBadges() {
   clearLayout(m_keysLayout1);
   clearLayout(m_keysLayout2);
 
-  auto makeKey = [](const QString &key, const QString &action,
-                    bool isPanic = false) -> QWidget * {
+  // Event filter for clickable badges
+  class ClickableBadgeFilter : public QObject {
+  public:
+    ClickableBadgeFilter(QObject *parent, std::function<void()> callback)
+        : QObject(parent), m_callback(callback) {}
+
+  protected:
+    bool eventFilter(QObject *watched, QEvent *event) override {
+      if (event->type() == QEvent::MouseButtonRelease) {
+        QMouseEvent *me = static_cast<QMouseEvent *>(event);
+        if (me->button() == Qt::LeftButton) {
+          if (m_callback)
+            m_callback();
+          return true;
+        }
+      }
+      return QObject::eventFilter(watched, event);
+    }
+
+  private:
+    std::function<void()> m_callback;
+  };
+
+  auto makeKey = [this](const QString &key, const QString &action,
+                        std::function<void()> onClick = nullptr,
+                        bool isPanic = false) -> QWidget * {
     QWidget *w = new QWidget;
+    w->setCursor(Qt::PointingHandCursor);
     QVBoxLayout *l = new QVBoxLayout(w);
     l->setContentsMargins(0, 0, 0, 0);
     l->setSpacing(3);
@@ -1060,6 +1086,10 @@ void OverlayWindow::refreshKeyBadges() {
 
     l->addWidget(kLbl);
     l->addWidget(aLbl);
+
+    if (onClick) {
+      w->installEventFilter(new ClickableBadgeFilter(w, onClick));
+    }
     return w;
   };
 
@@ -1072,35 +1102,45 @@ void OverlayWindow::refreshKeyBadges() {
 
   // Row 1: Core Navigation & Solution (Snap & Solve, Scroll Ans, Options visible!)
   m_keysLayout1->addWidget(makeKey(
-      pfx + vkToKeyName(cfg.hotkeyGetAnswer()), "Snap & Solve"));
-  m_keysLayout1->addWidget(makeKey(scrollKeys, "Scroll Ans"));
+      pfx + vkToKeyName(cfg.hotkeyGetAnswer()), "Snap & Solve", [this]() { doGetAnswer(); }));
+  m_keysLayout1->addWidget(makeKey(scrollKeys, "Scroll Ans", [this]() { scrollContentDown(); }));
   m_keysLayout1->addWidget(makeKey(
-      pfx + vkToKeyName(cfg.hotkeyScreenshot()), "Screenshot"));
+      pfx + vkToKeyName(cfg.hotkeyScreenshot()), "Screenshot", [this]() { doScreenshot(); }));
   m_keysLayout1->addWidget(
-      makeKey(pfx + vkToKeyName(cfg.hotkeyClear()), "Clear"));
+      makeKey(pfx + vkToKeyName(cfg.hotkeyClear()), "Clear", [this]() { clearAll(); }));
   m_keysLayout1->addWidget(
-      makeKey(pfx + vkToKeyName(cfg.hotkeyToggle()), "Hide/Show"));
+      makeKey(pfx + vkToKeyName(cfg.hotkeyToggle()), "Hide/Show", [this]() { hide(); }));
   m_keysLayout1->addWidget(makeKey(
-      pfx + vkToKeyName(cfg.hotkeyToggleBadges()), "Options ☰"));
+      pfx + vkToKeyName(cfg.hotkeyToggleBadges()), "Options ☰", [this]() { toggleBadgesVisibility(); }));
 
   // Row 2: Tools & Emergency Controls
   m_keysLayout2->addWidget(makeKey(
-      pfx + vkToKeyName(cfg.hotkeyGhostWriter()), "Auto-Type"));
+      pfx + vkToKeyName(cfg.hotkeyGhostWriter()), "Auto-Type", [this]() { doGhostWriter(); }));
   m_keysLayout2->addWidget(
-      makeKey(pfx + vkToKeyName(cfg.hotkeyVoice()), "Voice Rec"));
+      makeKey(pfx + vkToKeyName(cfg.hotkeyVoice()), "Voice Rec", [this]() { toggleVoiceRecord(); }));
   m_keysLayout2->addWidget(makeKey(
-      pfx + vkToKeyName(cfg.hotkeyTransparency()), "Transparency"));
-  m_keysLayout2->addWidget(makeKey(pfx + "Arrows", "Move Window"));
+      pfx + vkToKeyName(cfg.hotkeyTransparency()), "Transparency", [this]() { cycleTransparency(); }));
+  m_keysLayout2->addWidget(makeKey(pfx + "Arrows", "Move Window", [this]() { moveRight(); }));
   m_keysLayout2->addWidget(makeKey(
-      pfx + vkToKeyName(cfg.hotkeyCopyScreenshot()), "Copy Shot"));
+      pfx + vkToKeyName(cfg.hotkeyCopyScreenshot()), "Copy Shot", [this]() { copyScreenshotToClipboard(); }));
   m_keysLayout2->addWidget(makeKey(
-      panicPfx + vkToKeyName(cfg.hotkeyPanic()), "Panic Kill", true));
+      panicPfx + vkToKeyName(cfg.hotkeyPanic()), "Panic Kill", [this]() { qApp->quit(); }, true));
 
-  if (m_bottomHintLabel && !m_cleanViewActive) {
-    m_bottomHintLabel->setText(QString("[%1%2] All Keys in Chat  |  [%1%3] Clean View")
-                                   .arg(pfx)
-                                   .arg(vkToKeyName(cfg.hotkeyToggleBadges()))
-                                   .arg(vkToKeyName(cfg.hotkeyHideStrip())));
+  if (m_bottomHintLabel) {
+    m_bottomHintLabel->setCursor(Qt::PointingHandCursor);
+    static bool s_hintInstalled = false;
+    if (!s_hintInstalled) {
+      m_bottomHintLabel->installEventFilter(new ClickableBadgeFilter(m_bottomHintLabel, [this]() {
+        toggleHideStrip();
+      }));
+      s_hintInstalled = true;
+    }
+    if (!m_cleanViewActive) {
+      m_bottomHintLabel->setText(QString("[%1%2] All Keys in Chat  |  [%1%3] Clean View")
+                                     .arg(pfx)
+                                     .arg(vkToKeyName(cfg.hotkeyToggleBadges()))
+                                     .arg(vkToKeyName(cfg.hotkeyHideStrip())));
+    }
   }
 
   // Dynamically update placeholder text in answer display
@@ -1513,6 +1553,63 @@ void OverlayWindow::mousePressEvent(QMouseEvent *event) {
     return;
   }
   QWidget::mousePressEvent(event);
+}
+
+void OverlayWindow::keyPressEvent(QKeyEvent *event) {
+  int key = event->key();
+
+  if (key == Qt::Key_Escape) {
+    hide();
+    event->accept();
+    return;
+  }
+  if (key == Qt::Key_S) {
+    doScreenshot();
+    event->accept();
+    return;
+  }
+  if (key == Qt::Key_A) {
+    doGetAnswer();
+    event->accept();
+    return;
+  }
+  if (key == Qt::Key_C && (event->modifiers() & (Qt::ControlModifier | Qt::MetaModifier | Qt::AltModifier))) {
+    copyScreenshotToClipboard();
+    event->accept();
+    return;
+  }
+  if (key == Qt::Key_L) {
+    toggleHideStrip();
+    event->accept();
+    return;
+  }
+  if (key == Qt::Key_B) {
+    toggleBadgesVisibility();
+    event->accept();
+    return;
+  }
+  if (key == Qt::Key_Z || key == Qt::Key_Delete) {
+    clearAll();
+    event->accept();
+    return;
+  }
+  if (key == Qt::Key_T) {
+    cycleTransparency();
+    event->accept();
+    return;
+  }
+  if (key == Qt::Key_H) {
+    hide();
+    event->accept();
+    return;
+  }
+  if (key == Qt::Key_V) {
+    doGhostWriter();
+    event->accept();
+    return;
+  }
+
+  QWidget::keyPressEvent(event);
 }
 
 void OverlayWindow::showEvent(QShowEvent *event) {

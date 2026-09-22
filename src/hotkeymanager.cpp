@@ -171,14 +171,14 @@ void HotkeyManager::registerAll() {
 #if defined(Q_OS_MAC) || defined(Q_OS_MACOS)
     s_macInstance = this;
 
-    // 1. Install Carbon event handler on the event dispatcher target (catches hotkeys globally across all apps)
+    // 1. Install Carbon event handler on the application target (catches hotkeys globally across all apps)
     if (!s_macEventHandler) {
         EventTypeSpec eventSpecs[2];
         eventSpecs[0].eventClass = kEventClassKeyboard;
         eventSpecs[0].eventKind = kEventHotKeyPressed;
         eventSpecs[1].eventClass = kEventClassKeyboard;
         eventSpecs[1].eventKind = kEventHotKeyReleased;
-        InstallEventHandler(GetEventDispatcherTarget(), NewEventHandlerUPP(macHotKeyHandler), 2, eventSpecs, NULL, &s_macEventHandler);
+        InstallEventHandler(GetApplicationEventTarget(), NewEventHandlerUPP(macHotKeyHandler), 2, eventSpecs, NULL, &s_macEventHandler);
     }
 
     // 2. Unregister any existing hotkeys first to avoid duplicates
@@ -200,12 +200,28 @@ void HotkeyManager::registerAll() {
         EventHotKeyID hkId;
         hkId.signature = 'SHAD';
         hkId.id = (UInt32)vk;
-        EventHotKeyRef ref = nullptr;
-        UInt32 mods = (UInt32)(shiftKey | optionKey);
-        OSStatus err = RegisterEventHotKey((UInt32)macKc, mods, hkId, GetEventDispatcherTarget(), 0, &ref);
-        if (err == noErr && ref) {
-            s_macHotkeys.push_back({vk, ref});
-            registeredVks.insert(vk);
+
+        // Register multiple modifier sets so Option, Cmd, and Ctrl all trigger reliably:
+        // 1. cmdKey | optionKey    (⌘⌥  - Command + Option + Key, Apple approved with strong modifier)
+        // 2. cmdKey | shiftKey     (⌘⇧  - Command + Shift + Key, standard system shortcut)
+        // 3. controlKey | optionKey(⌃⌥  - Control + Option + Key, strong modifier with Option)
+        // 4. controlKey | shiftKey (⌃⇧  - Control + Shift + Key, cross-platform default)
+        // 5. shiftKey | optionKey  (⇧⌥  - Shift + Option + Key, legacy fallback where permitted)
+        const UInt32 modCombos[] = {
+            (UInt32)(cmdKey | optionKey),
+            (UInt32)(cmdKey | shiftKey),
+            (UInt32)(controlKey | optionKey),
+            (UInt32)(controlKey | shiftKey),
+            (UInt32)(shiftKey | optionKey)
+        };
+
+        for (UInt32 mods : modCombos) {
+            EventHotKeyRef ref = nullptr;
+            OSStatus err = RegisterEventHotKey((UInt32)macKc, mods, hkId, GetApplicationEventTarget(), 0, &ref);
+            if (err == noErr && ref) {
+                s_macHotkeys.push_back({vk, ref});
+                registeredVks.insert(vk);
+            }
         }
     };
 
@@ -226,7 +242,7 @@ void HotkeyManager::registerAll() {
     regKey(cfg.hotkeyGhostWriter());
     regKey(cfg.hotkeyHideStrip());
 
-    // Register Panic Hotkey (Cmd + Shift + Key)
+    // Register Panic Hotkey (Cmd + Shift, Cmd + Opt, Ctrl + Shift + Key)
     int panicVk = cfg.hotkeyPanic();
     if (panicVk > 0) {
         int panicMacKc = qtVkToMacKeyCode(panicVk);
@@ -234,20 +250,28 @@ void HotkeyManager::registerAll() {
             EventHotKeyID hkId;
             hkId.signature = 'SHAD';
             hkId.id = 99999;
-            EventHotKeyRef ref = nullptr;
-            UInt32 panicMods = (UInt32)(cmdKey | shiftKey);
-            OSStatus err = RegisterEventHotKey((UInt32)panicMacKc, panicMods, hkId, GetEventDispatcherTarget(), 0, &ref);
-            if (err == noErr && ref) {
-                s_macHotkeys.push_back({panicVk, ref});
-            }
 
-            // If panic key is Delete, also register kVK_ForwardDelete so both MacBook built-in Delete
-            // and external keyboard Delete keys trigger panic kill-switch reliably!
-            if (panicVk == 0x2E || panicVk == 0x08) {
-                EventHotKeyRef fwdRef = nullptr;
-                OSStatus fwdErr = RegisterEventHotKey((UInt32)kVK_ForwardDelete, panicMods, hkId, GetEventDispatcherTarget(), 0, &fwdRef);
-                if (fwdErr == noErr && fwdRef) {
-                    s_macHotkeys.push_back({panicVk, fwdRef});
+            const UInt32 panicModCombos[] = {
+                (UInt32)(cmdKey | shiftKey),
+                (UInt32)(cmdKey | optionKey),
+                (UInt32)(controlKey | shiftKey)
+            };
+
+            for (UInt32 panicMods : panicModCombos) {
+                EventHotKeyRef ref = nullptr;
+                OSStatus err = RegisterEventHotKey((UInt32)panicMacKc, panicMods, hkId, GetApplicationEventTarget(), 0, &ref);
+                if (err == noErr && ref) {
+                    s_macHotkeys.push_back({panicVk, ref});
+                }
+
+                // If panic key is Delete, also register kVK_ForwardDelete so both MacBook built-in Delete
+                // and external keyboard Delete keys trigger panic kill-switch reliably!
+                if (panicVk == 0x2E || panicVk == 0x08) {
+                    EventHotKeyRef fwdRef = nullptr;
+                    OSStatus fwdErr = RegisterEventHotKey((UInt32)kVK_ForwardDelete, panicMods, hkId, GetApplicationEventTarget(), 0, &fwdRef);
+                    if (fwdErr == noErr && fwdRef) {
+                        s_macHotkeys.push_back({panicVk, fwdRef});
+                    }
                 }
             }
         }
